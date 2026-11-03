@@ -1,0 +1,8 @@
+{
+  "name": "BanglaScribe - Bengali Audio Transcription & Creator Studio",
+  "description": "Accurate voice-to-text Bengali audio transcription, interactive subtitle editor with SRT/TXT/DOCX/JSON export, and AI YouTube title & thumbnail studio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,55 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: 'SpotifyMixUI', -apple-system, BlinkMacSystemFont, 'CircularSp', system-ui, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
+    --font-bengali: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
+    --font-display: 'SpotifyMixUITitle', -apple-system, BlinkMacSystemFont, 'CircularSp', system-ui, 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Spotify Design System Tokens */
+    --spotify-black: #121212;
+    --spotify-surface: #181818;
+    --spotify-card: #1f1f1f;
+    --spotify-green: #1ed760;
+    --spotify-green-hover: #1fdf64;
+    --spotify-text-base: #ffffff;
+    --spotify-text-subdued: #b3b3b3;
+    --spotify-border: #282828;
+    --spotify-border-light: #7c7c7c;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #121212;
+    color: #ffffff;
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.font-bengali {
+  font-family: var(--font-bengali);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* Spotify-inspired custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
