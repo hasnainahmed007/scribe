@@ -66,7 +66,9 @@ export interface ThumbnailConfig {
   showAccentBar: boolean;
 }
 
-export type ActiveTab = 'landing' | 'studio' | 'youtube' | 'thumbnail' | 'history' | 'admin' | 'pricing';
+export type ActiveTab = 'landing' | 'studio' | 'youtube' | 'thumbnail' | 'history' | 'admin' | 'pricing' | 'auth';
+
+export type AuthPageMode = 'login' | 'register' | 'verify-otp' | 'forgot-password' | 'reset-password';
 
 // ================== SaaS & Database Credit Models ==================
 

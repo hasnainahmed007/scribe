@@ -5,6 +5,11 @@ import { safeFetchJson } from '../utils/apiClient';
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; user?: SaaSUser; error?: string }>;
   register: (name: string, email: string, password: string, password_confirmation: string) => Promise<{ success: boolean; user?: SaaSUser; error?: string }>;
+  requestRegisterOtp: (name: string, email: string, password: string, password_confirmation: string) => Promise<{ success: boolean; email?: string; devOtp?: string; message?: string; error?: string }>;
+  verifyRegisterOtp: (email: string, otp: string) => Promise<{ success: boolean; user?: SaaSUser; error?: string }>;
+  resendRegisterOtp: (email: string) => Promise<{ success: boolean; devOtp?: string; message?: string; error?: string }>;
+  requestForgotPasswordOtp: (email: string) => Promise<{ success: boolean; email?: string; devOtp?: string; message?: string; error?: string }>;
+  verifyForgotPasswordOtp: (email: string, otp: string, newPassword: string, confirmPassword: string) => Promise<{ success: boolean; user?: SaaSUser; error?: string }>;
   logout: () => void;
   quickDemoLogin: (role: 'superadmin' | 'creator') => Promise<SaaSUser | null>;
   refreshProfile: () => Promise<void>;
@@ -95,6 +100,131 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const requestRegisterOtp = async (name: string, email: string, password: string, password_confirmation: string) => {
+    try {
+      const result = await safeFetchJson<{ success: boolean; email?: string; devOtp?: string; message?: string; error?: string }>(
+        '/api/auth/register/request-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, password_confirmation }),
+        }
+      );
+
+      if (!result.ok || !result.data?.success) {
+        return { success: false, error: result.error || result.data?.error || 'Failed to send verification code.' };
+      }
+
+      return {
+        success: true,
+        email: result.data.email,
+        devOtp: result.data.devOtp,
+        message: result.data.message,
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server connection error.' };
+    }
+  };
+
+  const verifyRegisterOtp = async (email: string, otp: string) => {
+    try {
+      const result = await safeFetchJson<{ success: boolean; user: SaaSUser; token: string; error?: string }>(
+        '/api/auth/register/verify-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp }),
+        }
+      );
+
+      if (!result.ok || !result.data?.success) {
+        return { success: false, error: result.error || result.data?.error || 'Verification failed.' };
+      }
+
+      setToken(result.data.token);
+      setUser(result.data.user);
+      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
+      return { success: true, user: result.data.user };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification failed.' };
+    }
+  };
+
+  const resendRegisterOtp = async (email: string) => {
+    try {
+      const result = await safeFetchJson<{ success: boolean; devOtp?: string; message?: string; error?: string }>(
+        '/api/auth/register/resend-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (!result.ok || !result.data?.success) {
+        return { success: false, error: result.error || result.data?.error || 'Failed to resend code.' };
+      }
+
+      return {
+        success: true,
+        devOtp: result.data.devOtp,
+        message: result.data.message,
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server connection error.' };
+    }
+  };
+
+  const requestForgotPasswordOtp = async (email: string) => {
+    try {
+      const result = await safeFetchJson<{ success: boolean; email?: string; devOtp?: string; message?: string; error?: string }>(
+        '/api/auth/forgot-password/request-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      );
+
+      if (!result.ok || !result.data?.success) {
+        return { success: false, error: result.error || result.data?.error || 'Failed to send reset code.' };
+      }
+
+      return {
+        success: true,
+        email: result.data.email,
+        devOtp: result.data.devOtp,
+        message: result.data.message,
+      };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server connection error.' };
+    }
+  };
+
+  const verifyForgotPasswordOtp = async (email: string, otp: string, newPassword: string, confirmPassword: string) => {
+    try {
+      const result = await safeFetchJson<{ success: boolean; user: SaaSUser; token: string; error?: string }>(
+        '/api/auth/forgot-password/verify-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp, newPassword, confirmPassword }),
+        }
+      );
+
+      if (!result.ok || !result.data?.success) {
+        return { success: false, error: result.error || result.data?.error || 'Password reset failed.' };
+      }
+
+      setToken(result.data.token);
+      setUser(result.data.user);
+      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
+      return { success: true, user: result.data.user };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Server connection error.' };
+    }
+  };
+
   const logout = async () => {
     if (token) {
       try {
@@ -133,6 +263,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isLoadingSession,
     login,
     register,
+    requestRegisterOtp,
+    verifyRegisterOtp,
+    resendRegisterOtp,
+    requestForgotPasswordOtp,
+    verifyForgotPasswordOtp,
     logout,
     quickDemoLogin,
     refreshProfile,

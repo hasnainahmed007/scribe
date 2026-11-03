@@ -48,3 +48,18 @@ BanglaScribe is an end-to-end Bengali voice-to-text transcription SaaS and YouTu
    - Enforced on both server and client:
      - **Server**: `/api/user/subscribe` checks `user.planId`. If the user is on an active paid plan (Pro Creator or Agency Studio) and attempts to select `plan-free`, the server returns HTTP 400 (`Downgrades to the Free Starter plan are not permitted for active paid subscriptions.`).
      - **Client**: `PricingModal.tsx` and `LandingPage.tsx` disable the Free Starter tier card with a locked indicator stating "Cannot Downgrade to Free" whenever an active paid subscription is detected.
+
+7. **Dedicated Full-Page Authentication System (NOT Modal)**:
+   - Replaced modal authentication with a full-page route (`activeTab === 'auth'`) featuring five connected sub-views:
+     - **Sign In**: Email & password login with show/hide password toggle, Quick Demo Credentials for test environments, and direct link to Forgot Password.
+     - **Register**: Full Name, Email, Password, and Password Confirmation validation with instant OTP request dispatch.
+     - **Email OTP Verification**: 6-digit spaced code input, 60-second cooldown timer, resend button, and dev-mode autofill helper for preview environments. Upon successful verification, user is activated with 30 free starter audio minutes.
+     - **Forgot Password**: Password reset request with 6-digit OTP delivery to the user's registered email.
+     - **Reset Password**: Verification of OTP along with new password and confirmation; logs the user in immediately upon reset.
+
+8. **Dual SMTP Setup (Mailtrap for Dev & Google App Password for Production)**:
+   - Configured nodemailer transporter supporting:
+     - **Mailtrap Testing**: `MAILTRAP_HOST`, `MAILTRAP_PORT`, `MAILTRAP_USER`, `MAILTRAP_PASS`.
+     - **Production Gmail**: `GMAIL_USER`, `GMAIL_APP_PASSWORD` with official Google App Password credentials.
+     - **Generic Custom SMTP**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+     - **Dev Console Fallback**: High-visibility console banner and API response `devOtp` for zero-friction testing in preview environments without configured credentials.

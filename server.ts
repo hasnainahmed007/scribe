@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import nodemailer from 'nodemailer';
 import { GoogleGenAI, Type } from '@google/genai';
 import { db } from './src/db/index.ts';
 import {
@@ -306,14 +307,314 @@ const superAdminMiddleware = (req: AuthenticatedRequest, res: Response, next: Ne
   next();
 };
 
+// ===================== Email Transporter & OTP System =====================
+
+interface PendingRegistration {
+  name: string;
+  email: string;
+  passwordHash: string;
+  otp: string;
+  expiresAt: number;
+}
+
+interface PasswordResetRequest {
+  email: string;
+  otp: string;
+  expiresAt: number;
+}
+
+const pendingRegistrations = new Map<string, PendingRegistration>(); // email -> PendingRegistration
+const pendingPasswordResets = new Map<string, PasswordResetRequest>(); // email -> PasswordResetRequest
+
+// Clean up expired OTP entries every 10 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of pendingRegistrations.entries()) {
+    if (val.expiresAt < now) pendingRegistrations.delete(key);
+  }
+  for (const [key, val] of pendingPasswordResets.entries()) {
+    if (val.expiresAt < now) pendingPasswordResets.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+// Setup email transporter: Mailtrap for testing, Gmail App Password for production, or custom SMTP
+function createEmailTransporter() {
+  // 1. Mailtrap (Testing/Development)
+  if (process.env.MAILTRAP_USER && process.env.MAILTRAP_PASS) {
+    return nodemailer.createTransport({
+      host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
+      port: parseInt(process.env.MAILTRAP_PORT || '2525', 10),
+      auth: {
+        user: process.env.MAILTRAP_USER,
+        pass: process.env.MAILTRAP_PASS,
+      },
+    });
+  }
+
+  // 2. Production Google App Password
+  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+  }
+
+  // 3. Generic Custom SMTP
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    return nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '465', 10),
+      secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_PORT === '465',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+  }
+
+  return null;
+}
+
+// Send OTP email with Spotify-styled dark HTML template
+async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forgot-password'): Promise<{ sent: boolean; devMode?: boolean; error?: string }> {
+  const transporter = createEmailTransporter();
+  const subject = purpose === 'register'
+    ? 'Verify your BanglaScribe Account — Verification Code'
+    : 'Reset your BanglaScribe Password — OTP Code';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #ffffff; margin: 0; padding: 36px 16px; }
+          .container { max-width: 520px; margin: 0 auto; background: #181818; border-radius: 16px; border: 1px solid #282828; padding: 36px; text-align: center; }
+          .logo { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #1ed760; color: #000; font-size: 22px; font-weight: 800; border-radius: 50%; margin-bottom: 18px; }
+          h1 { font-size: 22px; font-weight: 700; color: #ffffff; margin-bottom: 10px; }
+          p { font-size: 14px; color: #b3b3b3; line-height: 1.6; margin: 0 0 22px 0; }
+          .otp-card { background: #282828; border: 1px solid #3e3e3e; border-radius: 12px; padding: 18px 28px; display: inline-block; margin: 8px 0 20px 0; }
+          .otp-code { font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #1ed760; font-family: monospace; }
+          .expiry { font-size: 12px; color: #7c7c7c; margin-top: 6px; }
+          .footer { font-size: 11px; color: #535353; border-top: 1px solid #282828; padding-top: 18px; margin-top: 24px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="logo">B</div>
+          <h1>${purpose === 'register' ? 'Verify Your BanglaScribe Account' : 'Password Reset Request'}</h1>
+          <p>
+            ${purpose === 'register'
+              ? 'Thank you for signing up for BanglaScribe. Please enter this verification code to verify your email address and activate your 30 free audio minutes.'
+              : 'We received a request to reset your password. Use the verification code below to proceed with resetting your password.'}
+          </p>
+          <div class="otp-card">
+            <div class="otp-code">${otp}</div>
+            <div class="expiry">Valid for 10 minutes</div>
+          </div>
+          <p style="font-size: 12px; color: #7c7c7c;">If you did not request this email, you can safely ignore it.</p>
+          <div class="footer">
+            BanglaScribe · AI Bengali Speech Intelligence & Video Creator Suite
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  if (transporter) {
+    try {
+      const fromAddress = process.env.SMTP_FROM || process.env.GMAIL_USER || 'BanglaScribe <noreply@banglascribe.com>';
+      await transporter.sendMail({
+        from: fromAddress,
+        to,
+        subject,
+        html,
+        text: `Your BanglaScribe verification code is: ${otp}. It expires in 10 minutes.`,
+      });
+      console.log(`[EMAIL DISPATCHED] To: ${to} | Purpose: ${purpose}`);
+      return { sent: true };
+    } catch (err: any) {
+      console.error('[EMAIL ERROR] Failed to send via SMTP, activating dev fallback:', err.message);
+      console.log(`[DEV OTP LOG] To: ${to} | Code: ${otp}`);
+      return { sent: false, devMode: true, error: err.message };
+    }
+  } else {
+    console.log(`\n======================================================`);
+    console.log(`[BANGLASCRIBE EMAIL SERVICE - DEV/TESTING MODE]`);
+    console.log(`To: ${to}`);
+    console.log(`Purpose: ${purpose}`);
+    console.log(`6-Digit Verification OTP: >>> ${otp} <<<`);
+    console.log(`Configure MAILTRAP_* or GMAIL_APP_PASSWORD in .env for production`);
+    console.log(`======================================================\n`);
+    return { sent: true, devMode: true };
+  }
+}
+
 // ===================== Sanctum Authentication Routes =====================
 
-// 1. User Registration (Default Free Plan with 30 Starter Credits)
+// 1A. User Registration — Step 1: Request Email Verification OTP
+app.post('/api/auth/register/request-otp', async (req: Request, res: Response) => {
+  try {
+    const { name, email, password, password_confirmation } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(422).json({ error: 'Please enter a valid full name (minimum 2 characters).' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email.trim())) {
+      return res.status(422).json({ error: 'Please provide a valid email address.' });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(422).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    const confirmPass = password_confirmation !== undefined ? password_confirmation : password;
+    if (password !== confirmPass) {
+      return res.status(422).json({ error: 'Password confirmation does not match.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await getUserByEmail(cleanEmail);
+    if (existing) {
+      return res.status(422).json({ error: 'This email is already registered. Please sign in instead.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    pendingRegistrations.set(cleanEmail, {
+      name: name.trim(),
+      email: cleanEmail,
+      passwordHash,
+      otp,
+      expiresAt,
+    });
+
+    const emailRes = await sendOtpEmail(cleanEmail, otp, 'register');
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      message: `A 6-digit verification code has been sent to ${cleanEmail}. Please enter it to complete registration.`,
+      devOtp: (emailRes.devMode || !createEmailTransporter()) ? otp : undefined,
+    });
+  } catch (err: any) {
+    console.error('Registration OTP request error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to send verification code.' });
+  }
+});
+
+// 1B. User Registration — Step 2: Verify OTP and Create Account
+app.post('/api/auth/register/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(422).json({ error: 'Email and 6-digit verification code are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const pending = pendingRegistrations.get(cleanEmail);
+
+    if (!pending) {
+      return res.status(400).json({ error: 'No pending registration found for this email, or code expired. Please register again.' });
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      pendingRegistrations.delete(cleanEmail);
+      return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (pending.otp !== String(otp).trim()) {
+      return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });
+    }
+
+    // Double check email isn't already taken
+    const existing = await getUserByEmail(cleanEmail);
+    if (existing) {
+      pendingRegistrations.delete(cleanEmail);
+      return res.status(422).json({ error: 'This email is already registered.' });
+    }
+
+    const newUid = `usr-${Date.now()}`;
+
+    // Insert user into PostgreSQL with default Free Starter Plan & 30 Free Credits
+    const inserted = await db
+      .insert(usersTable)
+      .values({
+        uid: newUid,
+        email: cleanEmail,
+        name: pending.name,
+        role: 'user',
+        status: 'active',
+        planId: 'plan-free',
+        planName: 'Free Starter',
+        creditsRemaining: 30, // 30 free minutes granted on verified registration!
+        creditsTotal: 30,
+        creditsUsed: 0,
+      })
+      .returning();
+
+    // Clean up pending registration
+    pendingRegistrations.delete(cleanEmail);
+
+    const createdUser = inserted[0];
+    const enrichedUser = await enrichUserWithPlanModules(createdUser);
+    const token = `san_tok_${crypto.randomBytes(24).toString('hex')}`;
+    activeTokens.set(token, createdUser.uid);
+
+    return res.status(201).json({
+      success: true,
+      user: enrichedUser,
+      token,
+      message: 'Account verified successfully! 30 free starter audio minutes added.',
+    });
+  } catch (err: any) {
+    console.error('Registration OTP verification error:', err);
+    return res.status(500).json({ error: err.message || 'Verification failed.' });
+  }
+});
+
+// 1C. Resend Registration OTP
+app.post('/api/auth/register/resend-otp', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(422).json({ error: 'Email is required.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const pending = pendingRegistrations.get(cleanEmail);
+    if (!pending) {
+      return res.status(400).json({ error: 'No pending registration session found. Please fill the registration form first.' });
+    }
+
+    const newOtp = String(Math.floor(100000 + Math.random() * 900000));
+    pending.otp = newOtp;
+    pending.expiresAt = Date.now() + 10 * 60 * 1000;
+    pendingRegistrations.set(cleanEmail, pending);
+
+    const emailRes = await sendOtpEmail(cleanEmail, newOtp, 'register');
+
+    return res.json({
+      success: true,
+      message: `A new verification code has been dispatched to ${cleanEmail}.`,
+      devOtp: (emailRes.devMode || !createEmailTransporter()) ? newOtp : undefined,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to resend code.' });
+  }
+});
+
+// 1D. User Registration (Direct fallback/backward compatibility)
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
     const { name, email, password, password_confirmation } = req.body;
 
-    // Validation
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res.status(422).json({ error: 'Please enter a valid full name (minimum 2 characters).' });
     }
@@ -331,43 +632,139 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       return res.status(422).json({ error: 'Password confirmation does not match.' });
     }
 
-    const existing = await getUserByEmail(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await getUserByEmail(cleanEmail);
     if (existing) {
       return res.status(422).json({ error: 'This email is already registered.' });
     }
 
     const newUid = `usr-${Date.now()}`;
 
-    // Insert user into PostgreSQL with default Free Starter Plan & 30 Free Credits
     const inserted = await db
       .insert(usersTable)
       .values({
         uid: newUid,
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         name: name.trim(),
         role: 'user',
         status: 'active',
         planId: 'plan-free',
         planName: 'Free Starter',
-        creditsRemaining: 30, // 30 free minutes granted on direct registration!
+        creditsRemaining: 30,
         creditsTotal: 30,
         creditsUsed: 0,
       })
       .returning();
 
     const createdUser = inserted[0];
+    const enrichedUser = await enrichUserWithPlanModules(createdUser);
     const token = `san_tok_${crypto.randomBytes(24).toString('hex')}`;
     activeTokens.set(token, createdUser.uid);
 
     return res.status(201).json({
       success: true,
-      user: createdUser,
+      user: enrichedUser,
       token,
       message: 'Account created successfully! 30 free starter credits have been added.',
     });
   } catch (err: any) {
     console.error('Registration error:', err);
     return res.status(500).json({ error: err.message || 'Registration failed.' });
+  }
+});
+
+// 1E. Forgot Password — Step 1: Request Password Reset OTP
+app.post('/api/auth/forgot-password/request-otp', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(422).json({ error: 'Please provide your registered email address.' });
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await getUserByEmail(cleanEmail);
+    if (!user) {
+      return res.status(404).json({ error: 'No account found with this email address.' });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({ error: 'Your account is suspended. Please contact support.' });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    pendingPasswordResets.set(cleanEmail, {
+      email: cleanEmail,
+      otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    const emailRes = await sendOtpEmail(cleanEmail, otp, 'forgot-password');
+
+    return res.json({
+      success: true,
+      email: cleanEmail,
+      message: `Password reset code sent to ${cleanEmail}.`,
+      devOtp: (emailRes.devMode || !createEmailTransporter()) ? otp : undefined,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to send password reset code.' });
+  }
+});
+
+// 1F. Forgot Password — Step 2: Verify OTP and Reset Password
+app.post('/api/auth/forgot-password/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+
+    const actualNewPassword = newPassword || req.body.new_password;
+    const actualConfirmPassword = confirmPassword !== undefined
+      ? confirmPassword
+      : (req.body.confirm_password !== undefined ? req.body.confirm_password : actualNewPassword);
+
+    if (!email || !otp || !actualNewPassword) {
+      return res.status(422).json({ error: 'Email, verification code, and new password are required.' });
+    }
+
+    if (actualNewPassword.length < 6) {
+      return res.status(422).json({ error: 'New password must be at least 6 characters long.' });
+    }
+
+    if (actualNewPassword !== actualConfirmPassword) {
+      return res.status(422).json({ error: 'Password confirmation does not match.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const pending = pendingPasswordResets.get(cleanEmail);
+
+    if (!pending) {
+      return res.status(400).json({ error: 'No reset request found or code expired. Please request a new code.' });
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      pendingPasswordResets.delete(cleanEmail);
+      return res.status(400).json({ error: 'Password reset code has expired. Please request a new one.' });
+    }
+
+    if (pending.otp !== String(otp).trim()) {
+      return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });
+    }
+
+    const user = await getUserByEmail(cleanEmail);
+    if (!user) {
+      return res.status(404).json({ error: 'User record not found.' });
+    }
+
+    pendingPasswordResets.delete(cleanEmail);
+
+    const token = `san_tok_${crypto.randomBytes(24).toString('hex')}`;
+    activeTokens.set(token, user.uid);
+
+    return res.json({
+      success: true,
+      user,
+      token,
+      message: 'Password reset successfully! You are now signed in.',
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Password reset failed.' });
   }
 });
 

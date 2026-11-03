@@ -11,7 +11,7 @@ import { SuperAdminPanel } from './components/SuperAdminPanel';
 import { TranscriptHistory } from './components/TranscriptHistory';
 import { LockedModuleNotice } from './components/LockedModuleNotice';
 import { ExportModal } from './components/ExportModal';
-import { AuthModal } from './components/AuthModal';
+import { AuthPage } from './components/AuthPage';
 import { PricingModal } from './components/PricingModal';
 import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
@@ -20,6 +20,7 @@ import {
   TranscriptSegment,
   AudioSource,
   ActiveTab,
+  AuthPageMode,
   YouTubeMetadata,
   UserRole,
   SaaSUser,
@@ -61,9 +62,8 @@ function BanglaScribeApp() {
 
   // App Navigation & Modals - Default to 'landing' for visitors
   const [activeTab, setActiveTab] = useState<ActiveTab>('landing');
+  const [authInitialMode, setAuthInitialMode] = useState<AuthPageMode>('login');
   const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
-  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
-  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [isPricingOpen, setIsPricingOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
@@ -460,7 +460,7 @@ function BanglaScribeApp() {
         onNewRecording={() => {
           if (!user) {
             setAuthInitialMode('login');
-            setIsAuthOpen(true);
+            setActiveTab('auth');
           } else {
             setShowInputModal(true);
           }
@@ -468,7 +468,7 @@ function BanglaScribeApp() {
         onOpenExport={() => setIsExportOpen(true)}
         onOpenAuth={(mode = 'login') => {
           setAuthInitialMode(mode);
-          setIsAuthOpen(true);
+          setActiveTab('auth');
         }}
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -479,10 +479,24 @@ function BanglaScribeApp() {
       {/* Main Viewport */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
         {/* ======================================================================== */}
+        {/* VIEW 0: AUTHENTICATION PAGE (Dedicated Full Page, NOT Modal)              */}
+        {/* ======================================================================== */}
+        {activeTab === 'auth' && (
+          <AuthPage
+            initialMode={authInitialMode}
+            onSuccess={() => {
+              if (user?.role === 'superadmin') setActiveTab('admin');
+              else setActiveTab('studio');
+            }}
+            onBackToHome={() => setActiveTab('landing')}
+          />
+        )}
+
+        {/* ======================================================================== */}
         {/* VIEW 1: LANDING PAGE (Only Home, About, Contact Us sections)             */}
         {/* Rendered when unauthenticated OR explicitly navigated to landing         */}
         {/* ======================================================================== */}
-        {(!user || activeTab === 'landing') && (
+        {activeTab !== 'auth' && (!user || activeTab === 'landing') && (
           <LandingPage
             onGetStarted={() => {
               if (user) {
@@ -490,12 +504,12 @@ function BanglaScribeApp() {
                 else setActiveTab('studio');
               } else {
                 setAuthInitialMode('register');
-                setIsAuthOpen(true);
+                setActiveTab('auth');
               }
             }}
             onSignIn={() => {
               setAuthInitialMode('login');
-              setIsAuthOpen(true);
+              setActiveTab('auth');
             }}
           />
         )}
@@ -801,14 +815,6 @@ function BanglaScribeApp() {
         }}
       />
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        initialMode={authInitialMode}
-        onAuthSuccess={handleAuthSuccess}
-      />
-
       {/* Pricing Modal */}
       <PricingModal
         isOpen={isPricingOpen}
@@ -845,7 +851,7 @@ function BanglaScribeApp() {
         onStartTranscribing={() => {
           if (!user) {
             setAuthInitialMode('register');
-            setIsAuthOpen(true);
+            setActiveTab('auth');
           } else {
             setShowInputModal(true);
           }
