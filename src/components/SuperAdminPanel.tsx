@@ -28,6 +28,7 @@ import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
+import { adminPlanCreateSchema, formatZodFieldErrors } from '../schemas/validation';
 import { Input } from './ui/input';
 
 const AVAILABLE_MODULES: { id: PlanModule; label: string; desc: string }[] = [
@@ -133,16 +134,26 @@ export const SuperAdminPanel: React.FC = () => {
     setTimeout(() => setActionSuccess(null), 3000);
   };
 
-  // Plan Handlers
+  // Plan Handlers (Validated with Zod adminPlanCreateSchema)
   const handleSavePlan = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: Record<string, string> = {};
-    if (!planForm.name.trim()) errors.name = 'Plan name is required.';
-    if (planForm.priceUsd < 0) errors.priceUsd = 'Price must be 0 or positive.';
-    if (planForm.creditsGranted <= 0) errors.creditsGranted = 'Credits must be at least 1 minute.';
+    setPlanFormErrors({});
 
-    if (Object.keys(errors).length > 0) {
-      setPlanFormErrors(errors);
+    const featuresList = planForm.featuresText.split('\n').map((f) => f.trim()).filter(Boolean);
+
+    const parse = adminPlanCreateSchema.safeParse({
+      name: planForm.name,
+      description: planForm.description,
+      priceBdt: Number(planForm.priceBdt || planForm.priceUsd * 110),
+      priceUsd: Number(planForm.priceUsd),
+      interval: planForm.interval,
+      creditsGranted: Number(planForm.creditsGranted),
+      features: featuresList,
+      modules: planForm.modules,
+    });
+
+    if (!parse.success) {
+      setPlanFormErrors(formatZodFieldErrors(parse.error));
       return;
     }
 

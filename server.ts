@@ -22,6 +22,25 @@ import {
   SaaSSubscription,
   SaaSPayment,
 } from './src/types/index';
+import {
+  loginSchema,
+  registerOtpRequestSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
+  directRegisterSchema,
+  forgotPasswordRequestSchema,
+  forgotPasswordVerifySchema,
+  subscribePaymentSchema,
+  checkoutFormSchema,
+  adminPlanCreateSchema,
+  adminPlanUpdateSchema,
+  adminUserUpdateSchema,
+  generateMetadataSchema,
+  generateThumbnailSchema,
+  transcribeAudioSchema,
+  formatZodError,
+  formatZodFieldErrors,
+} from './src/schemas/validation.ts';
 
 dotenv.config();
 
@@ -458,27 +477,16 @@ async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forg
 // 1A. User Registration — Step 1: Request Email Verification OTP
 app.post('/api/auth/register/request-otp', async (req: Request, res: Response) => {
   try {
-    const { name, email, password, password_confirmation } = req.body;
-
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(422).json({ error: 'Please enter a valid full name (minimum 2 characters).' });
+    const parse = registerOtpRequestSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email.trim())) {
-      return res.status(422).json({ error: 'Please provide a valid email address.' });
-    }
-
-    if (!password || password.length < 6) {
-      return res.status(422).json({ error: 'Password must be at least 6 characters.' });
-    }
-
-    const confirmPass = password_confirmation !== undefined ? password_confirmation : password;
-    if (password !== confirmPass) {
-      return res.status(422).json({ error: 'Password confirmation does not match.' });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
+    const { name, email, password } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const existing = await getUserByEmail(cleanEmail);
     if (existing) {
       return res.status(422).json({ error: 'This email is already registered. Please sign in instead.' });
@@ -489,7 +497,7 @@ app.post('/api/auth/register/request-otp', async (req: Request, res: Response) =
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     pendingRegistrations.set(cleanEmail, {
-      name: name.trim(),
+      name,
       email: cleanEmail,
       passwordHash,
       otp,
@@ -513,13 +521,16 @@ app.post('/api/auth/register/request-otp', async (req: Request, res: Response) =
 // 1B. User Registration — Step 2: Verify OTP and Create Account
 app.post('/api/auth/register/verify-otp', async (req: Request, res: Response) => {
   try {
-    const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(422).json({ error: 'Email and 6-digit verification code are required.' });
+    const parse = verifyOtpSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const { email, otp } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const pending = pendingRegistrations.get(cleanEmail);
 
     if (!pending) {
@@ -531,7 +542,7 @@ app.post('/api/auth/register/verify-otp', async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'Verification code has expired. Please request a new one.' });
     }
 
-    if (pending.otp !== String(otp).trim()) {
+    if (pending.otp !== otp) {
       return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });
     }
 
@@ -584,10 +595,16 @@ app.post('/api/auth/register/verify-otp', async (req: Request, res: Response) =>
 // 1C. Resend Registration OTP
 app.post('/api/auth/register/resend-otp', async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(422).json({ error: 'Email is required.' });
+    const parse = resendOtpSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const { email } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const pending = pendingRegistrations.get(cleanEmail);
     if (!pending) {
       return res.status(400).json({ error: 'No pending registration session found. Please fill the registration form first.' });
@@ -613,26 +630,16 @@ app.post('/api/auth/register/resend-otp', async (req: Request, res: Response) =>
 // 1D. User Registration (Direct fallback/backward compatibility)
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { name, email, password, password_confirmation } = req.body;
-
-    if (!name || typeof name !== 'string' || name.trim().length < 2) {
-      return res.status(422).json({ error: 'Please enter a valid full name (minimum 2 characters).' });
+    const parse = directRegisterSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email.trim())) {
-      return res.status(422).json({ error: 'Please provide a valid email address.' });
-    }
-
-    if (!password || password.length < 6) {
-      return res.status(422).json({ error: 'Password must be at least 6 characters.' });
-    }
-
-    if (password !== password_confirmation) {
-      return res.status(422).json({ error: 'Password confirmation does not match.' });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
+    const { name, email, password } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const existing = await getUserByEmail(cleanEmail);
     if (existing) {
       return res.status(422).json({ error: 'This email is already registered.' });
@@ -645,7 +652,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       .values({
         uid: newUid,
         email: cleanEmail,
-        name: name.trim(),
+        name,
         role: 'user',
         status: 'active',
         planId: 'plan-free',
@@ -676,10 +683,16 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 // 1E. Forgot Password — Step 1: Request Password Reset OTP
 app.post('/api/auth/forgot-password/request-otp', async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(422).json({ error: 'Please provide your registered email address.' });
+    const parse = forgotPasswordRequestSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
 
-    const cleanEmail = email.trim().toLowerCase();
+    const { email } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const user = await getUserByEmail(cleanEmail);
     if (!user) {
       return res.status(404).json({ error: 'No account found with this email address.' });
@@ -712,26 +725,16 @@ app.post('/api/auth/forgot-password/request-otp', async (req: Request, res: Resp
 // 1F. Forgot Password — Step 2: Verify OTP and Reset Password
 app.post('/api/auth/forgot-password/verify-otp', async (req: Request, res: Response) => {
   try {
-    const { email, otp, newPassword, confirmPassword } = req.body;
-
-    const actualNewPassword = newPassword || req.body.new_password;
-    const actualConfirmPassword = confirmPassword !== undefined
-      ? confirmPassword
-      : (req.body.confirm_password !== undefined ? req.body.confirm_password : actualNewPassword);
-
-    if (!email || !otp || !actualNewPassword) {
-      return res.status(422).json({ error: 'Email, verification code, and new password are required.' });
+    const parse = forgotPasswordVerifySchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
-    if (actualNewPassword.length < 6) {
-      return res.status(422).json({ error: 'New password must be at least 6 characters long.' });
-    }
-
-    if (actualNewPassword !== actualConfirmPassword) {
-      return res.status(422).json({ error: 'Password confirmation does not match.' });
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
+    const { email, otp } = parse.data;
+    const cleanEmail = email.toLowerCase();
     const pending = pendingPasswordResets.get(cleanEmail);
 
     if (!pending) {
@@ -743,7 +746,7 @@ app.post('/api/auth/forgot-password/verify-otp', async (req: Request, res: Respo
       return res.status(400).json({ error: 'Password reset code has expired. Please request a new one.' });
     }
 
-    if (pending.otp !== String(otp).trim()) {
+    if (pending.otp !== otp) {
       return res.status(400).json({ error: 'Invalid verification code. Please check your email and try again.' });
     }
 
@@ -771,13 +774,17 @@ app.post('/api/auth/forgot-password/verify-otp', async (req: Request, res: Respo
 // 2. User Login
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(422).json({ error: 'Email and password are required.' });
+    const parse = loginSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
-    const user = await getUserByEmail(email);
+    const { email, password } = parse.data;
+    const cleanEmail = email.toLowerCase();
+    const user = await getUserByEmail(cleanEmail);
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password credentials.' });
     }
@@ -866,16 +873,26 @@ setInterval(() => {
 
 app.post('/api/user/subscribe', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const parse = subscribePaymentSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        success: false,
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
     const {
       planId,
-      paymentMethod = 'bkash',
+      paymentMethod,
       idempotencyKey,
       trxId,
       phoneNumber,
       amountPaid,
-      currency = 'BDT',
-    } = req.body;
+      currency,
+    } = parse.data;
     const user = req.user;
+    const cleanMethod = paymentMethod.toLowerCase();
 
     // 1. Idempotency Check: if identical idempotencyKey was already fulfilled, return cached response
     if (idempotencyKey && idempotencyStore.has(idempotencyKey)) {
@@ -895,26 +912,20 @@ app.post('/api/user/subscribe', authMiddleware, async (req: AuthenticatedRequest
     const plan = planRows[0];
     if (!plan) return res.status(404).json({ success: false, error: 'Selected plan not found.' });
 
-    // Validate payment method: strictly bkash, nagad, rocket
-    const allowedMethods = ['bkash', 'nagad', 'rocket'];
-    const cleanMethod = allowedMethods.includes(paymentMethod.toLowerCase())
-      ? paymentMethod.toLowerCase()
-      : 'bkash';
-
-    // Validate transaction details for paid plans
+    // Validate transaction details for paid plans using Zod
     const finalAmount = amountPaid !== undefined ? Number(amountPaid) : plan.priceBdt;
     if (finalAmount > 0) {
-      if (!trxId || typeof trxId !== 'string' || trxId.trim().length < 6) {
-        return res.status(422).json({
-          success: false,
-          error: `Please provide a valid ${cleanMethod.toUpperCase()} Transaction ID (TrxID) from your mobile receipt.`,
-        });
-      }
+      const checkoutValidation = checkoutFormSchema.safeParse({
+        paymentMethod,
+        walletPhone: phoneNumber || '',
+        trxId: trxId || '',
+      });
 
-      if (!phoneNumber || !/^01[3-9]\d{8}$/.test(phoneNumber.trim())) {
+      if (!checkoutValidation.success) {
         return res.status(422).json({
           success: false,
-          error: 'Please provide a valid 11-digit Bangladeshi mobile wallet number (01XXXXXXXXX).',
+          error: formatZodError(checkoutValidation.error),
+          errors: formatZodFieldErrors(checkoutValidation.error),
         });
       }
 
@@ -922,7 +933,7 @@ app.post('/api/user/subscribe', authMiddleware, async (req: AuthenticatedRequest
       const existingTxn = await db
         .select()
         .from(paymentsTable)
-        .where(eq(paymentsTable.transactionId, trxId.trim().toUpperCase()))
+        .where(eq(paymentsTable.transactionId, (trxId || '').trim().toUpperCase()))
         .limit(1);
 
       if (existingTxn.length > 0) {
@@ -1028,12 +1039,15 @@ app.get('/api/admin/plans', authMiddleware, superAdminMiddleware, async (_req, r
 
 app.post('/api/admin/plans', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
   try {
-    const { name, description, priceBdt, priceUsd, interval, creditsGranted, features, modules } = req.body;
-
-    if (!name || priceUsd === undefined || !creditsGranted) {
-      return res.status(422).json({ error: 'Please provide all required plan details.' });
+    const parse = adminPlanCreateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
 
+    const { name, description, priceBdt, priceUsd, interval, creditsGranted, features, modules } = parse.data;
     const newId = `plan-${Date.now()}`;
     const featuresArray = Array.isArray(features) ? features : [features];
     const modulesArray = Array.isArray(modules)
@@ -1046,10 +1060,10 @@ app.post('/api/admin/plans', authMiddleware, superAdminMiddleware, async (req: R
         id: newId,
         name,
         description: description || '',
-        priceBdt: Number(priceBdt || 0),
-        priceUsd: Number(priceUsd || 0),
-        interval: interval || 'monthly',
-        creditsGranted: Number(creditsGranted),
+        priceBdt,
+        priceUsd,
+        interval,
+        creditsGranted,
         features: JSON.stringify(featuresArray),
         modules: JSON.stringify(modulesArray),
         isActive: true,
@@ -1069,14 +1083,22 @@ app.post('/api/admin/plans', authMiddleware, superAdminMiddleware, async (req: R
 app.put('/api/admin/plans/:id', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, priceBdt, priceUsd, creditsGranted, features, modules, isActive } = req.body;
+    const parse = adminPlanUpdateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const { name, description, priceBdt, priceUsd, creditsGranted, features, modules, isActive } = parse.data;
 
     const updateData: any = {};
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
-    if (priceBdt !== undefined) updateData.priceBdt = Number(priceBdt);
-    if (priceUsd !== undefined) updateData.priceUsd = Number(priceUsd);
-    if (creditsGranted !== undefined) updateData.creditsGranted = Number(creditsGranted);
+    if (priceBdt !== undefined) updateData.priceBdt = priceBdt;
+    if (priceUsd !== undefined) updateData.priceUsd = priceUsd;
+    if (creditsGranted !== undefined) updateData.creditsGranted = creditsGranted;
     if (features) updateData.features = JSON.stringify(Array.isArray(features) ? features : [features]);
     if (modules) updateData.modules = JSON.stringify(Array.isArray(modules) ? modules : [modules]);
     if (isActive !== undefined) updateData.isActive = Boolean(isActive);
@@ -1111,13 +1133,21 @@ app.get('/api/admin/users', authMiddleware, superAdminMiddleware, async (_req, r
 app.put('/api/admin/users/:id', authMiddleware, superAdminMiddleware, async (req: Request, res: Response) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const { role, status, creditsRemaining, creditsTotal, planId, planName } = req.body;
+    const parse = adminUserUpdateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const { role, status, creditsRemaining, creditsTotal, planId, planName } = parse.data;
 
     const updateData: any = {};
     if (role) updateData.role = role;
     if (status) updateData.status = status;
-    if (creditsRemaining !== undefined) updateData.creditsRemaining = Number(creditsRemaining);
-    if (creditsTotal !== undefined) updateData.creditsTotal = Number(creditsTotal);
+    if (creditsRemaining !== undefined) updateData.creditsRemaining = creditsRemaining;
+    if (creditsTotal !== undefined) updateData.creditsTotal = creditsTotal;
     if (planId) updateData.planId = planId;
     if (planName) updateData.planName = planName;
 
@@ -1186,11 +1216,15 @@ app.get('/api/admin/payments', authMiddleware, superAdminMiddleware, async (_req
 
 app.post('/api/transcribe', async (req: Request, res: Response) => {
   try {
-    const { audioBase64, mimeType = 'audio/mp3', contextHint = '', estimatedDurationSeconds = 60 } = req.body;
-
-    if (!audioBase64) {
-      return res.status(400).json({ error: 'Missing audio payload.' });
+    const parse = transcribeAudioSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
+
+    const { audioBase64, mimeType, contextHint, estimatedDurationSeconds } = parse.data;
 
     if (!apiKey) {
       return res.status(500).json({
@@ -1451,11 +1485,15 @@ app.delete('/api/transcripts/:id', authMiddleware, async (req: AuthenticatedRequ
 // YouTube Metadata Generator with module permission check
 app.post('/api/generate-metadata', async (req: Request, res: Response) => {
   try {
-    const { transcript, titleHint = '', targetAudience = 'Bangladeshi & West Bengal Creators' } = req.body;
-
-    if (!transcript) {
-      return res.status(400).json({ error: 'Missing transcript text.' });
+    const parse = generateMetadataSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
+
+    const { transcript, titleHint, targetAudience } = parse.data;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
@@ -1570,11 +1608,15 @@ Based on the provided transcript, generate viral titles, SEO description, chapte
 // AI YouTube Thumbnail Generator & Concept Creator
 app.post('/api/generate-thumbnail-background', async (req: Request, res: Response) => {
   try {
-    const { title, style = 'bold', badge = 'NEW' } = req.body;
-
-    if (!title || typeof title !== 'string') {
-      return res.status(400).json({ error: 'Please provide a video title or topic.' });
+    const parse = generateThumbnailSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
     }
+
+    const { title, style, badge } = parse.data;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });

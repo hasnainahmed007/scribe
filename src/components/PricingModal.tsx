@@ -19,6 +19,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { checkoutFormSchema, formatZodFieldErrors } from '../schemas/validation';
 
 const FALLBACK_PLANS: SaaSPlan[] = [
   {
@@ -199,18 +200,19 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
   };
 
   const validateCheckout = (): boolean => {
-    const errors: Record<string, string> = {};
+    const parse = checkoutFormSchema.safeParse({
+      paymentMethod,
+      walletPhone,
+      trxId,
+    });
 
-    if (!/^01[3-9]\d{8}$/.test(walletPhone)) {
-      errors.walletPhone = 'Please enter a valid 11-digit Bangladeshi mobile number (01XXXXXXXXX).';
+    if (!parse.success) {
+      setFormErrors(formatZodFieldErrors(parse.error));
+      return false;
     }
 
-    if (!trxId || trxId.length < 6) {
-      errors.trxId = `Please enter the ${GATEWAY_CONFIG[paymentMethod].name} Transaction ID (TrxID) from your SMS receipt.`;
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    setFormErrors({});
+    return true;
   };
 
   const executeSubscription = async (

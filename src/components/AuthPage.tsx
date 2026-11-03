@@ -21,6 +21,16 @@ import { useAuth } from '../context/AuthContext';
 import { AuthPageMode } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import {
+  loginSchema,
+  registerOtpRequestSchema,
+  verifyOtpSchema,
+  resendOtpSchema,
+  forgotPasswordRequestSchema,
+  forgotPasswordVerifySchema,
+  formatZodError,
+  formatZodFieldErrors,
+} from '../schemas/validation';
 
 interface AuthPageProps {
   initialMode?: AuthPageMode;
@@ -73,6 +83,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Resend Cooldown Timer
   useEffect(() => {
@@ -94,6 +105,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const clearAlerts = () => {
     setErrorMessage(null);
     setSuccessMessage(null);
+    setFieldErrors({});
   };
 
   const switchMode = (newMode: AuthPageMode) => {
@@ -101,19 +113,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setMode(newMode);
   };
 
-  // 1. Handle Login
+  // 1. Handle Login (Validated with Zod loginSchema)
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
 
-    if (!loginEmail.trim() || !loginPassword) {
-      setErrorMessage('Please enter both your email address and password.');
+    const parse = loginSchema.safeParse({
+      email: loginEmail,
+      password: loginPassword,
+    });
+
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      setFieldErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await login(loginEmail.trim(), loginPassword);
+      const res = await login(parse.data.email, parse.data.password);
       if (res.success) {
         onSuccess?.();
       } else {
@@ -124,39 +142,35 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // 2. Handle Register (Step 1: Request OTP)
+  // 2. Handle Register (Step 1: Request OTP - Validated with Zod registerOtpRequestSchema)
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
 
-    if (!registerName.trim()) {
-      setErrorMessage('Please enter your full name.');
-      return;
-    }
-    if (!registerEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerEmail.trim())) {
-      setErrorMessage('Please enter a valid email address.');
-      return;
-    }
-    if (registerPassword.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
-      return;
-    }
-    if (registerPassword !== registerConfirmPassword) {
-      setErrorMessage('Passwords do not match. Please verify both fields.');
+    const parse = registerOtpRequestSchema.safeParse({
+      name: registerName,
+      email: registerEmail,
+      password: registerPassword,
+      password_confirmation: registerConfirmPassword,
+    });
+
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      setFieldErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await requestRegisterOtp(
-        registerName.trim(),
-        registerEmail.trim(),
-        registerPassword,
+        parse.data.name,
+        parse.data.email,
+        parse.data.password,
         registerConfirmPassword
       );
 
       if (res.success) {
-        setPendingEmail(registerEmail.trim().toLowerCase());
+        setPendingEmail(parse.data.email);
         setDevOtpHint(res.devOtp || null);
         setResendCooldown(60);
         setOtpCode(res.devOtp || '');
@@ -170,20 +184,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // 3. Handle Verify OTP (Step 2: Confirm Account)
+  // 3. Handle Verify OTP (Step 2: Confirm Account - Validated with Zod verifyOtpSchema)
   const handleVerifyOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
 
-    const cleanOtp = otpCode.trim();
-    if (cleanOtp.length !== 6) {
-      setErrorMessage('Please enter the 6-digit code sent to your email.');
+    const parse = verifyOtpSchema.safeParse({
+      email: pendingEmail,
+      otp: otpCode,
+    });
+
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      setFieldErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await verifyRegisterOtp(pendingEmail, cleanOtp);
+      const res = await verifyRegisterOtp(parse.data.email, parse.data.otp);
       if (res.success) {
         onSuccess?.();
       } else {
@@ -194,14 +213,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // 4. Handle Resend OTP
+  // 4. Handle Resend OTP (Validated with Zod resendOtpSchema)
   const handleResendOtp = async () => {
     if (resendCooldown > 0 || !pendingEmail) return;
     clearAlerts();
-    setIsLoading(true);
 
+    const parse = resendOtpSchema.safeParse({ email: pendingEmail });
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const res = await resendRegisterOtp(pendingEmail);
+      const res = await resendRegisterOtp(parse.data.email);
       if (res.success) {
         setResendCooldown(60);
         if (res.devOtp) {
@@ -217,21 +242,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // 5. Handle Forgot Password (Step 1: Request OTP)
+  // 5. Handle Forgot Password (Step 1: Request OTP - Validated with Zod forgotPasswordRequestSchema)
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
 
-    if (!forgotEmail.trim()) {
-      setErrorMessage('Please enter your registered email address.');
+    const parse = forgotPasswordRequestSchema.safeParse({
+      email: forgotEmail,
+    });
+
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      setFieldErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await requestForgotPasswordOtp(forgotEmail.trim());
+      const res = await requestForgotPasswordOtp(parse.data.email);
       if (res.success) {
-        setPendingEmail(forgotEmail.trim().toLowerCase());
+        setPendingEmail(parse.data.email);
         setDevOtpHint(res.devOtp || null);
         setOtpCode(res.devOtp || '');
         setResendCooldown(60);
@@ -245,28 +275,32 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  // 6. Handle Reset Password (Step 2: Verify & Update)
+  // 6. Handle Reset Password (Step 2: Verify & Update - Validated with Zod forgotPasswordVerifySchema)
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAlerts();
 
-    const cleanOtp = otpCode.trim();
-    if (cleanOtp.length !== 6) {
-      setErrorMessage('Please enter the 6-digit reset code.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setErrorMessage('New password must be at least 6 characters.');
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      setErrorMessage('Passwords do not match.');
+    const parse = forgotPasswordVerifySchema.safeParse({
+      email: pendingEmail,
+      otp: otpCode,
+      newPassword,
+      confirmPassword: confirmNewPassword,
+    });
+
+    if (!parse.success) {
+      setErrorMessage(formatZodError(parse.error));
+      setFieldErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
     setIsLoading(true);
     try {
-      const res = await verifyForgotPasswordOtp(pendingEmail, cleanOtp, newPassword, confirmNewPassword);
+      const res = await verifyForgotPasswordOtp(
+        parse.data.email,
+        parse.data.otp,
+        parse.data.newPassword,
+        parse.data.confirmPassword
+      );
       if (res.success) {
         onSuccess?.();
       } else {
