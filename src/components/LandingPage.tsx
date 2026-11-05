@@ -13,15 +13,24 @@ import {
   CheckCircle2,
   Building2,
   SlidersHorizontal,
+  ShieldCheck,
+  FileText,
+  Scale,
+  CreditCard,
+  Lock,
+  Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { SAMPLE_AUDIOS } from '../data/sampleAudios';
-import { SaaSPlan } from '../types';
+import { SaaSPlan, PolicySlug } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
+import { PolicyModal } from './PolicyModal';
+import { contactFormSchema, formatZodFieldErrors } from '../schemas/validation';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -100,7 +109,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [activeDemoSample, setActiveDemoSample] = useState(SAMPLE_AUDIOS[0]);
   const [plans, setPlans] = useState<SaaSPlan[]>(DEFAULT_PLANS);
 
-  // Contact Form State
+  // Policy Modal State (Terms, Privacy, Refund)
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [selectedPolicySlug, setSelectedPolicySlug] = useState<PolicySlug>('terms');
+
+  const handleOpenPolicy = (slug: PolicySlug) => {
+    setSelectedPolicySlug(slug);
+    setIsPolicyModalOpen(true);
+  };
+
+  // Contact Form State (Zod Validated)
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactSubject, setContactSubject] = useState('');
@@ -119,29 +137,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: Record<string, string> = {};
+    setContactErrors({});
 
-    if (!contactName.trim()) {
-      errors.name = 'Please provide your name.';
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!contactEmail.trim()) {
-      errors.email = 'Please provide your email address.';
-    } else if (!emailRegex.test(contactEmail.trim())) {
-      errors.email = 'Please enter a valid email address.';
-    }
-    if (!contactMessage.trim()) {
-      errors.message = 'Please enter your message.';
-    } else if (contactMessage.trim().length < 10) {
-      errors.message = 'Message must be at least 10 characters.';
-    }
+    const parse = contactFormSchema.safeParse({
+      name: contactName,
+      email: contactEmail,
+      subject: contactSubject,
+      message: contactMessage,
+    });
 
-    if (Object.keys(errors).length > 0) {
-      setContactErrors(errors);
+    if (!parse.success) {
+      setContactErrors(formatZodFieldErrors(parse.error));
       return;
     }
 
-    setContactErrors({});
     setIsSendingContact(true);
 
     setTimeout(() => {
@@ -699,6 +708,220 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
         </div>
       </section>
+
+      {/* ================= LANDING PAGE FOOTER ================= */}
+      <footer className="mt-20 border-t border-[#282828] bg-[#0c0c0c] text-white">
+        {/* Main Footer Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+            {/* Col 1: Brand & Bio (2 cols wide) */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#1ed760] text-black flex items-center justify-center font-bold font-display shadow-lg shadow-[#1ed760]/20">
+                  <Sparkles className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <span className="text-lg font-black tracking-tight text-white font-display">
+                    Bangla<span className="text-[#1ed760]">Scribe</span>
+                  </span>
+                  <span className="block text-[10px] text-[#7c7c7c] tracking-widest uppercase">
+                    AI Speech Intelligence & Creator Studio
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-[#a7a7a7] leading-relaxed max-w-sm">
+                Next-generation Bengali speech intelligence platform built for content creators, YouTube producers, podcasters, and media agencies. Transcribe Bengali audio with timestamped SRT subtitles, generate viral YouTube SEO metadata, and design 16:9 thumbnails effortlessly.
+              </p>
+
+              <div className="flex items-center gap-3 pt-2 text-xs text-[#7c7c7c]">
+                <div className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="font-medium text-[11px]">PostgreSQL Cloud SQL Secured</span>
+                </div>
+                <span>•</span>
+                <span className="text-[11px]">Bangladeshi Creator First</span>
+              </div>
+            </div>
+
+            {/* Col 2: Studio Tools */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-display">
+                Studio Tools
+              </h4>
+              <ul className="space-y-2 text-xs text-[#a7a7a7]">
+                <li>
+                  <button
+                    onClick={onGetStarted}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Bengali Speech-to-Text
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onGetStarted}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    SRT & TXT Subtitle Editor
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onGetStarted}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    16:9 Thumbnail Studio
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onGetStarted}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    YouTube SEO & Chapters AI
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={onGetStarted}
+                    className="hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    Browser Voice Recorder
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: Legal & Platform Policies */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-display flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#1ed760]" />
+                <span>Legal & Policies</span>
+              </h4>
+              <ul className="space-y-2.5 text-xs">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPolicy('terms')}
+                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-slate-300 group-hover:text-white">Terms and Conditions</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPolicy('privacy')}
+                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-slate-300 group-hover:text-white">Privacy Policy</span>
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenPolicy('refund')}
+                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                  >
+                    <Scale className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-slate-300 group-hover:text-white">Refund Policy</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 4: Payment */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider font-display flex items-center gap-1.5">
+                <CreditCard className="w-3.5 h-3.5 text-[#1ed760]" />
+                <span>Payment</span>
+              </h4>
+              <p className="text-[11px] text-[#7c7c7c] leading-relaxed">
+                Instant activation supported via mobile financial services:
+              </p>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                {/* bKash */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-[#e2136e]/15 text-[#ff4b8e] border border-[#e2136e]/30 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b8e]" />
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2L4.5 9.5l3.8 1.4L3 15l6.5 1.2L7.5 22 15 15.5l-3.8-1.4L17 10z"/>
+                  </svg>
+                  <span>bKash</span>
+                </div>
+
+                {/* Nagad */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-[#f7941d]/15 text-[#ffa726] border border-[#f7941d]/30 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#ffa726]" />
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H8l5-7v4h3l-5 7z"/>
+                  </svg>
+                  <span>Nagad</span>
+                </div>
+
+                {/* Rocket */}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold font-mono bg-[#8c3494]/15 text-[#c084fc] border border-[#8c3494]/30 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc]" />
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M13.13 2.18c-.37-.53-1.12-.53-1.49 0L7.4 8.24C6.91 8.94 7.41 9.9 8.27 9.9h1.96V18c0 .55.45 1 1 1h1.54c.55 0 1-.45 1-1V9.9h1.96c.86 0 1.36-.96.87-1.66l-4.24-6.06zM5 19c0-.55.45-1 1-1h12c.55 0 1 .45 1 1s-.45 1-1 1H6c-.55 0-1-.45-1-1z"/>
+                  </svg>
+                  <span>Rocket</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex items-center gap-2 text-[11px] text-[#7c7c7c]">
+                <Lock className="w-3.5 h-3.5 text-[#1ed760]" />
+                <span>256-Bit SSL Encrypted & OTP Protected</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Copyright Bar */}
+          <div className="mt-12 pt-8 border-t border-[#1f1f1f] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#7c7c7c]">
+            <div className="flex items-center gap-2">
+              <span>© {new Date().getFullYear()} BanglaScribe. All rights reserved.</span>
+              <span>•</span>
+              <span className="text-[#a7a7a7]">Made with ❤️ for Bangladeshi Creators</span>
+            </div>
+
+            <div className="flex items-center gap-4 text-[11px]">
+              <button
+                type="button"
+                onClick={() => handleOpenPolicy('terms')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Terms of Service
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => handleOpenPolicy('privacy')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Privacy Policy
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => handleOpenPolicy('refund')}
+                className="hover:text-white transition-colors cursor-pointer"
+              >
+                Refund Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Dynamic Policy Modal */}
+      <PolicyModal
+        isOpen={isPolicyModalOpen}
+        onClose={() => setIsPolicyModalOpen(false)}
+        initialSlug={selectedPolicySlug}
+      />
     </div>
   );
 };

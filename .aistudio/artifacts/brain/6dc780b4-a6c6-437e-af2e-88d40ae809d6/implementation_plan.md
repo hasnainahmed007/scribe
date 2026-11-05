@@ -63,3 +63,20 @@ BanglaScribe is an end-to-end Bengali voice-to-text transcription SaaS and YouTu
      - **Production Gmail**: `GMAIL_USER`, `GMAIL_APP_PASSWORD` with official Google App Password credentials.
      - **Generic Custom SMTP**: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
      - **Dev Console Fallback**: High-visibility console banner and API response `devOtp` for zero-friction testing in preview environments without configured credentials.
+
+9. **Dynamic Legal Policies & Dedicated Landing Page Footer**:
+   - **PostgreSQL Cloud SQL `policies` Schema**:
+     - Columns: `id` (serial primary key), `slug` (text unique: `'terms' | 'privacy' | 'refund'`), `title` (text), `content` (text), `updated_at` (timestamp), `updated_by` (text).
+     - Applied and synchronized schema to Cloud SQL via `cloudsql.UpdateSchema`.
+   - **SuperAdmin Policy Management**:
+     - Added 5th tab `Legal & Policies` in `SuperAdminPanel.tsx`.
+     - Real-time tab switcher between Terms & Conditions, Privacy Policy, and Refund Policy.
+     - Markdown content editor, live formatted preview toggle, and direct persistence to PostgreSQL via `PUT /api/admin/policies/:slug`.
+   - **Strict Scope Landing Page Footer**:
+     - Removed the global `<footer>` from `App.tsx` so other workspaces (editor, history, YouTube SEO, thumbnail canvas, admin, auth) have no generic footer.
+     - Added dedicated Spotify dark-themed footer strictly inside `LandingPage.tsx` with links to Terms & Conditions, Privacy Policy, Refund Policy, and accepted Bangladeshi wallets (bKash, Nagad, Rocket).
+   - **Dynamic Policy Viewer Modal (`PolicyModal.tsx`)**:
+     - Interactive modal opened from any footer link or quick button.
+     - Live fetching from `/api/policies` with fallback seed cache, formatted markdown rendering, tab switching, and print support.
+   - **100% Zod Form Validation**:
+     - All user forms (Auth login, OTP register, OTP verify, Forgot Password, Checkout, SuperAdmin Plan, SuperAdmin Policy, and Landing Page Contact) are strictly validated using Zod schemas (`src/schemas/validation.ts`).

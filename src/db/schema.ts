@@ -116,3 +116,13 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Platform Legal Policies (Terms and Conditions, Privacy Policy, Refund Policy)
+export const policies = pgTable('policies', {
+  id: serial('id').primaryKey(),
+  slug: text('slug').notNull().unique(), // 'terms' | 'privacy' | 'refund'
+  title: text('title').notNull(),
+  content: text('content').notNull(), // Markdown or structured legal text
+  updatedAt: timestamp('updated_at').defaultNow(),
+  updatedBy: text('updated_by').default('SuperAdmin'),
+});

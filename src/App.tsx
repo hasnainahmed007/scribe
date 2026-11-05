@@ -857,11 +857,6 @@ function BanglaScribeApp() {
           }
         }}
       />
-
-      {/* Footer */}
-      <footer className="mt-auto py-6 border-t border-slate-800/80 text-center text-xs text-slate-500">
-        BanglaScribe · AI Bengali Speech Intelligence & Video Creator Suite · PostgreSQL Cloud SQL Backend
-      </footer>
     </div>
   );
 }

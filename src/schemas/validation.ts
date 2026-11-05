@@ -265,6 +265,42 @@ export const adminUserUpdateSchema = z.object({
 
 export type AdminUserUpdateInput = z.infer<typeof adminUserUpdateSchema>;
 
+export const policyUpdateSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, 'Policy title must be at least 2 characters.')
+    .max(120, 'Policy title cannot exceed 120 characters.'),
+  content: z
+    .string()
+    .trim()
+    .min(10, 'Policy content must be at least 10 characters.'),
+});
+
+export type PolicyUpdateInput = z.infer<typeof policyUpdateSchema>;
+
+export const contactFormSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Please provide your name (at least 2 characters).')
+    .max(100, 'Name is too long.'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Please provide your email address.')
+    .email('Please enter a valid email address (e.g. name@example.com).')
+    .toLowerCase(),
+  subject: z.string().trim().max(150, 'Subject is too long.').optional().default(''),
+  message: z
+    .string()
+    .trim()
+    .min(10, 'Message must be at least 10 characters long.')
+    .max(3000, 'Message cannot exceed 3000 characters.'),
+});
+
+export type ContactFormInput = z.infer<typeof contactFormSchema>;
+
 // ============================================================================
 // 4. Studio AI & Metadata Generation Schemas
 // ============================================================================

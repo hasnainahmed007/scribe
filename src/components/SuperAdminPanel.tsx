@@ -15,6 +15,9 @@ import {
   Receipt,
   X,
   Zap,
+  FileText,
+  BookOpen,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -23,12 +26,14 @@ import {
   SaaSSubscription,
   SaaSPayment,
   PlanModule,
+  PlatformPolicy,
+  PolicySlug,
 } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { adminPlanCreateSchema, formatZodFieldErrors } from '../schemas/validation';
+import { adminPlanCreateSchema, policyUpdateSchema, formatZodFieldErrors } from '../schemas/validation';
 import { Input } from './ui/input';
 
 const AVAILABLE_MODULES: { id: PlanModule; label: string; desc: string }[] = [
@@ -42,7 +47,7 @@ const AVAILABLE_MODULES: { id: PlanModule; label: string; desc: string }[] = [
 
 export const SuperAdminPanel: React.FC = () => {
   const { token } = useAuth();
-  const [activeAdminTab, setActiveAdminTab] = useState<'plans' | 'users' | 'subscriptions' | 'payments'>('plans');
+  const [activeAdminTab, setActiveAdminTab] = useState<'plans' | 'users' | 'subscriptions' | 'payments' | 'policies'>('plans');
 
   // Data States
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
@@ -55,6 +60,15 @@ export const SuperAdminPanel: React.FC = () => {
     activeSubscribersCount: number;
     totalTransactions: number;
   }>({ totalRevenue: 0, mrr: 0, activeSubscribersCount: 0, totalTransactions: 0 });
+
+  // Legal Policies State
+  const [policiesList, setPoliciesList] = useState<PlatformPolicy[]>([]);
+  const [selectedPolicySlug, setSelectedPolicySlug] = useState<PolicySlug>('terms');
+  const [policyTitleInput, setPolicyTitleInput] = useState<string>('');
+  const [policyContentInput, setPolicyContentInput] = useState<string>('');
+  const [isSavingPolicy, setIsSavingPolicy] = useState<boolean>(false);
+  const [policyFormErrors, setPolicyFormErrors] = useState<Record<string, string>>({});
+  const [policyPreviewMode, setPolicyPreviewMode] = useState<boolean>(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
@@ -98,11 +112,12 @@ export const SuperAdminPanel: React.FC = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [resPlans, resUsers, resSubs, resPayments] = await Promise.all([
+      const [resPlans, resUsers, resSubs, resPayments, resPolicies] = await Promise.all([
         safeFetchJson<{ success: boolean; data: SaaSPlan[] }>('/api/admin/plans', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSUser[] }>('/api/admin/users', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSSubscription[] }>('/api/admin/subscriptions', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSPayment[]; analytics?: any }>('/api/admin/payments', { headers }),
+        safeFetchJson<{ success: boolean; data: PlatformPolicy[] }>('/api/policies'),
       ]);
 
       if (resPlans.ok && resPlans.data?.success && resPlans.data.data) {
@@ -117,6 +132,14 @@ export const SuperAdminPanel: React.FC = () => {
       if (resPayments.ok && resPayments.data?.success && resPayments.data.data) {
         setPaymentsList(resPayments.data.data);
         if (resPayments.data.analytics) setAnalytics(resPayments.data.analytics);
+      }
+      if (resPolicies.ok && resPolicies.data?.success && resPolicies.data.data) {
+        setPoliciesList(resPolicies.data.data);
+        const current = resPolicies.data.data.find((p) => p.slug === selectedPolicySlug);
+        if (current) {
+          setPolicyTitleInput(current.title);
+          setPolicyContentInput(current.content);
+        }
       }
     } catch (err) {
       console.warn('Admin data load warning:', err);
@@ -254,6 +277,61 @@ export const SuperAdminPanel: React.FC = () => {
       fetchAdminData();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Policy Handlers (Validated with Zod policyUpdateSchema)
+  const handleSelectPolicy = (slug: PolicySlug) => {
+    setSelectedPolicySlug(slug);
+    setPolicyFormErrors({});
+    const found = policiesList.find((p) => p.slug === slug);
+    if (found) {
+      setPolicyTitleInput(found.title);
+      setPolicyContentInput(found.content);
+    }
+  };
+
+  const handleSavePolicy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPolicyFormErrors({});
+
+    const parse = policyUpdateSchema.safeParse({
+      title: policyTitleInput,
+      content: policyContentInput,
+    });
+
+    if (!parse.success) {
+      setPolicyFormErrors(formatZodFieldErrors(parse.error));
+      return;
+    }
+
+    setIsSavingPolicy(true);
+    try {
+      const res = await safeFetchJson<{ success: boolean; data: PlatformPolicy; message?: string }>(
+        `/api/admin/policies/${selectedPolicySlug}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: parse.data.title,
+            content: parse.data.content,
+          }),
+        }
+      );
+
+      if (res.ok && res.data?.success) {
+        showNotification(res.data.message || 'Policy saved to PostgreSQL database!');
+        fetchAdminData();
+      } else {
+        setPolicyFormErrors({ _global: res.data?.message || 'Failed to save policy.' });
+      }
+    } catch (err: any) {
+      setPolicyFormErrors({ _global: err.message || 'Network error saving policy.' });
+    } finally {
+      setIsSavingPolicy(false);
     }
   };
 
@@ -405,6 +483,18 @@ export const SuperAdminPanel: React.FC = () => {
         >
           <Receipt className="w-3.5 h-3.5" />
           <span>Payments & Ledger</span>
+        </button>
+
+        <button
+          onClick={() => setActiveAdminTab('policies')}
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+            activeAdminTab === 'policies'
+              ? 'bg-slate-800 text-white font-semibold'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Legal & Policies</span>
         </button>
       </div>
 
@@ -743,6 +833,194 @@ export const SuperAdminPanel: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ================= TAB 5: LEGAL & POLICIES MANAGEMENT ================= */}
+      {activeAdminTab === 'policies' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-white font-display flex items-center gap-2">
+                <FileText className="w-4 h-4 text-purple-400" />
+                <span>Legal Agreements & Platform Policies</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage Terms & Conditions, Privacy Policy, and Refund Policy stored in PostgreSQL. These policies are displayed dynamically to users when clicking the public landing page footer.
+              </p>
+            </div>
+          </div>
+
+          {/* Policy Selector Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(
+              [
+                { slug: 'terms' as PolicySlug, label: 'Terms & Conditions', sub: 'Usage rules, license & creator rights', icon: BookOpen },
+                { slug: 'privacy' as PolicySlug, label: 'Privacy Policy', sub: 'Data security, storage & confidentiality', icon: ShieldCheck },
+                { slug: 'refund' as PolicySlug, label: 'Refund Policy', sub: 'Payment terms & refund eligibility', icon: Scale },
+              ] as const
+            ).map((item) => {
+              const policyData = policiesList.find((p) => p.slug === item.slug);
+              const isSelected = selectedPolicySlug === item.slug;
+              const IconComp = item.icon;
+
+              return (
+                <button
+                  key={item.slug}
+                  type="button"
+                  onClick={() => handleSelectPolicy(item.slug)}
+                  className={`p-4 rounded-xl text-left border transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-purple-950/20 border-purple-500/50 shadow-lg shadow-purple-950/30 ring-1 ring-purple-500/30'
+                      : 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/40 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`p-2 rounded-lg ${isSelected ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-800 text-slate-400'}`}>
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                          {item.label}
+                        </div>
+                        <div className="text-[10px] text-slate-400">{item.sub}</div>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-500 flex items-center justify-between pt-2 border-t border-slate-800/60">
+                    <span>Slug: <span className="font-mono text-slate-400">{item.slug}</span></span>
+                    <span>
+                      {policyData?.updatedAt ? `Updated: ${new Date(policyData.updatedAt).toLocaleDateString()}` : 'Ready to save'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Policy Editor Card */}
+          <Card className="p-6 bg-[#101726] border-slate-800 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  Editing: {selectedPolicySlug}
+                </span>
+                <span className="text-xs text-slate-400">
+                  Validated with Zod schema before database write
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPolicyPreviewMode(!policyPreviewMode)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  {policyPreviewMode ? 'Switch to Markdown Editor' : 'Live Preview Formatted'}
+                </button>
+              </div>
+            </div>
+
+            {policyFormErrors._global && (
+              <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-300">
+                {policyFormErrors._global}
+              </div>
+            )}
+
+            <form onSubmit={handleSavePolicy} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                  Policy Title:
+                </label>
+                <input
+                  type="text"
+                  value={policyTitleInput}
+                  onChange={(e) => setPolicyTitleInput(e.target.value)}
+                  placeholder="e.g. Terms and Conditions"
+                  className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                />
+                {policyFormErrors.title && (
+                  <p className="text-[11px] text-red-400 mt-1">{policyFormErrors.title}</p>
+                )}
+              </div>
+
+              {!policyPreviewMode ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-300">
+                      Policy Content (Markdown & Plain Text):
+                    </label>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {policyContentInput.length} characters
+                    </span>
+                  </div>
+                  <textarea
+                    rows={16}
+                    value={policyContentInput}
+                    onChange={(e) => setPolicyContentInput(e.target.value)}
+                    placeholder="Enter policy terms in markdown or plain text with headings (##), bullet points (- ), and bold text (**)..."
+                    className="w-full px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                  />
+                  {policyFormErrors.content && (
+                    <p className="text-[11px] text-red-400 mt-1">{policyFormErrors.content}</p>
+                  )}
+                  <p className="text-[10px] text-slate-500 mt-1.5">
+                    Supports headings (## Title), bold text (**bold**), bullet points (- item), and paragraphs. Changes are immediately visible in the public landing page footer modal once saved.
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-slate-800 rounded-xl bg-slate-900/40 p-5 space-y-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-400 mb-2">
+                    Live Formatted Preview
+                  </div>
+                  <h4 className="text-base font-bold text-white border-b border-slate-800 pb-2">
+                    {policyTitleInput || 'Untitled Policy'}
+                  </h4>
+                  <div className="text-xs text-slate-300 leading-relaxed space-y-3 whitespace-pre-wrap font-sans max-h-96 overflow-y-auto pr-2">
+                    {policyContentInput}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const found = policiesList.find((p) => p.slug === selectedPolicySlug);
+                    if (found) {
+                      setPolicyTitleInput(found.title);
+                      setPolicyContentInput(found.content);
+                    }
+                    setPolicyFormErrors({});
+                  }}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                >
+                  Reset
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPolicy}
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  {isSavingPolicy ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving to PostgreSQL...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Save Policy to Database</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </Card>
         </div>
       )}
 

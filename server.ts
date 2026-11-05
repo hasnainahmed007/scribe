@@ -14,6 +14,7 @@ import {
   payments as paymentsTable,
   usageLogs as usageLogsTable,
   transcripts as transcriptsTable,
+  policies as policiesTable,
 } from './src/db/schema.ts';
 import { eq, desc, sql } from 'drizzle-orm';
 import {
@@ -35,6 +36,7 @@ import {
   adminPlanCreateSchema,
   adminPlanUpdateSchema,
   adminUserUpdateSchema,
+  policyUpdateSchema,
   generateMetadataSchema,
   generateThumbnailSchema,
   transcribeAudioSchema,
@@ -1208,9 +1210,207 @@ app.get('/api/admin/payments', authMiddleware, superAdminMiddleware, async (_req
       },
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ success: false, error: err.message || 'Failed to fetch payments.' });
   }
 });
+
+// E. Platform Policies & Legal Documents (Terms, Privacy, Refund)
+app.get('/api/policies', async (_req: Request, res: Response) => {
+  try {
+    const list = await db.select().from(policiesTable).orderBy(policiesTable.id);
+    return res.json({ success: true, data: list });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to fetch policies.' });
+  }
+});
+
+app.get('/api/policies/:slug', async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const rows = await db.select().from(policiesTable).where(eq(policiesTable.slug, slug.toLowerCase())).limit(1);
+    if (!rows[0]) {
+      return res.status(404).json({ success: false, error: 'Policy not found.' });
+    }
+    return res.json({ success: true, data: rows[0] });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to fetch policy.' });
+  }
+});
+
+app.put('/api/admin/policies/:slug', authMiddleware, superAdminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const parse = policyUpdateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        success: false,
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const { title, content } = parse.data;
+    const cleanSlug = slug.toLowerCase();
+    const updatedBy = req.user?.name ? `${req.user.name} (SuperAdmin)` : 'SuperAdmin';
+
+    // Upsert policy in database
+    const existing = await db.select().from(policiesTable).where(eq(policiesTable.slug, cleanSlug)).limit(1);
+    let resultRecord;
+
+    if (existing[0]) {
+      const updated = await db
+        .update(policiesTable)
+        .set({
+          title,
+          content,
+          updatedAt: new Date(),
+          updatedBy,
+        })
+        .where(eq(policiesTable.slug, cleanSlug))
+        .returning();
+      resultRecord = updated[0];
+    } else {
+      const inserted = await db
+        .insert(policiesTable)
+        .values({
+          slug: cleanSlug,
+          title,
+          content,
+          updatedBy,
+        })
+        .returning();
+      resultRecord = inserted[0];
+    }
+
+    return res.json({
+      success: true,
+      data: resultRecord,
+      message: `${title} updated successfully in PostgreSQL!`,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update policy.' });
+  }
+});
+
+// Seed default legal documents if table is empty
+async function seedDefaultPoliciesIfEmpty() {
+  try {
+    const existing = await db.select().from(policiesTable).limit(1);
+    if (existing.length === 0) {
+      console.log('[DB] Seeding default platform legal policies (Terms, Privacy, Refund)...');
+      await db.insert(policiesTable).values([
+        {
+          slug: 'terms',
+          title: 'Terms and Conditions',
+          content: `# BanglaScribe — Terms and Conditions
+Last Updated: November 2026
+
+Welcome to BanglaScribe ("we", "our", or "the Platform"). By accessing or using our website, audio transcription services, subtitle editor, YouTube SEO generation tools, and thumbnail studio, you agree to comply with and be bound by these Terms and Conditions.
+
+### 1. Overview and Account Registration
+- **Service Scope**: BanglaScribe provides artificial intelligence-powered Bengali speech-to-text transcription, interactive waveform and subtitle editing (SRT, TXT, DOCX), YouTube metadata optimization, and 16:9 thumbnail design for digital content creators, podcasters, and media agencies.
+- **Account Credentials**: You must provide accurate and verifiable account information, including a valid email address verified via One-Time Password (OTP). You are responsible for safeguarding your credentials and for all activities that occur under your account.
+- **Starter Allowance**: Each newly verified creator account receives a complimentary 30 minutes of free audio transcription credits upon onboarding.
+
+### 2. Intellectual Property and Content Ownership
+- **User Content Ownership**: You retain 100% intellectual property rights, copyright, and full ownership of all audio recordings uploaded, generated subtitles, translated captions, exported documents, YouTube titles, and thumbnail artwork created using the platform.
+- **Processing License**: You grant BanglaScribe a strictly limited, non-exclusive license solely to temporarily process, encode, and transcribe your media for delivering your requested outputs. We do not use your proprietary recordings to train public generative models.
+
+### 3. Acceptable Use and Prohibited Conduct
+You agree not to use the platform to:
+- Process, distribute, or transcribe audio that infringes upon third-party copyrights, intellectual property, or trade secrets without authorization.
+- Upload unlawful, defamatory, harassing, sexually explicit, abusive, or harmful audio recordings.
+- Attempt to reverse-engineer, decompile, compromise, or bypass the platform's security mechanisms, authentication systems, or rate limits.
+
+### 4. Subscription Plans and Usage Credits
+- **Credit Consumption**: Audio credits are metered in minutes. Every minute of processed audio deducts one (1) minute from your account balance.
+- **Upgrades and Renewals**: Subscription tiers (e.g., Pro Creator, Agency Studio) activate immediately upon confirmed payment and refresh at each billing cycle.
+- **Downgrade Policy**: Active paid subscription accounts cannot be downgraded to the free tier during an active billing cycle.
+
+### 5. Service Availability and Disclaimers
+While we strive for 99.9% uptime and state-of-the-art transcription accuracy, speech recognition accuracy may vary based on audio quality, dialect, and background noise. BanglaScribe is provided on an "as is" and "as available" basis.
+
+### 6. Contact Information
+For any legal or licensing inquiries, please contact our support team at legal@banglascribe.com or support@banglascribe.com.`,
+          updatedBy: 'System Bootstrap',
+        },
+        {
+          slug: 'privacy',
+          title: 'Privacy Policy',
+          content: `# BanglaScribe — Privacy Policy
+Last Updated: November 2026
+
+BanglaScribe is committed to protecting your privacy and ensuring the security of your personal information, media recordings, and transcription data. This Privacy Policy details how we collect, use, and safeguard your data.
+
+### 1. Information We Collect
+- **Account Information**: Your full name, email address, password hash, and OTP verification logs.
+- **Audio Files and Transcripts**: Audio files uploaded for speech recognition, waveform analysis, generated timestamped subtitles (SRT, TXT, DOCX), and AI metadata.
+- **Transaction and Payment Records**: Mobile wallet sender phone number, payment provider (bKash, Nagad, Rocket), plan selected, amount paid, and unique Transaction ID (TrxID). We never ask for or store your mobile wallet PIN or banking credentials.
+- **Technical Diagnostics**: Browser type, operating system, and session timestamps used exclusively for service reliability and performance optimization.
+
+### 2. How We Use Your Information
+- To deliver automated Bengali audio transcription, subtitle alignment, and YouTube SEO recommendations.
+- To maintain your creator account, verify user identity via OTP, and manage credit allocations.
+- To detect and prevent fraudulent transactions, duplicate submissions, and service abuse.
+- To securely store your transcription history in our managed Google Cloud SQL PostgreSQL database.
+
+### 3. Data Protection and Zero-Sale Guarantee
+- **No Third-Party Sale**: We never sell, rent, or trade your personal data, audio recordings, or generated transcripts to third-party advertisers or data brokers.
+- **Encryption**: All communications are encrypted in transit using 256-bit SSL/TLS protocols, and database storage is protected with enterprise-grade access control policies.
+- **Confidentiality**: Your media recordings are processed securely in isolated memory buffers and retained only as required to serve your workspace history.
+
+### 4. User Rights and Data Control
+- **Access and Export**: You may review, download, and export your transcripts, subtitles, and YouTube SEO packs at any time.
+- **Deletion**: You can remove past transcripts from your history dashboard. To request permanent account and data deletion, email privacy@banglascribe.com.
+
+### 5. Policy Updates
+We may periodically update this Privacy Policy to reflect platform features or regulatory requirements. Significant revisions will be highlighted on our platform.
+
+### 6. Contact Us
+If you have any questions regarding your data privacy, please contact us at privacy@banglascribe.com.`,
+          updatedBy: 'System Bootstrap',
+        },
+        {
+          slug: 'refund',
+          title: 'Refund Policy',
+          content: `# BanglaScribe — Refund and Cancellation Policy
+Last Updated: November 2026
+
+Our mission is to provide Bangladeshi and global Bengali content creators with the most reliable, accurate, and high-performance speech intelligence tools. We believe in fair, transparent billing and customer satisfaction.
+
+### 1. Payment Methods and Activation
+- We support direct mobile payments via official Bangladeshi payment methods: **bKash**, **Nagad**, and **Rocket**.
+- Upon providing your sender mobile number and valid Transaction ID (TrxID), your selected plan and allocated audio credits are activated immediately.
+
+### 2. Refund Eligibility
+You are eligible for a full or prorated refund under the following circumstances:
+- **Technical Service Failure**: If a payment was successfully completed, but technical system errors prevented the allocation of plan benefits or transcription services, and our technical support cannot resolve the issue within forty-eight (48) hours.
+- **Duplicate Charges / Accidental Multi-Payment**: If an identical transaction was processed more than once due to network retransmission or wallet lag, the duplicate amount will be refunded in full within 24 to 72 business hours.
+- **Request Timeline**: Refund requests based on technical failure must be submitted within seven (7) calendar days of the transaction date.
+
+### 3. Non-Refundable Circumstances
+Refunds cannot be issued under the following conditions:
+- **Consumed Audio Credits**: When allocated audio minutes have already been utilized to transcribe audio, generate subtitles, or export creator metadata.
+- **Audio Quality Variations**: Transcription inaccuracies resulting from low-quality audio, severe background noise, unintelligible whispers, or distorted microphones.
+- **Change of Mind**: Subscriptions where the user changes their mind after accessing premium features and downloading project assets.
+
+### 4. How to Submit a Refund Request
+To submit a refund claim, please email our billing department at support@banglascribe.com with the following details:
+1. Registered account email address.
+2. Payment method (bKash / Nagad / Rocket) and sender mobile number.
+3. Transaction ID (TrxID) provided by the wallet provider.
+4. Reason for the refund request and any relevant error screenshots.
+
+Our billing team reviews all claims within two (2) business days and executes verified refunds directly to the originating mobile wallet.`,
+          updatedBy: 'System Bootstrap',
+        },
+      ]);
+      console.log('[DB] Default legal policies seeded successfully.');
+    }
+  } catch (err: any) {
+    console.warn('[DB] Policies seed warning:', err.message);
+  }
+}
 
 // ===================== Audio Transcription with Credit Deduction =====================
 
@@ -1733,6 +1933,8 @@ async function startServer() {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   }
+
+  await seedDefaultPoliciesIfEmpty();
 
   app.listen(port, '0.0.0.0', () => {
     console.log(`BanglaScribe SaaS server running at http://0.0.0.0:${port}`);

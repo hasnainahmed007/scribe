@@ -179,3 +179,14 @@ export interface AuthState {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
 }
+
+export type PolicySlug = 'terms' | 'privacy' | 'refund';
+
+export interface PlatformPolicy {
+  id: number;
+  slug: PolicySlug;
+  title: string;
+  content: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
