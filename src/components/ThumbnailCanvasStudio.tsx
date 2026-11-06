@@ -28,8 +28,8 @@ interface ThumbnailCanvasStudioProps {
 const PRESET_TEMPLATES = [
   {
     name: 'Breaking News Style',
-    headline: 'সব তথ্য ফাঁস! কীভাবে তৈরি করবেন?',
-    subhead: '২০২৬ সালের সেরা আপডেট ও গোপন ট্রিকস',
+    headline: 'EXPOSED: The Secret Behind AI Audio',
+    subhead: 'Master 2026 Multimodal Workflows Today',
     badge: 'URGENT',
     badgeColor: '#EF4444',
     bg1: '#0F172A',
@@ -39,8 +39,8 @@ const PRESET_TEMPLATES = [
   },
   {
     name: 'Tech Review Studio',
-    headline: 'সেরা ৫টি AI টুলস যা সবার প্রয়োজন',
-    subhead: 'কন্টেন্ট ক্রিয়েটরদের জন্য আলটিমেট গাইড',
+    headline: 'Top 5 AI Tools You Need Right Now',
+    subhead: 'The Ultimate Guide for Digital Creators',
     badge: '4K ULTRA',
     badgeColor: '#1ed760',
     bg1: '#090D16',
@@ -50,8 +50,8 @@ const PRESET_TEMPLATES = [
   },
   {
     name: 'Podcast & Storytelling',
-    headline: 'সফলতার আসল রহস্য কী ছিল?',
-    subhead: 'তাহসিন ও রাফিনের বিশেষ আলোচনা পর্ব',
+    headline: 'The Real Secret to Viral Success',
+    subhead: 'Special In-Depth Creator Interview',
     badge: 'NEW EPISODE',
     badgeColor: '#8B5CF6',
     bg1: '#1E1B4B',
@@ -61,9 +61,9 @@ const PRESET_TEMPLATES = [
   },
   {
     name: 'Tutorial & Masterclass',
-    headline: '১ ক্লিকে স্বয়ংক্রিয় সাবটাইটেল বানান',
-    subhead: 'মোবাইল ও কম্পিউটারে সম্পূর্ণ বিনামূল্যে',
-    badge: '১০০% ফ্রি',
+    headline: 'Generate Auto Subtitles in 1 Click',
+    subhead: 'Full Walkthrough for Web & Mobile',
+    badge: '100% FREE',
     badgeColor: '#F59E0B',
     bg1: '#18181B',
     bg2: '#451A03',
@@ -73,16 +73,16 @@ const PRESET_TEMPLATES = [
 ];
 
 export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
-  initialTitle = 'বাংলা অডিও থেকে ১ ক্লিকে সাবটাইটেল',
+  initialTitle = 'Turn Any Audio into Subtitles in 1 Click',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [config, setConfig] = useState<ThumbnailConfig>({
     headline: initialTitle,
-    subhead: 'High-Converting YouTube Thumbnails with Native Bengali Typography',
+    subhead: 'High-Converting YouTube Thumbnails with Clean Bold Typography',
     badge: 'NEW UPDATE',
     showBadge: true,
-    fontFamily: 'Noto Sans Bengali',
+    fontFamily: 'Inter, system-ui, sans-serif',
     headlineSize: 68,
     headlineColor: '#FACC15',
     strokeColor: '#000000',
@@ -372,7 +372,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     const dataUrl = canvas.toDataURL(format === 'png' ? 'image/png' : 'image/jpeg', 0.95);
     const a = document.createElement('a');
     a.href = dataUrl;
-    a.download = `banglascribe_thumbnail_${Date.now()}.${format}`;
+    a.download = `scriby_thumbnail_${Date.now()}.${format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -625,7 +625,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                 value={config.badge}
                 onChange={(e) => setConfig({ ...config, badge: e.target.value })}
                 className="text-xs flex-1"
-                placeholder="e.g. নতুন, URGENT, 4K..."
+                placeholder="e.g. NEW, URGENT, 4K..."
               />
               <input
                 type="color"

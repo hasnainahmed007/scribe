@@ -33,7 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   // Settings State with LocalStorage Persistence
   const [activeTab, setActiveTab] = useState<'preferences' | 'profile' | 'shortcuts' | 'storage'>('preferences');
-  const [defaultSpeaker, setDefaultSpeaker] = useState<string>(() => localStorage.getItem('bs_speaker_prefix') || 'স্পিকার');
+  const [defaultSpeaker, setDefaultSpeaker] = useState<string>(() => localStorage.getItem('bs_speaker_prefix') || 'Speaker');
   const [autoplayOnSelect, setAutoplayOnSelect] = useState<boolean>(() => localStorage.getItem('bs_autoplay_select') === 'true');
   const [autoScrollTranscript, setAutoScrollTranscript] = useState<boolean>(() => localStorage.getItem('bs_autoscroll') !== 'false');
   const [timestampPrecision, setTimestampPrecision] = useState<'seconds' | 'milliseconds'>(
@@ -42,8 +42,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [defaultExportFormat, setDefaultExportFormat] = useState<string>(
     () => localStorage.getItem('bs_default_export') || 'srt'
   );
-  const [bengaliNormalization, setBengaliNormalization] = useState<boolean>(
-    () => localStorage.getItem('bs_bn_normalize') !== 'false'
+  const [textNormalization, setTextNormalization] = useState<boolean>(
+    () => localStorage.getItem('bs_text_normalize') !== 'false' && localStorage.getItem('bs_bn_normalize') !== 'false'
   );
 
   const [isSaved, setIsSaved] = useState(false);
@@ -56,7 +56,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     localStorage.setItem('bs_autoscroll', String(autoScrollTranscript));
     localStorage.setItem('bs_timestamp_prec', timestampPrecision);
     localStorage.setItem('bs_default_export', defaultExportFormat);
-    localStorage.setItem('bs_bn_normalize', String(bengaliNormalization));
+    localStorage.setItem('bs_text_normalize', String(textNormalization));
 
     setIsSaved(true);
     setTimeout(() => {
@@ -66,12 +66,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleResetDefaults = () => {
-    setDefaultSpeaker('স্পিকার');
+    setDefaultSpeaker('Speaker');
     setAutoplayOnSelect(false);
     setAutoScrollTranscript(true);
     setTimestampPrecision('milliseconds');
     setDefaultExportFormat('srt');
-    setBengaliNormalization(true);
+    setTextNormalization(true);
   };
 
   return (
@@ -153,7 +153,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Input
                     value={defaultSpeaker}
                     onChange={(e) => setDefaultSpeaker(e.target.value)}
-                    placeholder="স্পিকার (Speaker)"
+                    placeholder="Speaker 1"
                     className="max-w-xs text-xs"
                   />
                   <span className="text-[11px] text-[#b3b3b3]">
@@ -232,16 +232,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <label className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828] cursor-pointer hover:border-[#383838]">
                   <div className="pr-4">
                     <div className="text-xs font-semibold text-white">
-                      Bengali Conjunct (যুক্তবর্ণ) Normalization
+                      Text & Punctuation Auto-Normalization
                     </div>
                     <div className="text-[11px] text-[#b3b3b3]">
-                      Automatically clean Unicode Hasanta and zero-width joiners for perfect font rendering
+                      Clean Unicode diacritics, whitespace, and punctuation for crisp rendering across all languages
                     </div>
                   </div>
                   <input
                     type="checkbox"
-                    checked={bengaliNormalization}
-                    onChange={(e) => setBengaliNormalization(e.target.checked)}
+                    checked={textNormalization}
+                    onChange={(e) => setTextNormalization(e.target.checked)}
                     className="w-4 h-4 rounded text-[#1ed760] accent-[#1ed760] cursor-pointer"
                   />
                 </label>
@@ -308,7 +308,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-white">{user?.name || 'Creator User'}</h3>
-                    <p className="text-xs text-[#b3b3b3]">{user?.email || 'user@banglascribe.com'}</p>
+                    <p className="text-xs text-[#b3b3b3]">{user?.email || 'user@scriby.com'}</p>
                   </div>
                   <Badge variant="default" className="text-xs font-bold">
                     {user?.planName || 'Free Starter'}

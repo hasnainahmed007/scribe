@@ -111,90 +111,90 @@ async function generateContentWithRetry(options: {
   throw lastError || new Error('All candidate AI models were unavailable.');
 }
 
-// Algorithmic Bengali YouTube SEO Generator (activated seamlessly during model capacity spikes)
+// Algorithmic YouTube SEO Generator (activated seamlessly during model capacity spikes)
 function generateAlgorithmicYouTubeSEO(transcript: string, titleHint: string = '') {
   const cleanTranscript = (transcript || '').replace(/\s+/g, ' ').trim();
   const sentences = cleanTranscript
-    .split(/[।!?\n]+/)
+    .split(/[.!?।\n]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 5);
 
-  const leadSentence = sentences[0] || 'বাংলা অডিও ও ভিডিও কনটেন্ট';
+  const leadSentence = sentences[0] || 'Content Strategy & Creator Insights';
   const topicKeyword = titleHint.trim() || leadSentence.slice(0, 40);
 
   const titles = [
     {
-      title: `${topicKeyword} — সম্পূর্ণ তথ্য ও আসল সত্য উন্মোচন`,
+      title: `${topicKeyword}: Complete Guide & Strategy Breakdown`,
       category: 'High CTR & Viral',
       ctrScore: 96,
     },
     {
-      title: `${topicKeyword}: যা আপনার অবশ্যই জানা প্রয়োজন (২০২৬ আপডেট)`,
+      title: `What You Must Know About ${topicKeyword} (2026 Masterclass)`,
       category: 'Authority & Value',
       ctrScore: 93,
     },
     {
-      title: `কেন সবাই ${topicKeyword} নিয়ে কথা বলছে? আসল কারণ জানুন`,
+      title: `Why Everyone Is Talking About ${topicKeyword} (The Real Truth)`,
       category: 'Curiosity & Mystery',
       ctrScore: 90,
     },
     {
-      title: `${topicKeyword} সম্পূর্ণ গাইড | Step-by-Step বিস্তারিত বিশ্লেষণ`,
+      title: `${topicKeyword}: Step-by-Step Blueprint for Creators`,
       category: 'Tutorial & How-To',
       ctrScore: 88,
     },
     {
-      title: `${topicKeyword} নিয়ে ৫টি গুরুত্বপূর্ণ তথ্য যা কেউ বলবে না!`,
+      title: `5 Critical Facts About ${topicKeyword} Nobody Talks About!`,
       category: 'Listicle & High Engagement',
       ctrScore: 95,
     },
   ];
 
   const chapters = [
-    { timestamp: '00:00', title: 'ভূমিকা ও বিষয়ের প্রারম্ভিক সারসংক্ষেপ' },
-    { timestamp: '01:25', title: `${topicKeyword.slice(0, 25)} এর মূল পটভূমি` },
-    { timestamp: '03:45', title: 'বাস্তব প্রেক্ষাপট ও গভীর বিশ্লেষণ' },
-    { timestamp: '06:10', title: 'গুরুত্বপূর্ণ পয়েন্ট ও সাধারণ ভুলসমূহ' },
-    { timestamp: '08:30', title: 'উপসংহার ও ভবিষ্যৎ করণীয়' },
+    { timestamp: '00:00', title: 'Introduction & Core Overview' },
+    { timestamp: '01:25', title: `Understanding ${topicKeyword.slice(0, 25)}` },
+    { timestamp: '03:45', title: 'Deep Dive Analysis & Framework' },
+    { timestamp: '06:10', title: 'Key Takeaways & Common Mistakes' },
+    { timestamp: '08:30', title: 'Action Plan & Future Outlook' },
   ];
 
-  const description = `📌 আজকের ভিডিওতে আমরা বিস্তারিত আলোচনা করেছি: "${topicKeyword}"।
+  const description = `📌 In this video, we break down everything you need to know about: "${topicKeyword}".
 
-ভিডিওটির মূল বিষয়বস্তু এবং গুরুত্বপূর্ণ আলোচনাগুলো সহজ ও প্রাঞ্জল ভাষায় তুলে ধরা হয়েছে যাতে প্রতিটি দর্শক সহজে বুঝতে পারেন।
+We dive into actionable insights, real-world frameworks, and step-by-step strategies designed to help you execute effectively.
 
-⏱️ ভিডিও চ্যাপ্টার ও টাইমস্ট্যাম্প (Timestamps):
+⏱️ Video Chapters & Timestamps:
 ${chapters.map((c) => `${c.timestamp} - ${c.title}`).join('\n')}
 
-💬 আপনার মূল্যবান মতামত কমেন্টে জানান। ভিডিওটি ভালো লাগলে লাইক দিন এবং বন্ধুদের সাথে শেয়ার করুন!
-🔔 পরবর্তী নতুন ভিডিও পেতে চ্যানেলটি সাবস্ক্রাইব করুন।
+💬 What are your thoughts on this? Leave a comment below! If you found value in this breakdown, like the video and share with a friend.
+🔔 Subscribe to stay updated with future releases.
 
-#BanglaVideo #YouTubeSEO #বাংলাটিউটোরিয়াল #${topicKeyword.replace(/[^a-zA-Z0-9\u0980-\u09FF]/g, '') || 'BanglaCreator'}`;
+#ContentStrategy #YouTubeSEO #VideoCreation #CreatorEconomy #${topicKeyword.replace(/[^a-zA-Z0-9]/g, '') || 'CreatorInsights'}`;
 
   const tags = [
     topicKeyword,
-    'বাংলা ভিডিও',
-    'Bangla Content',
-    'বাংলা আলোচনা',
-    'Bangla Tutorial',
-    'বাংলা পডকাস্ট',
-    'Tech & Media Bangla',
-    'Trending Bangla',
-    'YouTube SEO Bangla',
+    'YouTube Strategy',
+    'Video SEO',
+    'Creator Economy',
+    'Content Production',
+    'Tutorial',
+    'Tech & Media',
+    'Audience Growth',
+    'Trending',
   ];
 
   const socialPosts = {
-    facebook: `🔥 নতুন ভিডিও প্রকাশিত হয়েছে: "${topicKeyword}"!\n\nসম্পূর্ণ আলোচনা ও বিস্তারিত তথ্য জানতে ভিডিওটি দেখুন এবং আপনার মতামত কমেন্টে জানান।\n\n#BanglaVideo #Trending`,
-    instagram: `🎥 "${topicKeyword}" নিয়ে বিস্তারিত আলোচনা। সম্পূর্ণ ভিডিওর লিংক বায়োতে দেওয়া আছে।\n\n📌 সেভ ও শেয়ার করুন!\n\n#BanglaCreator #Reels #YouTube`,
+    facebook: `🔥 New Video Alert: "${topicKeyword}"!\n\nWe just published a comprehensive breakdown covering key insights, strategies, and next steps. Watch the full video and let us know your thoughts!\n\n#Trending #Video`,
+    instagram: `🎥 Deep dive into "${topicKeyword}". Link to the full video is in our bio.\n\n📌 Save and share with fellow creators!\n\n#ContentCreator #Reels #YouTube`,
     linkedin: `Exploring key insights on "${topicKeyword}". In this comprehensive breakdown, we discuss the core developments and implications for content creators and digital media.\n\nWatch full analysis and share your thoughts.`,
-    twitter: `নতুন ভিডিও: ${topicKeyword} — আসল সত্য এবং প্রয়োজনীয় সব তথ্য এক নজরে! সম্পূর্ণ ভিডিও দেখতে লিঙ্ক চেক করুন 🚀 #Bangla #Trending`,
+    twitter: `New Video: ${topicKeyword} — key takeaways and strategy essentials at a glance! Watch full video 🚀 #Trending #Creator`,
   };
 
   const thumbnailHeadlineIdeas = [
     topicKeyword.slice(0, 22),
-    'আসল সত্য ফাঁস!',
-    '১০০% কার্যকর পদ্ধতি',
-    'ভুল করবেন না!',
-    'নতুন আপডেট ২০২৬',
+    'MUST WATCH!',
+    '100% EFFECTIVE',
+    'DO NOT MISS THIS',
+    'NEW UPDATE 2026',
   ];
 
   return {
@@ -211,10 +211,12 @@ ${chapters.map((c) => `${c.timestamp} - ${c.title}`).join('\n')}
 const activeTokens = new Map<string, string>(); // token -> userUid
 
 // Seed initial token for admin demo
-const demoAdminToken = 'san_tok_admin_banglascribe_master_demo_key';
-const demoCreatorToken = 'san_tok_creator_banglascribe_demo_key';
+const demoAdminToken = 'san_tok_admin_scriby_master_demo_key';
+const demoCreatorToken = 'san_tok_creator_scriby_demo_key';
 activeTokens.set(demoAdminToken, 'usr-admin');
 activeTokens.set(demoCreatorToken, 'usr-creator');
+activeTokens.set('san_tok_admin_banglascribe_master_demo_key', 'usr-admin');
+activeTokens.set('san_tok_creator_banglascribe_demo_key', 'usr-creator');
 
 // Helper to enrich user with plan modules
 async function enrichUserWithPlanModules(userRecord: any): Promise<any> {
@@ -403,8 +405,8 @@ function createEmailTransporter() {
 async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forgot-password'): Promise<{ sent: boolean; devMode?: boolean; error?: string }> {
   const transporter = createEmailTransporter();
   const subject = purpose === 'register'
-    ? 'Verify your BanglaScribe Account — Verification Code'
-    : 'Reset your BanglaScribe Password — OTP Code';
+    ? 'Verify your Scriby Account — Verification Code'
+    : 'Reset your Scriby Password — OTP Code';
 
   const html = `
     <!DOCTYPE html>
@@ -425,11 +427,11 @@ async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forg
       </head>
       <body>
         <div class="container">
-          <div class="logo">B</div>
-          <h1>${purpose === 'register' ? 'Verify Your BanglaScribe Account' : 'Password Reset Request'}</h1>
+          <div class="logo">S</div>
+          <h1>${purpose === 'register' ? 'Verify Your Scriby Account' : 'Password Reset Request'}</h1>
           <p>
             ${purpose === 'register'
-              ? 'Thank you for signing up for BanglaScribe. Please enter this verification code to verify your email address and activate your 30 free audio minutes.'
+              ? 'Thank you for signing up for Scriby. Please enter this verification code to verify your email address and activate your 30 free audio minutes.'
               : 'We received a request to reset your password. Use the verification code below to proceed with resetting your password.'}
           </p>
           <div class="otp-card">
@@ -438,7 +440,7 @@ async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forg
           </div>
           <p style="font-size: 12px; color: #7c7c7c;">If you did not request this email, you can safely ignore it.</p>
           <div class="footer">
-            BanglaScribe · AI Bengali Speech Intelligence & Video Creator Suite
+            Scriby · AI Multilingual Speech Intelligence & Video Creator Suite
           </div>
         </div>
       </body>
@@ -447,13 +449,13 @@ async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forg
 
   if (transporter) {
     try {
-      const fromAddress = process.env.SMTP_FROM || process.env.GMAIL_USER || 'BanglaScribe <noreply@banglascribe.com>';
+      const fromAddress = process.env.SMTP_FROM || process.env.GMAIL_USER || 'Scriby <noreply@scriby.com>';
       await transporter.sendMail({
         from: fromAddress,
         to,
         subject,
         html,
-        text: `Your BanglaScribe verification code is: ${otp}. It expires in 10 minutes.`,
+        text: `Your Scriby verification code is: ${otp}. It expires in 10 minutes.`,
       });
       console.log(`[EMAIL DISPATCHED] To: ${to} | Purpose: ${purpose}`);
       return { sent: true };
@@ -464,7 +466,7 @@ async function sendOtpEmail(to: string, otp: string, purpose: 'register' | 'forg
     }
   } else {
     console.log(`\n======================================================`);
-    console.log(`[BANGLASCRIBE EMAIL SERVICE - DEV/TESTING MODE]`);
+    console.log(`[SCRIBY EMAIL SERVICE - DEV/TESTING MODE]`);
     console.log(`To: ${to}`);
     console.log(`Purpose: ${purpose}`);
     console.log(`6-Digit Verification OTP: >>> ${otp} <<<`);
@@ -1302,19 +1304,19 @@ async function seedDefaultPoliciesIfEmpty() {
         {
           slug: 'terms',
           title: 'Terms and Conditions',
-          content: `# BanglaScribe — Terms and Conditions
+          content: `# Scriby — Terms and Conditions
 Last Updated: November 2026
 
-Welcome to BanglaScribe ("we", "our", or "the Platform"). By accessing or using our website, audio transcription services, subtitle editor, YouTube SEO generation tools, and thumbnail studio, you agree to comply with and be bound by these Terms and Conditions.
+Welcome to Scriby ("we", "our", or "the Platform"). By accessing or using our website, audio transcription services, subtitle editor, YouTube SEO generation tools, and thumbnail studio, you agree to comply with and be bound by these Terms and Conditions.
 
 ### 1. Overview and Account Registration
-- **Service Scope**: BanglaScribe provides artificial intelligence-powered Bengali speech-to-text transcription, interactive waveform and subtitle editing (SRT, TXT, DOCX), YouTube metadata optimization, and 16:9 thumbnail design for digital content creators, podcasters, and media agencies.
+- **Service Scope**: Scriby provides artificial intelligence-powered multilingual speech-to-text transcription across all languages, interactive waveform and subtitle editing (SRT, TXT, DOCX), YouTube metadata optimization, and 16:9 thumbnail design for digital content creators, podcasters, and media agencies.
 - **Account Credentials**: You must provide accurate and verifiable account information, including a valid email address verified via One-Time Password (OTP). You are responsible for safeguarding your credentials and for all activities that occur under your account.
 - **Starter Allowance**: Each newly verified creator account receives a complimentary 30 minutes of free audio transcription credits upon onboarding.
 
 ### 2. Intellectual Property and Content Ownership
 - **User Content Ownership**: You retain 100% intellectual property rights, copyright, and full ownership of all audio recordings uploaded, generated subtitles, translated captions, exported documents, YouTube titles, and thumbnail artwork created using the platform.
-- **Processing License**: You grant BanglaScribe a strictly limited, non-exclusive license solely to temporarily process, encode, and transcribe your media for delivering your requested outputs. We do not use your proprietary recordings to train public generative models.
+- **Processing License**: You grant Scriby a strictly limited, non-exclusive license solely to temporarily process, encode, and transcribe your media for delivering your requested outputs. We do not use your proprietary recordings to train public generative models.
 
 ### 3. Acceptable Use and Prohibited Conduct
 You agree not to use the platform to:
@@ -1328,28 +1330,28 @@ You agree not to use the platform to:
 - **Downgrade Policy**: Active paid subscription accounts cannot be downgraded to the free tier during an active billing cycle.
 
 ### 5. Service Availability and Disclaimers
-While we strive for 99.9% uptime and state-of-the-art transcription accuracy, speech recognition accuracy may vary based on audio quality, dialect, and background noise. BanglaScribe is provided on an "as is" and "as available" basis.
+While we strive for 99.9% uptime and state-of-the-art transcription accuracy across all spoken languages, speech recognition accuracy may vary based on audio quality, dialect, and background noise. Scriby is provided on an "as is" and "as available" basis.
 
 ### 6. Contact Information
-For any legal or licensing inquiries, please contact our support team at legal@banglascribe.com or support@banglascribe.com.`,
+For any legal or licensing inquiries, please contact our support team at legal@scriby.com or support@scriby.com.`,
           updatedBy: 'System Bootstrap',
         },
         {
           slug: 'privacy',
           title: 'Privacy Policy',
-          content: `# BanglaScribe — Privacy Policy
+          content: `# Scriby — Privacy Policy
 Last Updated: November 2026
 
-BanglaScribe is committed to protecting your privacy and ensuring the security of your personal information, media recordings, and transcription data. This Privacy Policy details how we collect, use, and safeguard your data.
+Scriby is committed to protecting your privacy and ensuring the security of your personal information, media recordings, and transcription data. This Privacy Policy details how we collect, use, and safeguard your data.
 
 ### 1. Information We Collect
 - **Account Information**: Your full name, email address, password hash, and OTP verification logs.
-- **Audio Files and Transcripts**: Audio files uploaded for speech recognition, waveform analysis, generated timestamped subtitles (SRT, TXT, DOCX), and AI metadata.
+- **Audio Files and Transcripts**: Audio files uploaded for speech recognition in any language, waveform analysis, generated timestamped subtitles (SRT, TXT, DOCX), and AI metadata.
 - **Transaction and Payment Records**: Mobile wallet sender phone number, payment provider (bKash, Nagad, Rocket), plan selected, amount paid, and unique Transaction ID (TrxID). We never ask for or store your mobile wallet PIN or banking credentials.
 - **Technical Diagnostics**: Browser type, operating system, and session timestamps used exclusively for service reliability and performance optimization.
 
 ### 2. How We Use Your Information
-- To deliver automated Bengali audio transcription, subtitle alignment, and YouTube SEO recommendations.
+- To deliver automated multilingual audio transcription, subtitle alignment, and YouTube SEO recommendations.
 - To maintain your creator account, verify user identity via OTP, and manage credit allocations.
 - To detect and prevent fraudulent transactions, duplicate submissions, and service abuse.
 - To securely store your transcription history in our managed Google Cloud SQL PostgreSQL database.
@@ -1361,25 +1363,25 @@ BanglaScribe is committed to protecting your privacy and ensuring the security o
 
 ### 4. User Rights and Data Control
 - **Access and Export**: You may review, download, and export your transcripts, subtitles, and YouTube SEO packs at any time.
-- **Deletion**: You can remove past transcripts from your history dashboard. To request permanent account and data deletion, email privacy@banglascribe.com.
+- **Deletion**: You can remove past transcripts from your history dashboard. To request permanent account and data deletion, email privacy@scriby.com.
 
 ### 5. Policy Updates
 We may periodically update this Privacy Policy to reflect platform features or regulatory requirements. Significant revisions will be highlighted on our platform.
 
 ### 6. Contact Us
-If you have any questions regarding your data privacy, please contact us at privacy@banglascribe.com.`,
+If you have any questions regarding your data privacy, please contact us at privacy@scriby.com.`,
           updatedBy: 'System Bootstrap',
         },
         {
           slug: 'refund',
           title: 'Refund Policy',
-          content: `# BanglaScribe — Refund and Cancellation Policy
+          content: `# Scriby — Refund and Cancellation Policy
 Last Updated: November 2026
 
-Our mission is to provide Bangladeshi and global Bengali content creators with the most reliable, accurate, and high-performance speech intelligence tools. We believe in fair, transparent billing and customer satisfaction.
+Our mission is to provide global content creators with the most reliable, accurate, and high-performance speech intelligence tools. We believe in fair, transparent billing and customer satisfaction.
 
 ### 1. Payment Methods and Activation
-- We support direct mobile payments via official Bangladeshi payment methods: **bKash**, **Nagad**, and **Rocket**.
+- We support direct mobile payments via official payment methods: **bKash**, **Nagad**, and **Rocket**.
 - Upon providing your sender mobile number and valid Transaction ID (TrxID), your selected plan and allocated audio credits are activated immediately.
 
 ### 2. Refund Eligibility
@@ -1395,7 +1397,7 @@ Refunds cannot be issued under the following conditions:
 - **Change of Mind**: Subscriptions where the user changes their mind after accessing premium features and downloading project assets.
 
 ### 4. How to Submit a Refund Request
-To submit a refund claim, please email our billing department at support@banglascribe.com with the following details:
+To submit a refund claim, please email our billing department at support@scriby.com with the following details:
 1. Registered account email address.
 2. Payment method (bKash / Nagad / Rocket) and sender mobile number.
 3. Transaction ID (TrxID) provided by the wallet provider.
@@ -1472,18 +1474,19 @@ app.post('/api/transcribe', async (req: Request, res: Response) => {
       },
     };
 
-    const systemPrompt = `You are an expert native Bengali (বাংলা) transcriber, linguist, and subtitle editor.
-Your task is to transcribe this spoken audio into high-accuracy, natural Bengali text.
+    const systemPrompt = `You are an expert multilingual audio transcriber, linguist, and subtitle editor.
+Your task is to transcribe this spoken audio with high accuracy in the language spoken (e.g. English, Spanish, Bengali, Hindi, French, German, Arabic, Japanese, or any language detected), preserving authentic spelling, punctuation, and natural phrasing.
+
 Guidelines:
-1. Transcribe spoken Bengali accurately with correct Bengali grammar and spelling (যেমন: ণ-ত্ব, ষ-ত্ব বিধান, যতিচিহ্ন).
-2. For code-switched English words commonly used in Bengali tech/vlog/business speech (e.g., 'Artificial Intelligence', 'YouTube', 'Subscriber', 'Computer', 'Update'), transcribe them either in standard Bengali script (যেমন: 'ইউটিউব', 'এআই') or preserve commonly recognized English terms cleanly.
-3. Break the transcription down into chronological subtitle segments of about 3 to 10 seconds each.
-4. Estimate accurate timestamps (start and end in seconds).
-5. Identify speakers (e.g. 'স্পিকার ১', 'স্পিকার ২').
-6. Provide an accurate summary and key takeaways in Bengali.
+1. Automatically detect the spoken language and transcribe accurately with correct grammar, capitalization, and punctuation.
+2. For code-switching or loanwords (e.g., tech, business, proper names), transcribe them accurately in their natural spelling.
+3. Break the transcription down into chronological subtitle segments of roughly 3 to 7 seconds each.
+4. Provide precise start and end timestamps (in seconds as floats, e.g. 0.0, 3.5) for every segment.
+5. Identify speakers (e.g. 'Speaker 1', 'Speaker 2').
+6. Provide an accurate summary and key takeaways of the audio in clear English.
 ${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
 
-    const promptText = `Please transcribe this audio into timestamped segments and full text in Bengali. Return the output in strict JSON format.`;
+    const promptText = `Please transcribe this audio into timestamped segments and full text in the language spoken. Return the output in strict JSON format.`;
 
     const response = await generateContentWithRetry({
       models: ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'],
@@ -1496,9 +1499,9 @@ ${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            language: { type: Type.STRING, description: 'Language code, e.g. bn' },
-            fullTranscript: { type: Type.STRING, description: 'The complete transcribed text in Bengali.' },
-            summary: { type: Type.STRING, description: 'Brief 2-3 sentence summary in Bengali.' },
+            language: { type: Type.STRING, description: 'Detected language code, e.g. en, bn, es, hi, fr, de, ar' },
+            fullTranscript: { type: Type.STRING, description: 'The complete transcribed text.' },
+            summary: { type: Type.STRING, description: 'Brief 2-3 sentence summary in English.' },
             segments: {
               type: Type.ARRAY,
               description: 'Chronological timestamped subtitle segments.',
@@ -1508,8 +1511,8 @@ ${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
                   id: { type: Type.STRING },
                   start: { type: Type.NUMBER, description: 'Start time in seconds (float)' },
                   end: { type: Type.NUMBER, description: 'End time in seconds (float)' },
-                  speaker: { type: Type.STRING, description: 'Speaker label, e.g. স্পিকার ১' },
-                  text: { type: Type.STRING, description: 'Transcribed Bengali text for this segment' },
+                  speaker: { type: Type.STRING, description: 'Speaker label, e.g. Speaker 1' },
+                  text: { type: Type.STRING, description: 'Transcribed text for this segment' },
                 },
                 required: ['start', 'end', 'speaker', 'text'],
               },
@@ -1535,7 +1538,7 @@ ${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
         id: seg.id || `seg-${Date.now()}-${idx + 1}`,
         start: typeof seg.start === 'number' ? Math.max(0, seg.start) : idx * 4,
         end: typeof seg.end === 'number' ? Math.max(seg.start + 0.5, seg.end) : (idx + 1) * 4,
-        speaker: seg.speaker || 'স্পিকার ১',
+        speaker: seg.speaker || 'Speaker 1',
         text: (seg.text || '').trim(),
       }));
     }
@@ -1555,14 +1558,14 @@ ${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
 
       await db.insert(usageLogsTable).values({
         userId: authenticatedUser.id,
-        audioName: contextHint || 'Bengali Audio Clip',
+        audioName: contextHint || 'Audio Recording',
         durationSeconds: Math.round(actualDuration),
         creditsDeducted: actualCreditsDeducted,
       });
 
       // Auto-save generated transcript to history table
       try {
-        const title = contextHint || `Bengali Audio (${new Date().toLocaleDateString()})`;
+        const title = contextHint || `Audio Recording (${new Date().toLocaleDateString()})`;
         const wordCount = (data.fullTranscript || '').split(/\s+/).filter(Boolean).length;
         const saved = await db
           .insert(transcriptsTable)
@@ -1717,7 +1720,7 @@ app.post('/api/generate-metadata', async (req: Request, res: Response) => {
       }
     }
 
-    const systemPrompt = `You are a digital content strategist specializing in Bengali and South Asian YouTube channels.
+    const systemPrompt = `You are an expert digital content strategist and YouTube growth consultant for high-growth global video channels.
 Based on the provided transcript, generate viral titles, SEO description, chapter timestamps, tags, and social media posts.`;
 
     let parsed: any = null;
@@ -1826,12 +1829,12 @@ app.post('/api/generate-thumbnail-background', async (req: Request, res: Respons
     const generatedImageDataUrl: string | null = null;
 
     // Use Gemini to generate high-CTR thumbnail composition tokens
-    const prompt = `You are a YouTube thumbnail design director for high-growth Bengali channels.
+    const prompt = `You are a YouTube thumbnail design director for high-growth video channels.
 Analyze this video title: "${title}".
 Generate the optimal visual concept for a 1280x720 YouTube thumbnail:
-1. Short, punchy headline text (maximum 4-6 Bengali words for maximum CTR).
+1. Short, punchy headline text (maximum 4-6 words for maximum CTR).
 2. Supporting subhead text (explanatory, 4-8 words).
-3. Eye-catching badge (e.g. "নতুন", "URGENT", "১০০% সত্য", "ভাইরাল", "4K", "MUST WATCH").
+3. Eye-catching badge (e.g. "NEW", "URGENT", "MUST WATCH", "4K", "VIRAL").
 4. Two complementary background gradient hex codes (deep, dark, high contrast).
 5. Headline color (e.g. #FACC15, #FFFFFF, #38BDF8), stroke color (#000000), accent color.
 6. Return valid JSON only.`;
@@ -1865,18 +1868,18 @@ Generate the optimal visual concept for a 1280x720 YouTube thumbnail:
     } catch {
       const cleanTitleWords = title.trim().split(/\s+/);
       const headlineWords = cleanTitleWords.slice(0, 5).join(' ');
-      const subheadWords = cleanTitleWords.length > 5 ? cleanTitleWords.slice(5, 12).join(' ') : 'সম্পূর্ণ তথ্য এবং আসল সত্য উন্মোচন';
+      const subheadWords = cleanTitleWords.length > 5 ? cleanTitleWords.slice(5, 12).join(' ') : 'Complete Breakdown & Key Insights';
 
       parsedConfig = {
         headline: headlineWords || title.slice(0, 40),
         subhead: subheadWords,
-        badge: badge || 'নতুন ভিডিও 🔥',
+        badge: badge || 'NEW 🔥',
         customBgColor1: '#090d16',
         customBgColor2: '#1e1b4b',
         headlineColor: '#facc15',
         strokeColor: '#000000',
         accentBarColor: '#1ed760',
-        fontFamily: 'Hind Siliguri',
+        fontFamily: 'Outfit',
       };
     }
 
@@ -1937,7 +1940,7 @@ async function startServer() {
   await seedDefaultPoliciesIfEmpty();
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(`BanglaScribe SaaS server running at http://0.0.0.0:${port}`);
+    console.log(`Scriby SaaS server running at http://0.0.0.0:${port}`);
   });
 }
 

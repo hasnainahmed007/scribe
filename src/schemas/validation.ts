@@ -180,7 +180,7 @@ export const forgotPasswordVerifySchema = z
 export type ForgotPasswordVerifyInput = z.infer<typeof forgotPasswordVerifySchema>;
 
 // ============================================================================
-// 2. Subscription & Bangladeshi Wallet Checkout Schemas
+// 2. Subscription & Direct Wallet Checkout Schemas
 // ============================================================================
 
 export const PAYMENT_METHODS = ['bkash', 'nagad', 'rocket'] as const;
@@ -190,14 +190,14 @@ export const USER_ROLES = ['user', 'superadmin'] as const;
 export const USER_STATUSES = ['active', 'suspended', 'trial'] as const;
 
 /**
- * Client-Side Bangladeshi Checkout Modal Form Validation
+ * Client-Side Checkout Modal Form Validation
  */
 export const checkoutFormSchema = z.object({
   paymentMethod: z.enum(PAYMENT_METHODS),
   walletPhone: z
     .string()
     .trim()
-    .regex(/^01[3-9]\d{8}$/, 'Please enter a valid 11-digit Bangladeshi mobile number (01XXXXXXXXX).'),
+    .regex(/^01[3-9]\d{8}$/, 'Please enter a valid 11-digit mobile number (01XXXXXXXXX).'),
   trxId: z
     .string()
     .trim()
@@ -311,7 +311,7 @@ export const generateMetadataSchema = z.object({
     .trim()
     .min(3, 'Transcript text must be provided to generate YouTube SEO metadata.'),
   titleHint: z.string().optional().default(''),
-  targetAudience: z.string().optional().default('Bangladeshi & West Bengal Creators'),
+  targetAudience: z.string().optional().default('Global Digital Creators & Audience'),
 });
 
 export type GenerateMetadataInput = z.infer<typeof generateMetadataSchema>;

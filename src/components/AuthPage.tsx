@@ -341,9 +341,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-[#1ed760] text-black flex items-center justify-center font-extrabold text-xs">
-            B
+            S
           </div>
-          <span className="text-sm font-bold text-white tracking-tight">BanglaScribe</span>
+          <span className="text-sm font-bold text-white tracking-tight">Scriby</span>
         </div>
       </div>
 
@@ -372,10 +372,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <div>
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white tracking-tight font-display">
-                Sign in to BanglaScribe
+                Sign in to Scriby
               </h2>
               <p className="text-xs text-[#b3b3b3] mt-1.5">
-                Bengali Speech Intelligence & Video Creator Suite
+                AI Speech Intelligence & Creator Studio
               </p>
             </div>
 
@@ -390,7 +390,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="creator@banglascribe.com"
+                    placeholder="creator@scriby.com"
                     required
                     className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
                   />
@@ -745,7 +745,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     type="email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="your-email@banglascribe.com"
+                    placeholder="your-email@scriby.com"
                     required
                     className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
                   />

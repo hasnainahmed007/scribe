@@ -126,11 +126,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 font-bold font-display">
-              B
+              S
             </div>
             <div>
               <h3 className="text-sm font-bold text-white font-display">
-                {mode === 'login' ? 'Sign In to BanglaScribe' : 'Create Free Account'}
+                {mode === 'login' ? 'Sign In to Scriby' : 'Create Free Account'}
               </h3>
               <p className="text-[11px] text-slate-400">
                 Secure API Authentication & Role-Based Access
@@ -315,12 +315,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="mt-2 pt-2 border-t border-slate-800/60 font-mono text-[10px] space-y-0.5 text-slate-400">
             <div>
               <span className="text-purple-400 font-semibold">SuperAdmin:</span>{' '}
-              <span className="text-slate-300">admin@banglascribe.com</span> /{' '}
+              <span className="text-slate-300">admin@scriby.com</span> /{' '}
               <span className="text-slate-300">admin1234</span>
             </div>
             <div>
               <span className="text-emerald-400 font-semibold">Creator:</span>{' '}
-              <span className="text-slate-300">creator@banglascribe.com</span> /{' '}
+              <span className="text-slate-300">creator@scriby.com</span> /{' '}
               <span className="text-slate-300">creator1234</span>
             </div>
           </div>

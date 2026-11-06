@@ -73,7 +73,7 @@ export function generateJSON(segments: TranscriptSegment[], metadata?: Record<st
  */
 export async function downloadDOCX(
   segments: TranscriptSegment[],
-  title: string = 'বাংলা অডিও ট্রান্সক্রিপশন ও সাবটাইটেল',
+  title: string = 'Audio Transcription & Subtitles',
   summary: string = ''
 ): Promise<void> {
   const tableRows: TableRow[] = [
@@ -86,7 +86,7 @@ export async function downloadDOCX(
           children: [
             new Paragraph({
               children: [
-                new TextRun({ text: 'সময়কাল (Time)', bold: true, color: 'FFFFFF', size: 22 }),
+                new TextRun({ text: 'Time', bold: true, color: 'FFFFFF', size: 22 }),
               ],
             }),
           ],
@@ -97,7 +97,7 @@ export async function downloadDOCX(
           children: [
             new Paragraph({
               children: [
-                new TextRun({ text: 'বক্তা (Speaker)', bold: true, color: 'FFFFFF', size: 22 }),
+                new TextRun({ text: 'Speaker', bold: true, color: 'FFFFFF', size: 22 }),
               ],
             }),
           ],
@@ -108,7 +108,7 @@ export async function downloadDOCX(
           children: [
             new Paragraph({
               children: [
-                new TextRun({ text: 'অনুলিপি (Bengali Transcript)', bold: true, color: 'FFFFFF', size: 22 }),
+                new TextRun({ text: 'Transcript', bold: true, color: 'FFFFFF', size: 22 }),
               ],
             }),
           ],
@@ -142,7 +142,7 @@ export async function downloadDOCX(
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: seg.speaker || 'বক্তা',
+                    text: seg.speaker || 'Speaker',
                     bold: true,
                     size: 20,
                     color: '0F172A',
@@ -183,18 +183,18 @@ export async function downloadDOCX(
                 text: title,
                 bold: true,
                 size: 36,
-                color: '059669', // Emerald accent
+                color: '1ED760',
               }),
             ],
           }),
           new Paragraph({
             children: [
               new TextRun({
-                text: `তৈরির সময়: ${new Date().toLocaleDateString('bn-BD', {
+                text: `Generated on: ${new Date().toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
-                })} | মোট সেগমেন্ট: ${segments.length} টি`,
+                })} | Total Segments: ${segments.length}`,
                 italics: true,
                 color: '64748B',
                 size: 20,
@@ -206,7 +206,7 @@ export async function downloadDOCX(
             ? [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: 'সারাংশ (Summary): ', bold: true, size: 22, color: '0F172A' }),
+                    new TextRun({ text: 'Summary: ', bold: true, size: 22, color: '0F172A' }),
                     new TextRun({ text: summary, size: 22, color: '334155' }),
                   ],
                 }),

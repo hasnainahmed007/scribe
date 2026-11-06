@@ -14,6 +14,7 @@ import {
 import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from '../data/sampleAudios';
 import { TranscriptSegment, AudioSource } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
+import { preparePlayableAudio } from '../utils/audioProcessing';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../utils/apiClient';
 import { Card } from './ui/card';
@@ -112,45 +113,31 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           }
 
           const json = res.data;
-          const audioUrl = URL.createObjectURL(file);
-          const audioElem = new Audio();
-          audioElem.preload = 'metadata';
-          audioElem.src = audioUrl;
+          setLoadingStep('Syncing audio timeline and wave playback...');
 
-          let hasFinalized = false;
-          const finalizeAudio = (detectedDuration: number) => {
-            if (hasFinalized) return;
-            hasFinalized = true;
+          const fallbackEnd =
+            json.data.segments && json.data.segments.length > 0
+              ? json.data.segments[json.data.segments.length - 1].end
+              : 60;
 
-            let safeDuration = Number.isFinite(detectedDuration) && detectedDuration > 0 ? detectedDuration : 0;
-            if (safeDuration <= 0 && json.data.segments.length > 0) {
-              safeDuration = json.data.segments[json.data.segments.length - 1].end;
-            }
-            if (safeDuration <= 0) safeDuration = 60;
+          // Process and decode audio with universal WAV conversion for .ogg / .opus files
+          const processed = await preparePlayableAudio(file, file.name, fallbackEnd);
 
-            onTranscriptionComplete(
-              {
-                url: audioUrl,
-                name: file.name,
-                size: file.size,
-                duration: safeDuration,
-                blob: file,
-                mimeType: file.type || 'audio/mp3',
-              },
-              json.data.segments,
-              json.data.fullTranscript,
-              json.data.summary || ''
-            );
-            setIsLoading(false);
-            refreshProfile();
-          };
-
-          audioElem.onloadedmetadata = () => finalizeAudio(audioElem.duration);
-          audioElem.onerror = () => finalizeAudio(json.data.segments[json.data.segments.length - 1]?.end || 60);
-
-          setTimeout(() => {
-            finalizeAudio(audioElem.duration || (json.data.segments[json.data.segments.length - 1]?.end || 60));
-          }, 1000);
+          onTranscriptionComplete(
+            {
+              url: processed.url,
+              name: file.name,
+              size: file.size,
+              duration: processed.duration,
+              blob: processed.blob,
+              mimeType: processed.mimeType,
+            },
+            json.data.segments,
+            json.data.fullTranscript,
+            json.data.summary || ''
+          );
+          setIsLoading(false);
+          refreshProfile();
         } catch (err: any) {
           setErrorMessage(err.message || 'Audio conversion failed.');
           setIsLoading(false);
@@ -277,20 +264,28 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           }
 
           const json = res.data;
+          setLoadingStep('Syncing audio timeline and wave playback...');
 
-          let finalRecDuration = Number.isFinite(recordingSeconds) && recordingSeconds > 0 ? recordingSeconds : 0;
-          if (finalRecDuration <= 0 && json.data.segments.length > 0) {
-            finalRecDuration = json.data.segments[json.data.segments.length - 1].end;
-          }
-          if (finalRecDuration <= 0) finalRecDuration = 30;
+          const fallbackEnd =
+            json.data.segments && json.data.segments.length > 0
+              ? json.data.segments[json.data.segments.length - 1].end
+              : recordingSeconds > 0
+              ? recordingSeconds
+              : 30;
+
+          const processed = await preparePlayableAudio(
+            recordedBlob,
+            `Live Voice Recording (${new Date().toLocaleTimeString()}).wav`,
+            fallbackEnd
+          );
 
           onTranscriptionComplete(
             {
-              url: recordedUrl!,
+              url: processed.url,
               name: `Live Voice Recording (${new Date().toLocaleTimeString()})`,
-              duration: finalRecDuration,
-              blob: recordedBlob,
-              mimeType: 'audio/webm',
+              duration: processed.duration,
+              blob: processed.blob,
+              mimeType: processed.mimeType,
             },
             json.data.segments,
             json.data.fullTranscript,

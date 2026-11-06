@@ -66,10 +66,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 <Mic className="w-6 h-6" />
               </div>
               <h2 id="onboarding-title" className="text-xl font-bold text-white tracking-tight">
-                1. Upload or Record Bengali Audio
+                1. Upload or Record Spoken Audio
               </h2>
               <p className="text-xs text-[#b3b3b3] leading-relaxed">
-                BanglaScribe is designed specifically for Bengali phonetics, compound letters (যুক্তবর্ণ), and colloquial accents. You can upload MP3/WAV/M4A files or record directly from your microphone.
+                Scriby delivers state-of-the-art speech intelligence across 100+ global languages with accurate punctuation, timestamps, and speaker recognition. Upload MP3/WAV/M4A files or record directly from your microphone.
               </p>
 
               <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-2">
@@ -126,7 +126,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   <span>YouTube SEO & 16:9 Thumbnail Studio</span>
                 </div>
                 <p className="text-[11px] text-[#b3b3b3]">
-                  Automatically generate high-CTR Bengali titles, descriptions, and hashtags, and design matching 16:9 thumbnails.
+                  Automatically generate high-CTR video titles, descriptions, chapters, and hashtags, and design matching 16:9 thumbnails.
                 </p>
               </div>
             </div>

@@ -181,7 +181,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
   const handleApplyPromo = () => {
     const code = promoCode.trim().toUpperCase();
-    if (code === 'BANGLA20') {
+    if (code === 'SCRIBY20' || code === 'BANGLA20') {
       setAppliedDiscount(0.2); // 20% off
       setPromoMessage('20% creator discount applied!');
     } else if (code === 'CREATOR10') {
@@ -189,7 +189,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       setPromoMessage('10% creator discount applied!');
     } else {
       setAppliedDiscount(0);
-      setPromoMessage('Invalid promo code. Try "BANGLA20"');
+      setPromoMessage('Invalid promo code. Try "SCRIBY20"');
     }
   };
 
@@ -310,7 +310,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               </h2>
               <p className="text-xs text-[#b3b3b3]">
                 {stage === 'plans' && 'Top up audio minutes and unlock advanced creator capabilities'}
-                {stage === 'checkout' && 'Idempotent, secure mobile payment processing for Bangladeshi creators'}
+                {stage === 'checkout' && 'Idempotent, secure mobile payment processing for creators'}
                 {stage === 'receipt' && 'Your quota has been synchronized to your Cloud SQL profile'}
               </p>
             </div>
@@ -482,7 +482,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     }`}
                   >
                     <div className="w-6 h-6 rounded-full bg-[#E04122] text-white flex items-center justify-center font-bold text-xs">
-                      ন
+                      N
                     </div>
                     <span className="text-xs font-bold">Nagad</span>
                     <span className="text-[10px] text-[#7c7c7c]">Dial *167#</span>
@@ -520,7 +520,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828]">
                   <div>
-                    <div className="text-[11px] text-[#b3b3b3]">BanglaScribe Official {activeGateway.name} Account:</div>
+                    <div className="text-[11px] text-[#b3b3b3]">Scriby Official {activeGateway.name} Account:</div>
                     <div className="text-sm font-mono font-bold text-white tracking-wide mt-0.5">
                       {activeGateway.accountNumber} ({activeGateway.type})
                     </div>
@@ -589,7 +589,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     <Input
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
-                      placeholder="Promo Code (BANGLA20)"
+                      placeholder="Promo Code (SCRIBY20)"
                       className="text-xs uppercase font-mono max-w-[200px]"
                     />
                     <button
@@ -721,9 +721,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
         <div className="px-6 py-3.5 bg-[#121212] border-t border-[#282828] flex items-center justify-between text-xs text-[#b3b3b3]">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-[#1ed760]" />
-            <span>Bangladeshi mobile wallet verification with idempotency protection</span>
+            <span>Secure mobile wallet verification with idempotency protection</span>
           </div>
-          <div>BanglaScribe SaaS</div>
+          <div>Scriby SaaS</div>
         </div>
       </div>
     </div>

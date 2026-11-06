@@ -72,9 +72,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-2.5 text-base font-bold tracking-tight text-white hover:text-[#1ed760] transition-colors whitespace-nowrap shrink-0 font-display cursor-pointer"
         >
           <div className="w-7 h-7 rounded-full bg-[#1ed760] text-black flex items-center justify-center font-extrabold text-sm tracking-normal shadow-[0_2px_8px_rgba(30,215,96,0.3)]">
-            B
+            S
           </div>
-          <span className="font-bold">BanglaScribe</span>
+          <span className="font-bold">Scriby</span>
         </button>
       </div>
 

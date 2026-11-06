@@ -52,7 +52,7 @@ const DEFAULT_PLANS: SaaSPlan[] = [
       '30 free audio minutes included',
       'SRT and TXT subtitle export',
       'Interactive waveform audio player',
-      'Bengali speech AI recognition',
+      'Multilingual AI speech recognition (all languages)',
       'Standard processing queue',
     ],
     modules: ['subtitles_editor', 'voice_recorder'],
@@ -184,7 +184,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="home" className="pt-12 sm:pt-20 max-w-4xl mx-auto px-4 text-center">
         {/* Subtle, unboxed metadata */}
         <div className="text-xs font-semibold text-[#b3b3b3] tracking-wide mb-6">
-          <span>Bengali Speech Recognition</span>
+          <span>Multilingual Speech Intelligence</span>
           <span className="mx-2 text-[#4d4d4d]">·</span>
           <span>Subtitle Alignment</span>
           <span className="mx-2 text-[#4d4d4d]">·</span>
@@ -193,12 +193,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
         {/* Primary Headline: Restrained white heading */}
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.12] mb-6">
-          Turn Bengali voice recordings into accurate, synchronized subtitles.
+          Turn voice recordings in any language into accurate, synchronized subtitles.
         </h1>
 
         {/* Quiet Body Copy */}
         <p className="text-base sm:text-lg text-[#b3b3b3] max-w-2xl mx-auto mb-10 leading-relaxed font-sans">
-          Engineered specifically for spoken Bengali dialects, conjunct letters (যুক্তবর্ণ), and English code-switching. Transcribe audio, edit subtitle blocks with live audio sync, and export in SRT, DOCX, TXT, or JSON.
+          Powered by Gemini multimodal audio AI. Transcribe spoken audio across 100+ languages with timestamped precision, edit subtitle blocks with live audio sync, and export in SRT, DOCX, TXT, or JSON.
         </p>
 
         {/* Primary & Secondary Pill CTAs */}
@@ -331,10 +331,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             System Capabilities
           </div>
           <h2 className="text-3xl font-bold text-white tracking-tight mb-2">
-            Built deliberately for Bengali language workflows.
+            Built for modern creators & multilingual workflows.
           </h2>
           <p className="text-sm text-[#b3b3b3] leading-relaxed">
-            Conventional speech-to-text models struggle with Bengali conjuncts (যুক্তবর্ণ), vowel markers, and technical terminology. BanglaScribe combines high-fidelity multimodal acoustic intelligence with an editorial subtitle toolset.
+            Conventional speech-to-text models struggle with diverse global accents, technical terminology, and multilingual code-switching. Scriby combines high-fidelity multimodal acoustic intelligence with an editorial subtitle toolset.
           </p>
         </div>
 
@@ -347,14 +347,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <FileAudio className="w-4 h-4 text-[#b3b3b3]" />
               </div>
               <h3 className="text-base font-bold text-white mb-2">
-                Acoustic Speech Recognition
+                Multilingual Speech Recognition
               </h3>
               <p className="text-xs text-[#b3b3b3] leading-relaxed">
-                Native Bengali script transcription with accurate punctuation, conjunct resolution, and natural handling of mixed English and Bengali terminology.
+                Universal script transcription supporting all major global languages with accurate punctuation, speaker separation, and natural code-switching.
               </p>
             </div>
             <div className="mt-5 pt-3 border-t border-[#282828] text-[11px] text-[#7c7c7c] font-mono">
-              Dialect-Adaptive Vocabulary
+              100+ Global Languages
             </div>
           </Card>
 
@@ -404,7 +404,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 YouTube SEO & Thumbnail Canvas
               </h3>
               <p className="text-xs text-[#b3b3b3] leading-relaxed">
-                Extract high-CTR video titles, chapter timestamps, and description tags from transcript text, then design 1280x720 thumbnails with Bengali typography.
+                Extract high-CTR video titles, chapter timestamps, and description tags from transcript text, then design 1280x720 thumbnails with striking typography.
               </p>
             </div>
             <div className="mt-5 pt-3 border-t border-[#282828] text-[11px] text-[#7c7c7c] font-mono">
@@ -544,7 +544,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Contact the engineering team.
           </h2>
           <p className="text-sm text-[#b3b3b3] leading-relaxed">
-            Need custom high-volume quotas, API integration for newsrooms, or support with Bengali transcriptions? Send us a direct note.
+            Need custom high-volume quotas, API integration for media teams, or transcription support? Send us a direct note.
           </p>
         </div>
 
@@ -562,7 +562,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <div className="text-xs text-[#b3b3b3]">Email Inquiries</div>
                     <div className="text-xs font-bold text-white mt-0.5">
-                      support@banglascribe.com
+                      support@scriby.com
                     </div>
                   </div>
                 </div>
@@ -572,7 +572,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <div className="text-xs text-[#b3b3b3]">Engineering Hub</div>
                     <div className="text-xs font-bold text-white mt-0.5">
-                      Dhaka, Bangladesh
+                      Global Creator Cloud & APAC
                     </div>
                   </div>
                 </div>
@@ -722,7 +722,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
                 <div>
                   <span className="text-lg font-black tracking-tight text-white font-display">
-                    Bangla<span className="text-[#1ed760]">Scribe</span>
+                    Scriby
                   </span>
                   <span className="block text-[10px] text-[#7c7c7c] tracking-widest uppercase">
                     AI Speech Intelligence & Creator Studio
@@ -731,7 +731,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <p className="text-xs text-[#a7a7a7] leading-relaxed max-w-sm">
-                Next-generation Bengali speech intelligence platform built for content creators, YouTube producers, podcasters, and media agencies. Transcribe Bengali audio with timestamped SRT subtitles, generate viral YouTube SEO metadata, and design 16:9 thumbnails effortlessly.
+                Next-generation multilingual AI speech intelligence platform built for content creators, YouTube producers, podcasters, and media agencies. Transcribe audio across all languages with timestamped SRT subtitles, generate viral YouTube SEO metadata, and design 16:9 thumbnails effortlessly.
               </p>
 
               <div className="flex items-center gap-3 pt-2 text-xs text-[#7c7c7c]">
@@ -740,7 +740,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <span className="font-medium text-[11px]">PostgreSQL Cloud SQL Secured</span>
                 </div>
                 <span>•</span>
-                <span className="text-[11px]">Bangladeshi Creator First</span>
+                <span className="text-[11px]">Universal Multilingual Support</span>
               </div>
             </div>
 
@@ -755,7 +755,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onClick={onGetStarted}
                     className="hover:text-white transition-colors cursor-pointer text-left"
                   >
-                    Bengali Speech-to-Text
+                    Multilingual Speech-to-Text
                   </button>
                 </li>
                 <li>
@@ -882,9 +882,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* Bottom Copyright Bar */}
           <div className="mt-12 pt-8 border-t border-[#1f1f1f] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#7c7c7c]">
             <div className="flex items-center gap-2">
-              <span>© {new Date().getFullYear()} BanglaScribe. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} Scriby. All rights reserved.</span>
               <span>•</span>
-              <span className="text-[#a7a7a7]">Made with ❤️ for Bangladeshi Creators</span>
+              <span className="text-[#a7a7a7]">Made with ❤️ for Global Creators</span>
             </div>
 
             <div className="flex items-center gap-4 text-[11px]">

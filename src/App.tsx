@@ -43,11 +43,12 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Badge } from './components/ui/badge';
 
-function BanglaScribeApp() {
+function ScribyApp() {
   const { user, isSuperAdmin, token, refreshProfile, isLoadingSession } = useAuth();
 
   const [audioSource, setAudioSource] = useState<AudioSource | null>(null);
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
+  const [previousSegmentsBackup, setPreviousSegmentsBackup] = useState<TranscriptSegment[] | null>(null);
   const [fullTranscript, setFullTranscript] = useState<string>('');
   const [summary, setSummary] = useState<string>('');
 
@@ -73,7 +74,7 @@ function BanglaScribeApp() {
   // YouTube Studio State
   const [youtubeMetadata, setYoutubeMetadata] = useState<YouTubeMetadata | null>(null);
   const [isLoadingMetadata, setIsLoadingMetadata] = useState<boolean>(false);
-  const [thumbnailTitle, setThumbnailTitle] = useState<string>('বাংলা অডিও থেকে ১ ক্লিকে সাবটাইটেল');
+  const [thumbnailTitle, setThumbnailTitle] = useState<string>('Generate High-CTR Subtitles & Titles');
 
   // Track user login state transitions for role-based auto-redirection
   const previousUserRef = useRef<SaaSUser | null>(null);
@@ -121,8 +122,26 @@ function BanglaScribeApp() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleDurationChange = () => setDuration(audio.duration || 0);
+    setIsPlaying(false);
+    setCurrentTime(0);
+
+    const syncDuration = () => {
+      const d = audio.duration;
+      if (Number.isFinite(d) && d > 0) {
+        setDuration(d);
+      } else if (audioSource?.duration && Number.isFinite(audioSource.duration) && audioSource.duration > 0) {
+        setDuration(audioSource.duration);
+      }
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      syncDuration();
+    };
+
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
     const handleEnded = () => {
       if (isLooping) {
         audio.currentTime = 0;
@@ -132,35 +151,65 @@ function BanglaScribeApp() {
       }
     };
 
+    const handleError = (e: Event) => {
+      console.warn('Audio tag encountered error:', e);
+      setIsPlaying(false);
+    };
+
     audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('durationchange', handleDurationChange);
+    audio.addEventListener('durationchange', syncDuration);
+    audio.addEventListener('loadedmetadata', syncDuration);
+    audio.addEventListener('canplay', syncDuration);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('seeking', handleTimeUpdate);
+    audio.addEventListener('seeked', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleError);
+
+    // Initial check
+    syncDuration();
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('durationchange', handleDurationChange);
+      audio.removeEventListener('durationchange', syncDuration);
+      audio.removeEventListener('loadedmetadata', syncDuration);
+      audio.removeEventListener('canplay', syncDuration);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('seeking', handleTimeUpdate);
+      audio.removeEventListener('seeked', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleError);
     };
-  }, [isLooping]);
+  }, [audioSource?.url, isLooping]);
 
   // Audio Playback Handlers
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
+    if (!audio.paused) {
       audio.pause();
       setIsPlaying(false);
     } else {
-      audio.play().then(() => setIsPlaying(true)).catch(console.error);
+      try {
+        await audio.play();
+        setIsPlaying(true);
+      } catch (err: any) {
+        console.error('Audio play error:', err);
+        setIsPlaying(false);
+      }
     }
   };
 
   const handleSeek = (time: number) => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.currentTime = time;
-    setCurrentTime(time);
+    const targetDuration = Number.isFinite(duration) && duration > 0 ? duration : (audioSource?.duration || Infinity);
+    const safeTime = Math.max(0, Math.min(targetDuration, time));
+    audio.currentTime = safeTime;
+    setCurrentTime(safeTime);
   };
 
   const handlePlaybackRateChange = (rate: number) => {
@@ -178,14 +227,17 @@ function BanglaScribeApp() {
   };
 
   // Play a specific segment: seek and immediately begin playback
-  const handlePlaySegment = (start: number) => {
+  const handlePlaySegment = async (start: number) => {
     const audio = audioRef.current;
     if (!audio) return;
     audio.currentTime = start;
     setCurrentTime(start);
-    audio.play().then(() => setIsPlaying(true)).catch((err) => {
-      console.warn('Playback initiation warning:', err);
-    });
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.warn('Playback initiation warning on segment:', err);
+    }
   };
 
   // Restore a saved transcript from history into the studio workspace
@@ -286,7 +338,7 @@ function BanglaScribeApp() {
         start: lastEnd,
         end: lastEnd + 4,
         speaker: 'Speaker',
-        text: 'নতুন বাক্য লিখুন...',
+        text: 'Type new subtitle segment...',
       };
       setSegments((prev) => [...prev, newSegment]);
       return;
@@ -301,7 +353,7 @@ function BanglaScribeApp() {
       start: currentSeg.end,
       end: currentSeg.end + 4,
       speaker: currentSeg.speaker,
-      text: 'নতুন বাক্য লিখুন...',
+      text: 'Type new subtitle segment...',
     };
 
     const updated = [...segments];
@@ -327,6 +379,43 @@ function BanglaScribeApp() {
     const updated = [...segments];
     updated.splice(index, 2, merged);
     setSegments(updated);
+  };
+
+  const handleMergeAllSegments = () => {
+    if (segments.length <= 1) return;
+
+    // Backup current state for undo capability
+    setPreviousSegmentsBackup([...segments]);
+
+    const first = segments[0];
+    const last = segments[segments.length - 1];
+    const combinedText = segments
+      .map((s) => s.text.trim())
+      .filter(Boolean)
+      .join(' ');
+
+    const mergedAll: TranscriptSegment = {
+      id: `seg-merged-all-${Date.now()}`,
+      start: first.start,
+      end: last.end,
+      speaker: first.speaker || 'Speaker 1',
+      text: combinedText,
+    };
+
+    setSegments([mergedAll]);
+    setFullTranscript(combinedText);
+  };
+
+  const handleUndoMergeAll = () => {
+    if (previousSegmentsBackup && previousSegmentsBackup.length > 0) {
+      setSegments(previousSegmentsBackup);
+      const restoredFullText = previousSegmentsBackup
+        .map((s) => s.text.trim())
+        .filter(Boolean)
+        .join(' ');
+      setFullTranscript(restoredFullText);
+      setPreviousSegmentsBackup(null);
+    }
   };
 
   const handleSplitSegment = (id: string, splitIndex: number) => {
@@ -403,30 +492,30 @@ function BanglaScribeApp() {
     } catch (err: any) {
       console.warn('Metadata generation error:', err);
       if (!youtubeMetadata) {
-        const sentences = textToAnalyze.split(/[।!?\n]+/).map((s) => s.trim()).filter((s) => s.length > 5);
-        const titleTopic = hint || sentences[0] || 'বাংলা ভিডিও কন্টেন্ট';
+        const sentences = textToAnalyze.split(/[.!?।\n]+/).map((s) => s.trim()).filter((s) => s.length > 5);
+        const titleTopic = hint || sentences[0] || 'Creator Video Strategy';
         setYoutubeMetadata({
           titles: [
-            { title: `${titleTopic} — সম্পূর্ণ আলোচনা ও আসল সত্য`, category: 'High CTR', ctrScore: 94 },
-            { title: `${titleTopic}: যা আপনার অবশ্যই জানা প্রয়োজন (২০২৬ আপডেট)`, category: 'Authority', ctrScore: 91 },
-            { title: `কেন সবাই ${titleTopic} নিয়ে আলোচনা করছে? আসল কারণ জানুন`, category: 'Viral', ctrScore: 89 },
+            { title: `${titleTopic}: The Complete Guide & Key Insights`, category: 'High CTR', ctrScore: 94 },
+            { title: `What You Must Know About ${titleTopic} (2026 Strategy)`, category: 'Authority', ctrScore: 91 },
+            { title: `Why Everyone Is Talking About ${titleTopic} (Full Breakdown)`, category: 'Viral', ctrScore: 89 },
           ],
-          description: `📌 আজকের ভিডিওতে আমরা বিস্তারিত আলোচনা করেছি: "${titleTopic}"।\n\n00:00 - ভূমিকা ও প্রারম্ভিক সারসংক্ষেপ\n01:30 - মূল পটভূমি ও আলোচনা\n04:00 - উপসংহার ও পরবর্তী করণীয়\n\n#BanglaVideo #YouTubeSEO`,
+          description: `📌 In this video, we break down everything you need to know about: "${titleTopic}".\n\n00:00 - Introduction & Overview\n01:30 - Core Analysis & Deep Dive\n04:00 - Key Takeaways & Action Items\n\n#ContentCreator #YouTubeSEO #VideoStrategy`,
           chapters: [
-            { timestamp: '00:00', title: 'ভূমিকা ও প্রারম্ভিক সারসংক্ষেপ' },
-            { timestamp: '01:30', title: 'মূল পটভূমি ও আলোচনা' },
-            { timestamp: '04:00', title: 'উপসংহার ও পরবর্তী করণীয়' },
+            { timestamp: '00:00', title: 'Introduction & Overview' },
+            { timestamp: '01:30', title: 'Core Analysis & Deep Dive' },
+            { timestamp: '04:00', title: 'Key Takeaways & Action Items' },
           ],
-          tags: [titleTopic, 'বাংলা ভিডিও', 'Bangla Tutorial', 'YouTube SEO', 'Bangla Content'],
+          tags: [titleTopic, 'Video SEO', 'Creator Strategy', 'Tutorial', 'Content Production'],
           socialPosts: {
-            facebook: `নতুন ভিডিও: ${titleTopic}! বিস্তারিত জানতে দেখুন।`,
-            instagram: `নতুন ভিডিও: ${titleTopic} লিংক বায়োতে।`,
+            facebook: `New Video: Deep dive into ${titleTopic}! Watch the breakdown now.`,
+            instagram: `New Video: ${titleTopic}. Link in bio!`,
             linkedin: `Comprehensive discussion on ${titleTopic}.`,
-            twitter: `নতুন ভিডিও: ${titleTopic} 🚀 #Bangla`,
+            twitter: `New Video: ${titleTopic} — key insights and action items 🚀 #Creator #Video`,
           },
-          thumbnailHeadlineIdeas: [titleTopic.slice(0, 20), 'আসল সত্য!', 'নতুন আপডেট'],
+          thumbnailHeadlineIdeas: [titleTopic.slice(0, 20), 'MUST WATCH!', 'NEW 2026'],
         });
-        setThumbnailTitle(`${titleTopic} — সম্পূর্ণ আলোচনা`);
+        setThumbnailTitle(`${titleTopic}: Complete Breakdown`);
       }
     } finally {
       setIsLoadingMetadata(false);
@@ -447,6 +536,7 @@ function BanglaScribeApp() {
       {/* Hidden Audio Element */}
       {audioSource?.url && (
         <audio
+          key={audioSource.url}
           ref={audioRef}
           src={audioSource.url}
           preload="auto"
@@ -579,7 +669,7 @@ function BanglaScribeApp() {
                     audioUrl={audioSource.url}
                     audioName={audioSource.name}
                     currentTime={currentTime}
-                    duration={duration}
+                    duration={Number.isFinite(duration) && duration > 0 ? duration : (audioSource.duration || 0)}
                     isPlaying={isPlaying}
                     playbackRate={playbackRate}
                     volume={volume}
@@ -603,6 +693,9 @@ function BanglaScribeApp() {
                       onDeleteSegment={handleDeleteSegment}
                       onAddSegment={handleAddSegment}
                       onMergeSegments={handleMergeSegments}
+                      onMergeAllSegments={handleMergeAllSegments}
+                      onUndoMergeAll={handleUndoMergeAll}
+                      canUndoMergeAll={!!previousSegmentsBackup}
                       onSplitSegment={handleSplitSegment}
                       onSeek={handleSeek}
                       onPlaySegment={handlePlaySegment}
@@ -864,7 +957,7 @@ function BanglaScribeApp() {
 export default function App() {
   return (
     <AuthProvider>
-      <BanglaScribeApp />
+      <ScribyApp />
     </AuthProvider>
   );
 }

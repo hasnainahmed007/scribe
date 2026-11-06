@@ -226,9 +226,9 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                     <span>{wordCount} words</span>
                   </div>
 
-                  {/* Transcript Excerpt (Bengali) */}
-                  <p className="text-xs text-slate-300 font-bengali line-clamp-3 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
-                    {item.fullTranscript || 'কোনও প্রতিলিপি পাওয়া যায়নি...'}
+                  {/* Transcript Excerpt */}
+                  <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                    {item.fullTranscript || 'No transcript text available...'}
                   </p>
                 </div>
 

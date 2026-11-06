@@ -13,19 +13,19 @@ interface PolicyModalProps {
 const FALLBACK_POLICIES: Record<PolicySlug, { title: string; content: string }> = {
   terms: {
     title: 'Terms and Conditions',
-    content: `# BanglaScribe — Terms and Conditions
+    content: `# Scriby — Terms and Conditions
 Last Updated: November 2026
 
-Welcome to BanglaScribe ("we", "our", or "the Platform"). By accessing or using our website, audio transcription services, subtitle editor, YouTube SEO generation tools, and thumbnail studio, you agree to comply with and be bound by these Terms and Conditions.
+Welcome to Scriby ("we", "our", or "the Platform"). By accessing or using our website, audio transcription services, subtitle editor, YouTube SEO generation tools, and thumbnail studio, you agree to comply with and be bound by these Terms and Conditions.
 
 ### 1. Overview and Account Registration
-- **Service Scope**: BanglaScribe provides artificial intelligence-powered Bengali speech-to-text transcription, interactive waveform and subtitle editing (SRT, TXT, DOCX), YouTube metadata optimization, and 16:9 thumbnail design for digital content creators, podcasters, and media agencies.
+- **Service Scope**: Scriby provides artificial intelligence-powered multilingual speech-to-text transcription across all languages, interactive waveform and subtitle editing (SRT, TXT, DOCX), YouTube metadata optimization, and 16:9 thumbnail design for digital content creators, podcasters, and media agencies.
 - **Account Credentials**: You must provide accurate and verifiable account information, including a valid email address verified via One-Time Password (OTP). You are responsible for safeguarding your credentials and for all activities that occur under your account.
 - **Starter Allowance**: Each newly verified creator account receives a complimentary 30 minutes of free audio transcription credits upon onboarding.
 
 ### 2. Intellectual Property and Content Ownership
 - **User Content Ownership**: You retain 100% intellectual property rights, copyright, and full ownership of all audio recordings uploaded, generated subtitles, translated captions, exported documents, YouTube titles, and thumbnail artwork created using the platform.
-- **Processing License**: You grant BanglaScribe a strictly limited, non-exclusive license solely to temporarily process, encode, and transcribe your media for delivering your requested outputs. We do not use your proprietary recordings to train public generative models.
+- **Processing License**: You grant Scriby a strictly limited, non-exclusive license solely to temporarily process, encode, and transcribe your media for delivering your requested outputs. We do not use your proprietary recordings to train public generative models.
 
 ### 3. Acceptable Use and Prohibited Conduct
 You agree not to use the platform to:
@@ -39,26 +39,26 @@ You agree not to use the platform to:
 - **Downgrade Policy**: Active paid subscription accounts cannot be downgraded to the free tier during an active billing cycle.
 
 ### 5. Service Availability and Disclaimers
-While we strive for 99.9% uptime and state-of-the-art transcription accuracy, speech recognition accuracy may vary based on audio quality, dialect, and background noise. BanglaScribe is provided on an "as is" and "as available" basis.
+While we strive for 99.9% uptime and state-of-the-art transcription accuracy across all spoken languages, speech recognition accuracy may vary based on audio quality, dialect, and background noise. Scriby is provided on an "as is" and "as available" basis.
 
 ### 6. Contact Information
-For any legal or licensing inquiries, please contact our support team at legal@banglascribe.com or support@banglascribe.com.`,
+For any legal or licensing inquiries, please contact our support team at legal@scriby.com or support@scriby.com.`,
   },
   privacy: {
     title: 'Privacy Policy',
-    content: `# BanglaScribe — Privacy Policy
+    content: `# Scriby — Privacy Policy
 Last Updated: November 2026
 
-BanglaScribe is committed to protecting your privacy and ensuring the security of your personal information, media recordings, and transcription data. This Privacy Policy details how we collect, use, and safeguard your data.
+Scriby is committed to protecting your privacy and ensuring the security of your personal information, media recordings, and transcription data. This Privacy Policy details how we collect, use, and safeguard your data.
 
 ### 1. Information We Collect
 - **Account Information**: Your full name, email address, password hash, and OTP verification logs.
-- **Audio Files and Transcripts**: Audio files uploaded for speech recognition, waveform analysis, generated timestamped subtitles (SRT, TXT, DOCX), and AI metadata.
+- **Audio Files and Transcripts**: Audio files uploaded for speech recognition in any language, waveform analysis, generated timestamped subtitles (SRT, TXT, DOCX), and AI metadata.
 - **Transaction and Payment Records**: Mobile wallet sender phone number, payment provider (bKash, Nagad, Rocket), plan selected, amount paid, and unique Transaction ID (TrxID). We never ask for or store your mobile wallet PIN or banking credentials.
 - **Technical Diagnostics**: Browser type, operating system, and session timestamps used exclusively for service reliability and performance optimization.
 
 ### 2. How We Use Your Information
-- To deliver automated Bengali audio transcription, subtitle alignment, and YouTube SEO recommendations.
+- To deliver automated multilingual audio transcription, subtitle alignment, and YouTube SEO recommendations.
 - To maintain your creator account, verify user identity via OTP, and manage credit allocations.
 - To detect and prevent fraudulent transactions, duplicate submissions, and service abuse.
 - To securely store your transcription history in our managed Google Cloud SQL PostgreSQL database.
@@ -70,23 +70,23 @@ BanglaScribe is committed to protecting your privacy and ensuring the security o
 
 ### 4. User Rights and Data Control
 - **Access and Export**: You may review, download, and export your transcripts, subtitles, and YouTube SEO packs at any time.
-- **Deletion**: You can remove past transcripts from your history dashboard. To request permanent account and data deletion, email privacy@banglascribe.com.
+- **Deletion**: You can remove past transcripts from your history dashboard. To request permanent account and data deletion, email privacy@scriby.com.
 
 ### 5. Policy Updates
 We may periodically update this Privacy Policy to reflect platform features or regulatory requirements. Significant revisions will be highlighted on our platform.
 
 ### 6. Contact Us
-If you have any questions regarding your data privacy, please contact us at privacy@banglascribe.com.`,
+If you have any questions regarding your data privacy, please contact us at privacy@scriby.com.`,
   },
   refund: {
     title: 'Refund Policy',
-    content: `# BanglaScribe — Refund and Cancellation Policy
+    content: `# Scriby — Refund and Cancellation Policy
 Last Updated: November 2026
 
-Our mission is to provide Bangladeshi and global Bengali content creators with the most reliable, accurate, and high-performance speech intelligence tools. We believe in fair, transparent billing and customer satisfaction.
+Our mission is to provide global content creators with the most reliable, accurate, and high-performance multilingual speech intelligence tools. We believe in fair, transparent billing and customer satisfaction.
 
 ### 1. Payment Methods and Activation
-- We support direct mobile payments via official Bangladeshi payment methods: **bKash**, **Nagad**, and **Rocket**.
+- We support direct mobile payments via official payment methods: **bKash**, **Nagad**, and **Rocket**.
 - Upon providing your sender mobile number and valid Transaction ID (TrxID), your selected plan and allocated audio credits are activated immediately.
 
 ### 2. Refund Eligibility
@@ -102,7 +102,7 @@ Refunds cannot be issued under the following conditions:
 - **Change of Mind**: Subscriptions where the user changes their mind after accessing premium features and downloading project assets.
 
 ### 4. How to Submit a Refund Request
-To submit a refund claim, please email our billing department at support@banglascribe.com with the following details:
+To submit a refund claim, please email our billing department at support@scriby.com with the following details:
 1. Registered account email address.
 2. Payment method (bKash / Nagad / Rocket) and sender mobile number.
 3. Transaction ID (TrxID) provided by the wallet provider.
@@ -285,7 +285,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
           <div className="flex items-center justify-between gap-2 pb-2 text-[11px] text-slate-400 border-b border-slate-800">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Verified BanglaScribe SaaS Legal Document</span>
+              <span>Verified Scriby SaaS Legal Document</span>
             </div>
             <div className="flex items-center gap-1 font-mono text-[10px] text-slate-500">
               <Clock className="w-3 h-3" />
@@ -306,7 +306,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
 
         {/* Modal Footer */}
         <div className="p-4 border-t border-[#282828] bg-[#181818]/60 flex items-center justify-between text-xs text-slate-400">
-          <span>BanglaScribe · Official Creator Terms & Policies</span>
+          <span>Scriby · Official Creator Terms & Policies</span>
           <Button variant="outline" size="sm" onClick={onClose}>
             Close
           </Button>

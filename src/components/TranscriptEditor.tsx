@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Play,
   Plus,
@@ -9,6 +9,9 @@ import {
   User,
   Check,
   Volume2,
+  Combine,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import { TranscriptSegment } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
@@ -21,6 +24,9 @@ interface TranscriptEditorProps {
   onDeleteSegment: (id: string) => void;
   onAddSegment: (afterId?: string) => void;
   onMergeSegments: (firstId: string) => void;
+  onMergeAllSegments?: () => void;
+  onUndoMergeAll?: () => void;
+  canUndoMergeAll?: boolean;
   onSplitSegment: (id: string, splitIndex: number) => void;
   onSeek: (seconds: number) => void;
   onPlaySegment?: (start: number, end: number, id: string) => void;
@@ -35,6 +41,9 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   onDeleteSegment,
   onAddSegment,
   onMergeSegments,
+  onMergeAllSegments,
+  onUndoMergeAll,
+  canUndoMergeAll = false,
   onSeek,
   onPlaySegment,
   onSearchReplace,
@@ -45,6 +54,62 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [editingSpeakerId, setEditingSpeakerId] = useState<string | null>(null);
   const [speakerInputValue, setSpeakerInputValue] = useState('');
   const [showSummary, setShowSummary] = useState(true);
+  const [showMergeAllConfirm, setShowMergeAllConfirm] = useState(false);
+  const [showUndoBanner, setShowUndoBanner] = useState(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear undo timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+    };
+  }, []);
+
+  // When canUndoMergeAll becomes false (e.g. user already clicked undo), hide banner
+  useEffect(() => {
+    if (!canUndoMergeAll) {
+      setShowUndoBanner(false);
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+    }
+  }, [canUndoMergeAll]);
+
+  const handleExecuteMergeAll = () => {
+    if (onMergeAllSegments) {
+      onMergeAllSegments();
+    }
+    setShowMergeAllConfirm(false);
+    setShowUndoBanner(true);
+
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+
+    // Auto-dismiss after 5 seconds
+    undoTimerRef.current = setTimeout(() => {
+      setShowUndoBanner(false);
+    }, 5000);
+  };
+
+  const handleDismissUndoAlert = () => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+    setShowUndoBanner(false);
+  };
+
+  const handleUndo = () => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+    setShowUndoBanner(false);
+    if (onUndoMergeAll) {
+      onUndoMergeAll();
+    }
+  };
 
   // Text-To-Speech (TTS) State
   const [speakingSegmentId, setSpeakingSegmentId] = useState<string | null>(null);
@@ -70,16 +135,18 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'bn-BD';
-
     const voices = window.speechSynthesis.getVoices();
-    const bnVoice = voices.find(
-      (v) =>
-        v.lang.startsWith('bn') ||
-        v.name.toLowerCase().includes('bengali') ||
-        v.name.toLowerCase().includes('bangla')
-    );
-    if (bnVoice) utterance.voice = bnVoice;
+    const isBengali = /[\u0980-\u09FF]/.test(text);
+
+    if (isBengali) {
+      utterance.lang = 'bn-BD';
+      const bnVoice = voices.find((v) => v.lang.startsWith('bn') || v.name.toLowerCase().includes('bengali'));
+      if (bnVoice) utterance.voice = bnVoice;
+    } else {
+      utterance.lang = 'en-US';
+      const enVoice = voices.find((v) => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('English')));
+      if (enVoice) utterance.voice = enVoice;
+    }
     utterance.rate = 0.95;
 
     utterance.onend = () => setSpeakingSegmentId(null);
@@ -142,6 +209,48 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Merge All Segments Button with Rich Tooltip */}
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => {
+                  if (segments.length > 1) {
+                    setShowMergeAllConfirm(true);
+                  }
+                }}
+                disabled={segments.length <= 1}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed text-white rounded-full text-xs font-bold border border-[#3e3e3e] transition-all cursor-pointer hover:scale-104 shadow-sm"
+                title={
+                  segments.length > 1
+                    ? `Merge all ${segments.length} subtitle segments into 1 continuous block`
+                    : 'Requires at least 2 subtitle segments to merge'
+                }
+                aria-label="Merge all subtitle segments"
+              >
+                <Combine className="w-3.5 h-3.5 text-[#1ed760]" />
+                <span>Merge All</span>
+                {segments.length > 1 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#2a2a2a] text-[10px] text-[#b3b3b3] font-mono tabular-nums leading-none">
+                    {segments.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Styled Hover Tooltip */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all opacity-0 group-hover:opacity-100 duration-200">
+                <div className="bg-[#121212] text-white text-[11px] font-medium px-3 py-1.5 rounded-lg border border-[#383838] shadow-[0_8px_24px_rgba(0,0,0,0.85)] whitespace-nowrap flex items-center gap-1.5">
+                  <Combine className="w-3 h-3 text-[#1ed760] shrink-0" />
+                  <span>
+                    {segments.length > 1
+                      ? `Merge all ${segments.length} segments into 1 continuous subtitle block`
+                      : 'Requires at least 2 segments to merge'}
+                  </span>
+                </div>
+                <div className="w-2 h-2 bg-[#121212] border-r border-b border-[#383838] rotate-45 -mt-1" />
+              </div>
+            </div>
+
+            {/* Add Subtitle Block Button */}
             <button
               onClick={() => onAddSegment()}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-white rounded-full text-xs font-bold border border-[#3e3e3e] transition-all cursor-pointer hover:scale-104"
@@ -158,7 +267,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             <Search className="w-3.5 h-3.5 text-[#7c7c7c] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Find Bengali or English words..."
+              placeholder="Find spoken words or phrases..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-3 py-1.5 bg-[#1f1f1f] border border-[#2e2e2e] rounded-full text-xs text-white placeholder-[#7c7c7c] focus:outline-none focus:border-white transition-colors font-sans"
@@ -192,6 +301,81 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </div>
       </div>
 
+      {/* Merge All Confirmation Prompt */}
+      {showMergeAllConfirm && (
+        <div className="p-3.5 bg-[#181818] border border-[#3e3e3e] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-white shadow-xl animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-[#1ed760]/20 flex items-center justify-center text-[#1ed760] shrink-0">
+              <Combine className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-white">Merge all {segments.length} subtitle segments?</div>
+              <div className="text-[11px] text-[#b3b3b3]">
+                This combines all {segments.length} blocks into 1 continuous segment from{' '}
+                <span className="font-mono text-white">{formatPlayerTime(segments[0]?.start ?? 0)}</span> to{' '}
+                <span className="font-mono text-white">{formatPlayerTime(segments[segments.length - 1]?.end ?? 0)}</span>. You can undo this action anytime.
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowMergeAllConfirm(false)}
+              className="px-3 py-1.5 text-xs text-[#b3b3b3] hover:text-white rounded-full hover:bg-[#282828] cursor-pointer transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleExecuteMergeAll}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold text-xs rounded-full cursor-pointer transition-transform hover:scale-104 shadow-md"
+            >
+              <Combine className="w-3.5 h-3.5" />
+              <span>Yes, Merge All</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Undo Merge Notification Banner (Auto-dismisses after 5 seconds or manually closeable) */}
+      {showUndoBanner && canUndoMergeAll && onUndoMergeAll && !showMergeAllConfirm && (
+        <div className="p-3 bg-[#132517] border border-[#1ed760]/40 rounded-xl flex items-center justify-between gap-3 text-xs text-white shadow-lg animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-full bg-[#1ed760]/20 flex items-center justify-center text-[#1ed760] shrink-0">
+              <Check className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[#e2e8f0] font-medium">
+                All subtitle segments have been merged into 1 continuous block.
+              </span>
+              <span className="hidden sm:inline-block text-[11px] text-[#7c7c7c] ml-2 font-mono">
+                (auto-closes in 5s)
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleUndo}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black text-xs font-bold rounded-full cursor-pointer transition-transform hover:scale-104 shrink-0 shadow-sm"
+              title="Restore original separated subtitle segments"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Undo Merge</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDismissUndoAlert}
+              className="p-1.5 text-[#b3b3b3] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              title="Close notification"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Summary Accordion Strip */}
       {summary && (
         <div className="p-4 rounded-xl bg-[#0f1726] border border-slate-800 text-xs text-slate-300">
@@ -206,7 +390,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
               {showSummary ? 'Collapse' : 'Expand'}
             </button>
           </div>
-          {showSummary && <p className="text-slate-300 leading-relaxed font-bengali text-sm">{summary}</p>}
+          {showSummary && <p className="text-slate-300 leading-relaxed text-sm">{summary}</p>}
         </div>
       )}
 
@@ -252,7 +436,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                         ? 'bg-[#282828] text-[#1ed760] border-[#1ed760]'
                         : 'bg-[#121212] hover:bg-[#282828] text-[#b3b3b3] hover:text-white border-[#2e2e2e]'
                     }`}
-                    title={isSpeaking ? 'Stop speaking' : 'Read Bengali text aloud (Text-to-Speech)'}
+                    title={isSpeaking ? 'Stop speaking' : 'Read text aloud (Text-to-Speech)'}
                   >
                     <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-[#1ed760]' : 'text-[#b3b3b3]'}`} />
                     <span className="text-[11px] font-mono">
@@ -328,8 +512,8 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 value={seg.text}
                 onChange={(e) => onUpdateSegment(seg.id, { text: e.target.value })}
                 rows={2}
-                className="w-full bg-transparent border-0 text-sm text-slate-100 font-bengali leading-relaxed focus:outline-none focus:bg-slate-900/60 p-2 rounded-lg resize-y transition-colors"
-                placeholder="Type Bengali subtitle text..."
+                className="w-full bg-transparent border-0 text-sm text-slate-100 leading-relaxed focus:outline-none focus:bg-slate-900/60 p-2 rounded-lg resize-y transition-colors"
+                placeholder="Type subtitle segment text..."
               />
             </div>
           );

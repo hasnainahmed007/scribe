@@ -18,10 +18,28 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const TOKEN_KEY = 'scriby_sanctum_token';
+const LEGACY_TOKEN_KEY = 'banglascribe_sanctum_token';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<SaaSUser | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('banglascribe_sanctum_token'));
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem(TOKEN_KEY) || localStorage.getItem(LEGACY_TOKEN_KEY)
+  );
   const [isLoadingSession, setIsLoadingSession] = useState<boolean>(true);
+
+  const saveToken = (newToken: string) => {
+    setToken(newToken);
+    localStorage.setItem(TOKEN_KEY, newToken);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  };
+
+  const clearToken = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  };
 
   const fetchProfile = async (currentToken: string) => {
     try {
@@ -33,9 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(result.data.user);
       } else {
         // Token invalid or expired, clear session
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('banglascribe_sanctum_token');
+        clearToken();
       }
     } catch {
       // Network failure, don't clear token preemptively
@@ -67,9 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: result.error || result.data?.error || 'Login failed. Please verify credentials.' };
       }
 
-      setToken(result.data.token);
+      saveToken(result.data.token);
       setUser(result.data.user);
-      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
       return { success: true, user: result.data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server connection error.' };
@@ -91,9 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: result.error || result.data?.error || 'Registration failed.' };
       }
 
-      setToken(result.data.token);
+      saveToken(result.data.token);
       setUser(result.data.user);
-      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
       return { success: true, user: result.data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server connection error.' };
@@ -141,9 +155,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: result.error || result.data?.error || 'Verification failed.' };
       }
 
-      setToken(result.data.token);
+      saveToken(result.data.token);
       setUser(result.data.user);
-      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
       return { success: true, user: result.data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Verification failed.' };
@@ -216,9 +229,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: result.error || result.data?.error || 'Password reset failed.' };
       }
 
-      setToken(result.data.token);
+      saveToken(result.data.token);
       setUser(result.data.user);
-      localStorage.setItem('banglascribe_sanctum_token', result.data.token);
       return { success: true, user: result.data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server connection error.' };
@@ -236,16 +248,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // ignore
       }
     }
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('banglascribe_sanctum_token');
+    clearToken();
   };
 
   const quickDemoLogin = async (role: 'superadmin' | 'creator'): Promise<SaaSUser | null> => {
     const creds =
       role === 'superadmin'
-        ? { email: 'admin@banglascribe.com', password: 'admin1234' }
-        : { email: 'creator@banglascribe.com', password: 'creator1234' };
+        ? { email: 'admin@scriby.com', password: 'admin1234' }
+        : { email: 'creator@scriby.com', password: 'creator1234' };
 
     const res = await login(creds.email, creds.password);
     return res.user || null;
