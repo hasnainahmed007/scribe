@@ -13,12 +13,14 @@ import {
   RotateCcw,
   Layers,
   Wand2,
+  Maximize2,
+  Eye,
+  Trash2,
 } from 'lucide-react';
 import { ThumbnailConfig } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 
 interface ThumbnailCanvasStudioProps {
@@ -72,6 +74,14 @@ const PRESET_TEMPLATES = [
   },
 ];
 
+const QUICK_PALETTES = [
+  { name: 'Emerald Dark', bg1: '#0A0F1D', bg2: '#042F2E', text: '#FACC15', accent: '#1ed760' },
+  { name: 'Cyber Blue', bg1: '#080E1A', bg2: '#1E1B4B', text: '#38BDF8', accent: '#0284C7' },
+  { name: 'Crimson Fire', bg1: '#180404', bg2: '#7F1D1D', text: '#FDE047', accent: '#EF4444' },
+  { name: 'Royal Purple', bg1: '#1A0B2E', bg2: '#4C1D95', text: '#F472B6', accent: '#A855F7' },
+  { name: 'Slate Gold', bg1: '#0F172A', bg2: '#334155', text: '#FBBF24', accent: '#F59E0B' },
+];
+
 export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
   initialTitle = 'Turn Any Audio into Subtitles in 1 Click',
 }) => {
@@ -101,7 +111,10 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
   const [bgImageElement, setBgImageElement] = useState<HTMLImageElement | null>(null);
   const [showPlayOverlay, setShowPlayOverlay] = useState<boolean>(true);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
+
+  // Active Editor Section Tab: 'text' | 'ai' | 'style' | 'badge'
+  const [editorTab, setEditorTab] = useState<'text' | 'ai' | 'style' | 'badge'>('text');
 
   // AI Thumbnail Generation State
   const [aiPrompt, setAiPrompt] = useState<string>(initialTitle);
@@ -285,7 +298,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     renderCanvas();
   }, [config, bgImageElement, showPlayOverlay]);
 
-  // AI Thumbnail Generator Handler
+  // AI Thumbnail Background & Layout Generator
   const handleGenerateAiThumbnail = async () => {
     if (!aiPrompt.trim()) return;
     setIsGeneratingAi(true);
@@ -295,7 +308,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     try {
       const res = await safeFetchJson<{
         success: boolean;
-        data: {
+        data?: {
           headline: string;
           subhead: string;
           badge: string;
@@ -334,7 +347,6 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         accentBarColor: generated.accentBarColor || prev.accentBarColor,
       }));
 
-      // If AI generated an image background, load it onto the canvas
       if (generated.bgImageDataUrl) {
         const img = new Image();
         img.onload = () => {
@@ -344,7 +356,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         img.src = generated.bgImageDataUrl;
       }
 
-      setAiSuccessMessage('AI thumbnail concept & visual palette applied!');
+      setAiSuccessMessage('AI thumbnail concept applied live!');
       setTimeout(() => setAiSuccessMessage(null), 3000);
     } catch (err: any) {
       setAiErrorMessage(err.message || 'Failed to generate thumbnail.');
@@ -354,8 +366,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    const file = e.target.files?.[0];
+    if (file) {
       const img = new Image();
       img.onload = () => {
         setBgImageElement(img);
@@ -395,328 +407,647 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     }));
   };
 
+  const applyPalette = (palette: typeof QUICK_PALETTES[0]) => {
+    setConfig((prev) => ({
+      ...prev,
+      customBgColor1: palette.bg1,
+      customBgColor2: palette.bg2,
+      headlineColor: palette.text,
+      accentBarColor: palette.accent,
+    }));
+  };
+
+  const handleResetToDefault = () => {
+    setConfig({
+      headline: initialTitle || 'Turn Any Audio into Subtitles in 1 Click',
+      subhead: 'High-Converting YouTube Thumbnails with Clean Bold Typography',
+      badge: 'NEW UPDATE',
+      showBadge: true,
+      fontFamily: 'Inter, system-ui, sans-serif',
+      headlineSize: 68,
+      headlineColor: '#FACC15',
+      strokeColor: '#000000',
+      strokeWidth: 8,
+      shadowColor: 'rgba(0, 0, 0, 0.85)',
+      shadowBlur: 16,
+      backgroundTheme: 'emerald',
+      customBgColor1: '#0A0F1D',
+      customBgColor2: '#042F2E',
+      bgImageOpacity: 0.65,
+      bgImageBlur: 0,
+      overlayVignette: true,
+      accentBarColor: '#1ed760',
+      showAccentBar: true,
+    });
+    setBgImageElement(null);
+    setShowPlayOverlay(true);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Top AI Generation Toolbar */}
-      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#1ed760]" />
-              <span>AI YouTube Thumbnail Generator & Visual Designer</span>
-            </h3>
-            <p className="text-xs text-[#b3b3b3]">
-              Generate high-CTR Bengali thumbnail concepts with AI, then customize every detail.
-            </p>
-          </div>
-
+      {/* Studio Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#282828]">
+        <div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => handleDownloadThumbnail('png')}
-              size="sm"
-              className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold shadow-[0_2px_8px_rgba(30,215,96,0.25)]"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>{downloadSuccess ? 'Downloaded!' : 'Download PNG (1280x720 HD)'}</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleDownloadThumbnail('jpeg')}
-            >
-              JPEG
-            </Button>
+            <h1 className="text-xl font-extrabold text-white tracking-tight font-display">
+              YouTube Thumbnail Studio
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1ed760]/20 text-[#1ed760] border border-[#1ed760]/30 uppercase tracking-wider">
+              16:9 Canvas
+            </span>
           </div>
+          <p className="text-xs text-[#b3b3b3] mt-0.5">
+            Real-time live visual editor with side-by-side instant feedback and AI styling
+          </p>
         </div>
 
-        {/* AI Prompt Input Bar */}
-        <div className="pt-3 border-t border-[#282828] flex flex-col sm:flex-row items-center gap-3">
-          <Input
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-            placeholder="Video title or topic to design thumbnail for..."
-            className="text-xs flex-1"
-          />
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
           <Button
-            onClick={handleGenerateAiThumbnail}
-            disabled={isGeneratingAi || !aiPrompt.trim()}
-            size="default"
-            className="flex items-center gap-2 whitespace-nowrap"
+            onClick={() => handleDownloadThumbnail('png')}
+            size="sm"
+            className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-extrabold shadow-[0_4px_12px_rgba(30,215,96,0.25)] gap-1.5 cursor-pointer"
           >
-            {isGeneratingAi ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Designing Thumbnail...</span>
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4" />
-                <span>AI Generate Thumbnail</span>
-              </>
-            )}
+            <Download className="w-3.5 h-3.5" />
+            <span>{downloadSuccess ? 'Downloaded!' : 'Download HD PNG'}</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownloadThumbnail('jpeg')}
+            className="border-[#3e3e3e] text-white hover:bg-[#282828] text-xs cursor-pointer"
+          >
+            JPEG
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetToDefault}
+            className="text-xs text-[#878787] hover:text-white p-2"
+            title="Reset to default settings"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
           </Button>
         </div>
-
-        {aiSuccessMessage && (
-          <div className="text-xs text-[#1ed760] font-semibold flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5" />
-            <span>{aiSuccessMessage}</span>
-          </div>
-        )}
-
-        {aiErrorMessage && (
-          <div className="text-xs text-rose-400 font-semibold">
-            {aiErrorMessage}
-          </div>
-        )}
       </div>
 
-      {/* 16:9 Live Canvas Preview Stage */}
-      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl">
-        <div className="relative aspect-video w-full max-w-4xl mx-auto rounded-xl overflow-hidden border border-[#282828] shadow-[0_8px_32px_rgba(0,0,0,0.7)] bg-black">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full object-contain"
-          />
-        </div>
-      </div>
-
-      {/* Curated Presets Bar */}
-      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-5 shadow-lg">
-        <div className="text-xs font-bold text-white mb-3 flex items-center gap-2">
-          <Layers className="w-3.5 h-3.5 text-[#1ed760]" />
-          <span>Quick Thumbnail Style Presets:</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {PRESET_TEMPLATES.map((preset, i) => (
-            <button
-              key={i}
-              onClick={() => applyPreset(preset)}
-              className="p-3 text-left rounded-xl bg-[#141414] border border-[#282828] hover:border-[#1ed760] transition-all group cursor-pointer"
-            >
-              <div className="text-xs font-bold text-white group-hover:text-[#1ed760] mb-1">
-                {preset.name}
-              </div>
-              <p className="text-[11px] text-[#b3b3b3] line-clamp-1">
-                {preset.headline}
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Custom Editing Controls Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left: Text & Typography Customizer */}
-        <Card className="p-6 bg-[#181818] border-[#282828] space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-[#282828] text-sm font-bold text-white">
-            <Type className="w-4 h-4 text-[#1ed760]" />
-            <span>Headline & Text Customizer</span>
-          </div>
-
-          <div>
-            <label className="text-xs text-[#b3b3b3] block mb-1 font-semibold">
-              Main Headline (Bengali / English):
-            </label>
-            <textarea
-              rows={2}
-              value={config.headline}
-              onChange={(e) => setConfig({ ...config, headline: e.target.value })}
-              className="w-full bg-[#141414] border border-[#282828] focus:border-white rounded-xl p-3 text-xs text-white focus:outline-none"
-              placeholder="Enter thumbnail headline..."
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-[#b3b3b3] block mb-1 font-semibold">
-              Subheadline / Secondary Hook:
-            </label>
-            <Input
-              type="text"
-              value={config.subhead}
-              onChange={(e) => setConfig({ ...config, subhead: e.target.value })}
-              className="text-xs"
-              placeholder="Enter subheadline..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">
-                Font Size ({config.headlineSize}px):
-              </label>
-              <input
-                type="range"
-                min="44"
-                max="105"
-                value={config.headlineSize}
-                onChange={(e) => setConfig({ ...config, headlineSize: parseInt(e.target.value, 10) })}
-                className="w-full accent-[#1ed760] cursor-pointer"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">
-                Outline Thickness ({config.strokeWidth}px):
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="16"
-                value={config.strokeWidth}
-                onChange={(e) => setConfig({ ...config, strokeWidth: parseInt(e.target.value, 10) })}
-                className="w-full accent-[#1ed760] cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">Text Color:</label>
+      {/* ========================================================================= */}
+      {/* MAIN 2-COLUMN STUDIO LAYOUT: STICKY CANVAS ON LEFT, CONTROLS ON RIGHT       */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* ======================================================================= */}
+        {/* LEFT COLUMN: STICKY LIVE CANVAS PREVIEW (ALWAYS VISIBLE WHILE EDITING)   */}
+        {/* ======================================================================= */}
+        <div className="lg:col-span-7 xl:col-span-7 lg:sticky lg:top-20 z-20 space-y-4">
+          <Card className="p-4 bg-[#181818] border-[#282828] shadow-2xl rounded-2xl space-y-3">
+            {/* Canvas Stage Header */}
+            <div className="flex items-center justify-between text-xs text-[#b3b3b3] pb-1">
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={config.headlineColor}
-                  onChange={(e) => setConfig({ ...config, headlineColor: e.target.value })}
-                  className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
-                />
-                <span className="text-xs font-mono text-white">{config.headlineColor}</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-[#1ed760] animate-pulse" />
+                <span className="font-bold text-white font-mono text-[11px] tracking-wide">
+                  LIVE CANVAS PREVIEW
+                </span>
+                <span className="text-[#535353]">·</span>
+                <span className="text-[#878787] text-[11px]">Updates instantly on edit</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#1ed760] bg-[#1ed760]/10 px-2 py-0.5 rounded-md border border-[#1ed760]/20">
+                <Maximize2 className="w-3 h-3" />
+                <span>1280 × 720 HD (16:9)</span>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">Outline Color:</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={config.strokeColor}
-                  onChange={(e) => setConfig({ ...config, strokeColor: e.target.value })}
-                  className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
-                />
-                <span className="text-xs font-mono text-white">{config.strokeColor}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Right: Background, Badges & Overlays Customizer */}
-        <Card className="p-6 bg-[#181818] border-[#282828] space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-[#282828] text-sm font-bold text-white">
-            <Palette className="w-4 h-4 text-[#1ed760]" />
-            <span>Badges, Overlays & Backgrounds</span>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs text-[#b3b3b3] font-semibold">Highlight Badge:</label>
-              <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.showBadge}
-                  onChange={(e) => setConfig({ ...config, showBadge: e.target.checked })}
-                  className="w-4 h-4 rounded accent-[#1ed760]"
-                />
-                <span>Show Badge</span>
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                value={config.badge}
-                onChange={(e) => setConfig({ ...config, badge: e.target.value })}
-                className="text-xs flex-1"
-                placeholder="e.g. NEW, URGENT, 4K..."
+            {/* Canvas Stage */}
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-[#333333] shadow-[0_12px_36px_rgba(0,0,0,0.85)] bg-black group select-none">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-full object-contain block"
               />
-              <input
-                type="color"
-                value={config.accentBarColor}
-                onChange={(e) => setConfig({ ...config, accentBarColor: e.target.value })}
-                className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
-                title="Badge & Accent Color"
-              />
-            </div>
-          </div>
 
-          {/* Gradients */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">Gradient Start:</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={config.customBgColor1}
-                  onChange={(e) => setConfig({ ...config, customBgColor1: e.target.value })}
-                  className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
-                />
-                <span className="text-xs font-mono text-white">{config.customBgColor1}</span>
+              {/* Subtle hover guide overlay */}
+              <div className="absolute top-2 left-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="px-2 py-1 bg-black/75 backdrop-blur-md rounded text-[10px] text-[#b3b3b3] border border-white/10 font-mono">
+                  YouTube Standard Thumbnail
+                </span>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs text-[#b3b3b3] block mb-1">Gradient End:</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={config.customBgColor2}
-                  onChange={(e) => setConfig({ ...config, customBgColor2: e.target.value })}
-                  className="w-8 h-8 rounded border-0 cursor-pointer bg-transparent"
-                />
-                <span className="text-xs font-mono text-white">{config.customBgColor2}</span>
+            {/* Quick Color Palette Swatches (1-Click Application) */}
+            <div className="pt-2 border-t border-[#242424] flex items-center justify-between gap-2 overflow-x-auto">
+              <span className="text-[11px] font-semibold text-[#878787] shrink-0">
+                Quick Themes:
+              </span>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {QUICK_PALETTES.map((pal, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => applyPalette(pal)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#2e2e2e] bg-[#121212] hover:border-[#1ed760] transition-all cursor-pointer shrink-0"
+                    title={`Apply ${pal.name} theme`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full border border-black/40 shadow-sm shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${pal.bg1}, ${pal.bg2})` }}
+                    />
+                    <span className="text-[11px] font-medium text-white">{pal.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          </Card>
 
-          {/* Overlays */}
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <label className="flex items-center gap-2 p-2.5 rounded-xl bg-[#141414] border border-[#282828] text-xs text-white cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showPlayOverlay}
-                onChange={(e) => setShowPlayOverlay(e.target.checked)}
-                className="w-4 h-4 rounded accent-[#1ed760]"
-              />
-              <span>YouTube Play Button</span>
-            </label>
+          {/* Quick Style Presets Bar (Directly Under Canvas) */}
+          <Card className="p-4 bg-[#181818] border-[#282828] rounded-2xl space-y-2.5 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                <Layers className="w-3.5 h-3.5 text-[#1ed760]" />
+                <span>Instant Style Presets</span>
+              </div>
+              <span className="text-[10px] text-[#878787]">Click any preset to apply live</span>
+            </div>
 
-            <label className="flex items-center gap-2 p-2.5 rounded-xl bg-[#141414] border border-[#282828] text-xs text-white cursor-pointer">
-              <input
-                type="checkbox"
-                checked={config.overlayVignette}
-                onChange={(e) => setConfig({ ...config, overlayVignette: e.target.checked })}
-                className="w-4 h-4 rounded accent-[#1ed760]"
-              />
-              <span>Contrast Vignette</span>
-            </label>
-          </div>
-
-          {/* Background Image Upload / Removal */}
-          <div className="pt-2 border-t border-[#282828]">
-            <label className="text-xs text-[#b3b3b3] block mb-1.5 font-semibold">
-              Background Photo (Upload or AI Generated):
-            </label>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 px-4 py-2 bg-[#141414] hover:bg-[#282828] text-white text-xs font-bold rounded-full border border-[#282828] cursor-pointer transition-colors">
-                <Upload className="w-3.5 h-3.5 text-[#1ed760]" />
-                <span>Upload Custom Image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
-
-              {bgImageElement && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {PRESET_TEMPLATES.map((preset, i) => (
                 <button
-                  onClick={() => setBgImageElement(null)}
-                  className="text-xs text-rose-400 hover:underline cursor-pointer"
+                  key={i}
+                  type="button"
+                  onClick={() => applyPreset(preset)}
+                  className="p-2.5 text-left rounded-xl bg-[#121212] border border-[#282828] hover:border-[#1ed760] hover:bg-[#1a1a1a] transition-all group cursor-pointer"
                 >
-                  Remove Image
+                  <div className="text-[11px] font-bold text-white group-hover:text-[#1ed760] truncate">
+                    {preset.name}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full border border-black/30"
+                      style={{ backgroundColor: preset.badgeColor }}
+                    />
+                    <span className="text-[10px] text-[#878787] truncate">
+                      {preset.badge}
+                    </span>
+                  </div>
                 </button>
-              )}
+              ))}
             </div>
+          </Card>
+        </div>
+
+        {/* ======================================================================= */}
+        {/* RIGHT COLUMN: SCROLLABLE ACCORDION / TABBED EDITING SUITE                */}
+        {/* ======================================================================= */}
+        <div className="lg:col-span-5 xl:col-span-5 space-y-4">
+          {/* Segmented Control Bar for Editing Sections */}
+          <div className="flex items-center p-1 bg-[#181818] rounded-xl border border-[#282828] grid grid-cols-4 gap-1 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setEditorTab('text')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
+                editorTab === 'text'
+                  ? 'bg-[#282828] text-white shadow-sm'
+                  : 'text-[#b3b3b3] hover:text-white'
+              }`}
+            >
+              <Type className="w-3.5 h-3.5 text-[#1ed760]" />
+              <span className="truncate">Text</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('ai')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
+                editorTab === 'ai'
+                  ? 'bg-[#282828] text-white shadow-sm'
+                  : 'text-[#b3b3b3] hover:text-white'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span className="truncate">AI Style</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('style')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
+                editorTab === 'style'
+                  ? 'bg-[#282828] text-white shadow-sm'
+                  : 'text-[#b3b3b3] hover:text-white'
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5 text-purple-400" />
+              <span className="truncate">Theme</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setEditorTab('badge')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
+                editorTab === 'badge'
+                  ? 'bg-[#282828] text-white shadow-sm'
+                  : 'text-[#b3b3b3] hover:text-white'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5 text-amber-400" />
+              <span className="truncate">Overlays</span>
+            </button>
           </div>
-        </Card>
+
+          {/* =================================================================== */}
+          {/* TAB 1: TEXT & TYPOGRAPHY CUSTOMIZER                                 */}
+          {/* =================================================================== */}
+          {editorTab === 'text' && (
+            <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Type className="w-4 h-4 text-[#1ed760]" />
+                  <span>Headline & Text Elements</span>
+                </div>
+                <span className="text-[11px] text-[#1ed760]">Updates live</span>
+              </div>
+
+              {/* Main Headline */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-white">
+                    Primary Headline
+                  </label>
+                  <span className="text-[10px] text-[#878787]">
+                    Supports English & Bengali (বাংলা)
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={config.headline}
+                  onChange={(e) => setConfig({ ...config, headline: e.target.value })}
+                  className="w-full bg-[#121212] border border-[#282828] focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760] rounded-xl p-3 text-xs text-white focus:outline-none transition-all leading-relaxed"
+                  placeholder="Enter high-CTR thumbnail headline..."
+                />
+              </div>
+
+              {/* Secondary Subheadline */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-white">
+                  Secondary Hook / Subheadline
+                </label>
+                <Input
+                  type="text"
+                  value={config.subhead}
+                  onChange={(e) => setConfig({ ...config, subhead: e.target.value })}
+                  className="bg-[#121212] border-[#282828] text-xs focus:border-[#1ed760]"
+                  placeholder="Supporting topic or teaser..."
+                />
+              </div>
+
+              {/* Font Size & Stroke Sliders */}
+              <div className="grid grid-cols-2 gap-4 pt-1">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[#b3b3b3]">Headline Size</span>
+                    <span className="font-mono text-[#1ed760] font-bold">{config.headlineSize}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="40"
+                    max="110"
+                    value={config.headlineSize}
+                    onChange={(e) => setConfig({ ...config, headlineSize: parseInt(e.target.value, 10) })}
+                    className="w-full accent-[#1ed760] cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#535353] font-mono">
+                    <span>40px</span>
+                    <span>110px</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-[#b3b3b3]">Outline Stroke</span>
+                    <span className="font-mono text-[#1ed760] font-bold">{config.strokeWidth}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="18"
+                    value={config.strokeWidth}
+                    onChange={(e) => setConfig({ ...config, strokeWidth: parseInt(e.target.value, 10) })}
+                    className="w-full accent-[#1ed760] cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#535353] font-mono">
+                    <span>None</span>
+                    <span>18px</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Text & Stroke Colors */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#242424]">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Text Fill Color</label>
+                  <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
+                    <input
+                      type="color"
+                      value={config.headlineColor}
+                      onChange={(e) => setConfig({ ...config, headlineColor: e.target.value })}
+                      className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <span className="text-xs font-mono text-white font-semibold">
+                      {config.headlineColor.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Outline Color</label>
+                  <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
+                    <input
+                      type="color"
+                      value={config.strokeColor}
+                      onChange={(e) => setConfig({ ...config, strokeColor: e.target.value })}
+                      className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <span className="text-xs font-mono text-white font-semibold">
+                      {config.strokeColor.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* =================================================================== */}
+          {/* TAB 2: AI THUMBNAIL GENERATOR & VISUAL PROMPTING                     */}
+          {/* =================================================================== */}
+          {editorTab === 'ai' && (
+            <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Sparkles className="w-4 h-4 text-blue-400" />
+                  <span>AI Concept & Palette Generator</span>
+                </div>
+                <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                  Gemini Powered
+                </span>
+              </div>
+
+              <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                Enter your video topic or title. AI will generate an optimized high-CTR visual headline, color harmony, and background concept directly on the canvas.
+              </p>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white">Video Title or Topic</label>
+                <textarea
+                  rows={3}
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g. Master Bengali Audio Transcription with AI in 5 minutes..."
+                  className="w-full bg-[#121212] border border-[#282828] focus:border-blue-400 focus:ring-1 focus:ring-blue-400 rounded-xl p-3 text-xs text-white focus:outline-none transition-all leading-relaxed"
+                />
+              </div>
+
+              <Button
+                onClick={handleGenerateAiThumbnail}
+                disabled={isGeneratingAi || !aiPrompt.trim()}
+                className="w-full h-10 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isGeneratingAi ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Designing High-CTR Concept...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4" />
+                    <span>Generate AI Thumbnail Concept</span>
+                  </>
+                )}
+              </Button>
+
+              {aiSuccessMessage && (
+                <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-xs text-blue-300 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-blue-400 shrink-0" />
+                  <span>{aiSuccessMessage}</span>
+                </div>
+              )}
+
+              {aiErrorMessage && (
+                <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
+                  {aiErrorMessage}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* =================================================================== */}
+          {/* TAB 3: THEME, GRADIENTS & BACKGROUND IMAGES                          */}
+          {/* =================================================================== */}
+          {editorTab === 'style' && (
+            <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Palette className="w-4 h-4 text-purple-400" />
+                  <span>Theme & Background Colors</span>
+                </div>
+                <span className="text-[11px] text-[#1ed760]">Live rendering</span>
+              </div>
+
+              {/* Gradient Color Pickers */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Gradient Start</label>
+                  <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
+                    <input
+                      type="color"
+                      value={config.customBgColor1}
+                      onChange={(e) => setConfig({ ...config, customBgColor1: e.target.value })}
+                      className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <span className="text-xs font-mono text-white font-semibold">
+                      {config.customBgColor1.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Gradient End</label>
+                  <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
+                    <input
+                      type="color"
+                      value={config.customBgColor2}
+                      onChange={(e) => setConfig({ ...config, customBgColor2: e.target.value })}
+                      className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
+                    />
+                    <span className="text-xs font-mono text-white font-semibold">
+                      {config.customBgColor2.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Image Upload & Controls */}
+              <div className="space-y-3 pt-2 border-t border-[#242424]">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-white">
+                    Background Photo Layer
+                  </label>
+                  {bgImageElement && (
+                    <button
+                      type="button"
+                      onClick={() => setBgImageElement(null)}
+                      className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Remove Image</span>
+                    </button>
+                  )}
+                </div>
+
+                <label className="flex items-center justify-center gap-2 p-3 bg-[#121212] hover:bg-[#1a1a1a] border border-dashed border-[#3e3e3e] hover:border-[#1ed760] rounded-xl text-xs text-white font-bold cursor-pointer transition-all">
+                  <Upload className="w-4 h-4 text-[#1ed760]" />
+                  <span>{bgImageElement ? 'Change Photo Image' : 'Upload Custom Image'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+
+                {bgImageElement && (
+                  <div className="grid grid-cols-2 gap-4 pt-1">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-[#b3b3b3]">
+                        <span>Opacity</span>
+                        <span className="font-mono text-[#1ed760]">
+                          {Math.round(config.bgImageOpacity * 100)}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1"
+                        step="0.05"
+                        value={config.bgImageOpacity}
+                        onChange={(e) => setConfig({ ...config, bgImageOpacity: parseFloat(e.target.value) })}
+                        className="w-full accent-[#1ed760] cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-[#b3b3b3]">
+                        <span>Blur</span>
+                        <span className="font-mono text-[#1ed760]">{config.bgImageBlur}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="15"
+                        value={config.bgImageBlur}
+                        onChange={(e) => setConfig({ ...config, bgImageBlur: parseInt(e.target.value, 10) })}
+                        className="w-full accent-[#1ed760] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Contrast Vignette Scrim Toggle */}
+              <div className="pt-2 border-t border-[#242424]">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-[#1ed760]" />
+                    <span>Contrast Dark Vignette Scrim</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={config.overlayVignette}
+                    onChange={(e) => setConfig({ ...config, overlayVignette: e.target.checked })}
+                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                  />
+                </label>
+              </div>
+            </Card>
+          )}
+
+          {/* =================================================================== */}
+          {/* TAB 4: BADGES, ACCENT BARS & WATERMARKS                             */}
+          {/* =================================================================== */}
+          {editorTab === 'badge' && (
+            <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
+                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                  <Sliders className="w-4 h-4 text-amber-400" />
+                  <span>Badges & Overlay Accents</span>
+                </div>
+                <span className="text-[11px] text-[#1ed760]">Live visual</span>
+              </div>
+
+              {/* Highlight Badge */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-white">Top Corner Badge</label>
+                  <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.showBadge}
+                      onChange={(e) => setConfig({ ...config, showBadge: e.target.checked })}
+                      className="w-4 h-4 rounded accent-[#1ed760]"
+                    />
+                    <span>Show Badge</span>
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    value={config.badge}
+                    onChange={(e) => setConfig({ ...config, badge: e.target.value })}
+                    className="text-xs flex-1 bg-[#121212] border-[#282828]"
+                    placeholder="e.g. NEW, 4K ULTRA, URGENT, 100% FREE..."
+                  />
+                  <div className="flex items-center gap-1 bg-[#121212] border border-[#282828] p-1.5 rounded-xl">
+                    <input
+                      type="color"
+                      value={config.accentBarColor}
+                      onChange={(e) => setConfig({ ...config, accentBarColor: e.target.value })}
+                      className="w-7 h-7 rounded border-0 cursor-pointer bg-transparent"
+                      title="Badge and Accent Color"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* YouTube Play Watermark & Accent Bar */}
+              <div className="space-y-2 pt-2 border-t border-[#242424]">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Play className="w-4 h-4 text-red-500 fill-current" />
+                    <span>YouTube Play Button Emblem Overlay</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showPlayOverlay}
+                    onChange={(e) => setShowPlayOverlay(e.target.checked)}
+                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded bg-[#1ed760]" />
+                    <span>Left Edge Contrast Accent Stripe</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={config.showAccentBar}
+                    onChange={(e) => setConfig({ ...config, showAccentBar: e.target.checked })}
+                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                  />
+                </label>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
