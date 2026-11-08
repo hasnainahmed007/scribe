@@ -12,6 +12,7 @@ import {
   Combine,
   RotateCcw,
   X,
+  FileAudio,
 } from 'lucide-react';
 import { TranscriptSegment } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
@@ -396,7 +397,20 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
       {/* Segment Cards List */}
       <div className="space-y-3">
-        {segments.map((seg, index) => {
+        {segments.length === 0 ? (
+          <div className="p-10 text-center bg-[#181818] border border-dashed border-[#282828] rounded-xl space-y-3">
+            <div className="w-12 h-12 rounded-full bg-[#242424] text-[#1ed760] flex items-center justify-center mx-auto">
+              <FileAudio className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white font-display">Studio Workspace is Clean</h4>
+              <p className="text-xs text-[#878787] mt-1 max-w-md mx-auto">
+                No active transcript loaded. Upload or record audio with the Transcribe button, open a session from History, or send audio from Voiceover Studio.
+              </p>
+            </div>
+          </div>
+        ) : (
+          segments.map((seg, index) => {
           const isActive = currentTime >= seg.start && currentTime <= seg.end;
           const isSpeaking = speakingSegmentId === seg.id;
 
@@ -517,7 +531,8 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
               />
             </div>
           );
-        })}
+        })
+      )}
       </div>
     </div>
   );

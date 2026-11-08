@@ -97,7 +97,13 @@ export async function cacheTranscriptAudio(
     await saveAudioBlob(`transcript_${transcriptId}`, blob);
   }
   if (title) {
-    await saveAudioBlob(`title_${title.trim()}`, blob);
+    const raw = title.trim();
+    const clean = raw.replace(/^Uploaded file name:\s*/i, '').trim();
+    await saveAudioBlob(`title_${raw}`, blob);
+    if (clean !== raw) {
+      await saveAudioBlob(`title_${clean}`, blob);
+      await saveAudioBlob(`title_Uploaded file name: ${clean}`, blob);
+    }
   }
 }
 
@@ -113,7 +119,13 @@ export async function retrieveTranscriptAudio(
     if (blob) return blob;
   }
   if (title) {
-    const blob = await getAudioBlob(`title_${title.trim()}`);
+    const raw = title.trim();
+    const clean = raw.replace(/^Uploaded file name:\s*/i, '').trim();
+    let blob = await getAudioBlob(`title_${raw}`);
+    if (blob) return blob;
+    blob = await getAudioBlob(`title_${clean}`);
+    if (blob) return blob;
+    blob = await getAudioBlob(`title_Uploaded file name: ${clean}`);
     if (blob) return blob;
   }
   return null;

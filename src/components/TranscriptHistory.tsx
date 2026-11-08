@@ -23,6 +23,7 @@ interface TranscriptHistoryProps {
   onLoadTranscript: (transcript: SavedTranscript) => void;
   onExportTranscript: (transcript: SavedTranscript) => void;
   onOpenInYouTube?: (transcript: SavedTranscript) => void;
+  onDeleteTranscript?: (deletedId: number, item: SavedTranscript) => void;
   onNewRecording: () => void;
 }
 
@@ -30,6 +31,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
   onLoadTranscript,
   onExportTranscript,
   onOpenInYouTube,
+  onDeleteTranscript,
   onNewRecording,
 }) => {
   const { token } = useAuth();
@@ -83,6 +85,12 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
         }
 
         setTranscripts((prev) => prev.filter((t) => t.id !== item.id));
+
+        // Notify parent workspace to immediately clear subtitle and active editor state
+        if (onDeleteTranscript) {
+          onDeleteTranscript(item.id, item);
+        }
+
         setActionMessage('Transcript permanently deleted from history.');
         setTimeout(() => setActionMessage(null), 3000);
       } else {

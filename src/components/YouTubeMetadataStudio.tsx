@@ -14,6 +14,7 @@ import {
   History,
   Trash2,
   Layers,
+  X,
 } from 'lucide-react';
 import { YouTubeMetadata } from '../types';
 import { Button } from './ui/button';
@@ -57,34 +58,72 @@ export const YouTubeMetadataStudio: React.FC<YouTubeMetadataStudioProps> = ({
     }
   });
 
-  const [activePackId, setActivePackId] = useState<string>('current');
+  const [activePackId, setActivePackId] = useState<string>(() => {
+    try {
+      const stored = localStorage.getItem('bs_recent_seo_packs');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.length > 0) return parsed[0].id;
+      }
+    } catch {}
+    return 'current';
+  });
 
   // When new metadata arrives, automatically archive it into recent generations
   useEffect(() => {
     if (metadata && metadata.titles && metadata.titles.length > 0) {
+      const newId = `pack-${Date.now()}`;
       setRecentPacks((prev) => {
-        const primaryTitle = metadata.titles[0]?.title || 'Bengali YouTube Pack';
+        const primaryTitle = metadata.titles[0]?.title || 'YouTube SEO Pack';
         // Avoid duplicate immediate entries
         if (prev.length > 0 && prev[0].metadata.description === metadata.description) {
           return prev;
         }
 
         const newPack: HistoricalMetadata = {
-          id: `pack-${Date.now()}`,
+          id: newId,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           label: primaryTitle.slice(0, 32) + '...',
           metadata,
         };
 
-        const updated = [newPack, ...prev].slice(0, 6); // Keep last 6 packs
+        const updated = [newPack, ...prev].slice(0, 8); // Keep last 8 packs
         try {
           localStorage.setItem('bs_recent_seo_packs', JSON.stringify(updated));
         } catch {}
         return updated;
       });
-      setActivePackId('current');
+      setActivePackId(newId);
     }
   }, [metadata]);
+
+  const handleRemoveVersion = (idToRemove: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setRecentPacks((prev) => {
+      const updated = prev.filter((p) => p.id !== idToRemove);
+      try {
+        localStorage.setItem('bs_recent_seo_packs', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    if (activePackId === idToRemove || activePackId === 'current') {
+      const remaining = recentPacks.filter((p) => p.id !== idToRemove);
+      if (remaining.length > 0) {
+        setActivePackId(remaining[0].id);
+      } else {
+        setActivePackId('empty');
+      }
+    }
+  };
+
+  const handleClearAllVersions = () => {
+    setRecentPacks([]);
+    try {
+      localStorage.removeItem('bs_recent_seo_packs');
+    } catch {}
+    setActivePackId('empty');
+  };
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -99,9 +138,13 @@ export const YouTubeMetadataStudio: React.FC<YouTubeMetadataStudioProps> = ({
   // Determine which metadata to display: active selected historical pack OR current metadata
   const selectedHistorical = recentPacks.find((p) => p.id === activePackId);
   const displayedMetadata =
-    activePackId !== 'current' && selectedHistorical
+    activePackId === 'empty'
+      ? null
+      : selectedHistorical
       ? selectedHistorical.metadata
-      : metadata || (recentPacks.length > 0 ? recentPacks[0].metadata : null);
+      : recentPacks.length > 0
+      ? recentPacks[0].metadata
+      : (activePackId === 'current' ? metadata : null);
 
   const handleCopyAll = () => {
     if (!displayedMetadata) return;
@@ -135,7 +178,7 @@ ${displayedMetadata.tags.join(', ')}
               </h2>
             </div>
             <p className="text-xs text-[#b3b3b3]">
-              Generate high-CTR Bengali video titles, descriptions, auto-timestamps, and keyword tags from your transcript.
+              Generate high-CTR video titles, descriptions, auto-timestamps, and keyword tags from your transcript.
             </p>
           </div>
 
@@ -182,33 +225,62 @@ ${displayedMetadata.tags.join(', ')}
         )}
       </div>
 
-      {/* Recent Generations Version Selector */}
+      {/* Recent Generations Version Selector with Removable Badges */}
       {recentPacks.length > 0 && (
-        <div className="p-3 rounded-2xl bg-[#141414] border border-[#282828] flex flex-wrap items-center justify-between gap-3">
+        <div className="p-3.5 rounded-2xl bg-[#141414] border border-[#282828] flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
             <History className="w-4 h-4 text-[#1ed760]" />
-            <span className="font-bold text-white">Recent Generations Archive:</span>
+            <span className="font-bold text-white">Generated Versions:</span>
+            <span className="text-[11px] text-[#7c7c7c] font-mono">({recentPacks.length})</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
             {recentPacks.map((pack, idx) => {
-              const isSelected = activePackId === pack.id || (activePackId === 'current' && idx === 0);
+              const isSelected = activePackId === pack.id || (!recentPacks.some((p) => p.id === activePackId) && idx === 0);
+              const versionNumber = recentPacks.length - idx;
               return (
-                <button
+                <div
                   key={pack.id}
-                  onClick={() => setActivePackId(pack.id)}
-                  className={`px-3 py-1 text-xs rounded-full font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+                  className={`group relative flex items-center pl-3 pr-1 py-1 text-xs rounded-full font-medium transition-all ${
                     isSelected
-                      ? 'bg-[#282828] text-white border border-[#383838] shadow-sm font-bold'
+                      ? 'bg-[#282828] text-white border border-[#1ed760]/60 shadow-sm font-bold ring-1 ring-[#1ed760]/30'
                       : 'bg-[#181818] text-[#b3b3b3] hover:text-white border border-[#282828]'
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#1ed760]" />
-                  <span>Version {recentPacks.length - idx}</span>
-                  <span className="text-[10px] text-[#7c7c7c]">({pack.timestamp})</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivePackId(pack.id)}
+                    className="flex items-center gap-1.5 cursor-pointer text-left"
+                    title={`Switch to Version ${versionNumber} (${pack.timestamp})`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#1ed760]' : 'bg-[#7c7c7c]'}`} />
+                    <span>Version {versionNumber}</span>
+                    <span className="text-[10px] text-[#7c7c7c]">({pack.timestamp})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveVersion(pack.id, e)}
+                    className="ml-1 p-0.5 text-[#7c7c7c] hover:text-red-400 hover:bg-[#383838] rounded-full transition-colors cursor-pointer"
+                    title={`Delete Version ${versionNumber}`}
+                    aria-label={`Delete Version ${versionNumber}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
               );
             })}
+
+            {recentPacks.length > 1 && (
+              <button
+                type="button"
+                onClick={handleClearAllVersions}
+                className="text-xs text-[#7c7c7c] hover:text-red-400 px-2.5 py-1 rounded-full border border-dashed border-[#383838] hover:border-red-500/50 transition-all cursor-pointer flex items-center gap-1 ml-1"
+                title="Remove all saved versions"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Clear All</span>
+              </button>
+            )}
 
             {displayedMetadata && (
               <Button
@@ -244,7 +316,7 @@ ${displayedMetadata.tags.join(', ')}
             No YouTube Metadata Generated Yet
           </h3>
           <p className="text-xs text-[#b3b3b3] max-w-md mx-auto mb-5 leading-relaxed">
-            Generate high-CTR Bengali video titles, descriptions with automatic chapter markers, and SEO tags from your transcript in 1 click.
+            Generate high-CTR video titles, descriptions with automatic chapter markers, and SEO tags from your transcript in 1 click.
           </p>
           <Button
             onClick={handleGenerate}

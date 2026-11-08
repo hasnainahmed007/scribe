@@ -99,7 +99,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             body: JSON.stringify({
               audioBase64: cleanBase64,
               mimeType: file.type || 'audio/mp3',
-              contextHint: `Uploaded file name: ${file.name}`,
+              contextHint: file.name,
               estimatedDurationSeconds: 60,
             }),
           });
@@ -124,10 +124,29 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           // Process and decode audio with universal WAV conversion for .ogg / .opus files
           const processed = await preparePlayableAudio(file, file.name, fallbackEnd);
 
-          // Persist in local client audio vault for instant playback in History
+          // Persist in local client audio vault and sync to server for permanent zero-latency playback
           try {
             const savedId = (json.data as any)?.savedTranscriptId;
             await cacheTranscriptAudio(savedId, file.name, processed.blob);
+            if (savedId) {
+              const readerWav = new FileReader();
+              readerWav.onload = async () => {
+                const b64 = (readerWav.result as string).split(',')[1];
+                await safeFetchJson(`/api/audio/${savedId}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({
+                    audioBase64: b64,
+                    mimeType: processed.mimeType || 'audio/wav',
+                    filename: file.name,
+                  }),
+                });
+              };
+              readerWav.readAsDataURL(processed.blob);
+            }
           } catch (storageErr) {
             console.warn('[AudioVault] Could not cache uploaded audio locally:', storageErr);
           }
@@ -292,6 +311,25 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           try {
             const savedId = (json.data as any)?.savedTranscriptId;
             await cacheTranscriptAudio(savedId, recName, processed.blob);
+            if (savedId) {
+              const readerRec = new FileReader();
+              readerRec.onload = async () => {
+                const b64 = (readerRec.result as string).split(',')[1];
+                await safeFetchJson(`/api/audio/${savedId}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  body: JSON.stringify({
+                    audioBase64: b64,
+                    mimeType: processed.mimeType || 'audio/wav',
+                    filename: recName,
+                  }),
+                });
+              };
+              readerRec.readAsDataURL(processed.blob);
+            }
           } catch (storageErr) {
             console.warn('[AudioVault] Could not cache recorded voice locally:', storageErr);
           }

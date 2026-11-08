@@ -5,7 +5,6 @@ import {
   FileAudio,
   Youtube,
   Image as ImageIcon,
-  Download,
   LogOut,
   LogIn,
   History,
@@ -19,7 +18,6 @@ interface NavbarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   onNewRecording: () => void;
-  onOpenExport: () => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
   onOpenPricing: () => void;
   onOpenSettings?: () => void;
@@ -32,7 +30,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   onNewRecording,
-  onOpenExport,
   onOpenAuth,
   onOpenPricing,
   onOpenSettings,
@@ -145,6 +142,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('voiceover')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
+                activeTab === 'voiceover'
+                  ? 'bg-[#282828] text-white font-bold shadow-sm'
+                  : 'text-[#b3b3b3] hover:text-white'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5 text-[#1ed760]" />
+              <span>Voiceover</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('youtube')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                 activeTab === 'youtube'
@@ -251,15 +260,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[#b3b3b3] text-[11px]"> left</span>
             </div>
 
-            {hasSegments && (
-              <button
-                onClick={onOpenExport}
-                className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold text-white bg-transparent hover:border-white border border-[#7c7c7c] rounded-full hover:scale-104 transition-all cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5 text-white" />
-                <span>Export</span>
-              </button>
-            )}
 
             <button
               onClick={onNewRecording}

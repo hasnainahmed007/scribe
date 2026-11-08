@@ -9,6 +9,7 @@ import { YouTubeMetadataStudio } from './components/YouTubeMetadataStudio';
 import { ThumbnailCanvasStudio } from './components/ThumbnailCanvasStudio';
 import { SuperAdminPanel } from './components/SuperAdminPanel';
 import { TranscriptHistory } from './components/TranscriptHistory';
+import { VoiceoverStudio } from './components/VoiceoverStudio';
 import { LockedModuleNotice } from './components/LockedModuleNotice';
 import { ExportModal } from './components/ExportModal';
 import { AuthPage } from './components/AuthPage';
@@ -39,6 +40,7 @@ import {
   ShieldCheck,
   Zap,
   History,
+  Trash2,
 } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
@@ -52,6 +54,30 @@ function ScribyApp() {
   const [previousSegmentsBackup, setPreviousSegmentsBackup] = useState<TranscriptSegment[] | null>(null);
   const [fullTranscript, setFullTranscript] = useState<string>('');
   const [summary, setSummary] = useState<string>('');
+  const [loadedTranscriptId, setLoadedTranscriptId] = useState<number | null>(null);
+
+  // Clear studio workspace and active editor state completely
+  const handleClearStudioState = () => {
+    setLoadedTranscriptId(null);
+    setSegments([]);
+    setPreviousSegmentsBackup(null);
+    setFullTranscript('');
+    setSummary('');
+    setAudioSource(null);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setYoutubeMetadata(null);
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current.src = '';
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
 
   // Audio Playback State
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -242,7 +268,7 @@ function ScribyApp() {
   };
 
   // Restore a saved transcript from history into the studio workspace with full audio playback
-  const handleLoadTranscript = async (item: SavedTranscript) => {
+  const handleLoadTranscript = async (item: SavedTranscript, targetTab: ActiveTab = 'studio') => {
     const safeDuration = Number(
       item.durationSeconds ||
       item.duration ||
@@ -254,6 +280,7 @@ function ScribyApp() {
     setSummary(item.summary || '');
     setDuration(safeDuration);
     setThumbnailTitle(item.title);
+    setLoadedTranscriptId(item.id);
 
     // 1. Try local client-side IndexedDB vault first (instant zero-latency playback of exact uploaded file)
     let playableUrl = '';
@@ -299,7 +326,7 @@ function ScribyApp() {
       setCurrentTime(0);
       setIsPlaying(false);
     }
-    setActiveTab('studio');
+    setActiveTab(targetTab);
   };
 
   // Direct export from history list
@@ -584,7 +611,6 @@ function ScribyApp() {
             setShowInputModal(true);
           }
         }}
-        onOpenExport={() => setIsExportOpen(true)}
         onOpenAuth={(mode = 'login') => {
           setAuthInitialMode(mode);
           setActiveTab('auth');
@@ -673,6 +699,19 @@ function ScribyApp() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {(segments.length > 0 || audioSource) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClearStudioState}
+                        className="text-xs text-slate-400 hover:text-red-400 hover:bg-[#282828] h-8"
+                        title="Clear studio workspace"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <span>Clear Studio</span>
+                      </Button>
+                    )}
+
                     <Button
                       onClick={() => setShowInputModal(true)}
                       size="sm"
@@ -822,15 +861,52 @@ function ScribyApp() {
                 <TranscriptHistory
                   onLoadTranscript={handleLoadTranscript}
                   onExportTranscript={handleExportTranscriptFromHistory}
-                  onOpenInYouTube={(item) => {
-                    handleLoadTranscript(item);
-                    setActiveTab('youtube');
+                  onOpenInYouTube={async (item) => {
+                    await handleLoadTranscript(item, 'youtube');
                     const textToAnalyze =
                       item.fullTranscript ||
                       (item.segments || []).map((s: any) => s.text).join(' ');
                     handleGenerateMetadata(item.title, textToAnalyze);
                   }}
+                  onDeleteTranscript={(deletedId, item) => {
+                    if (
+                      loadedTranscriptId === deletedId ||
+                      (item && audioSource && (audioSource.name === item.audioName || audioSource.name === item.title))
+                    ) {
+                      handleClearStudioState();
+                    }
+                  }}
                   onNewRecording={() => setShowInputModal(true)}
+                />
+              </div>
+            )}
+
+            {/* 3B-2. AI VOICEOVER & VOICE CLONING STUDIO */}
+            {activeTab === 'voiceover' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <button
+                    onClick={() => setActiveTab('studio')}
+                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    ← Back to Subtitle Editor
+                  </button>
+                  <span className="text-xs text-slate-400">Creator Workspace · AI Voiceover & Cloning</span>
+                </div>
+                <VoiceoverStudio
+                  currentSubtitleText={fullTranscript || segments.map((s) => s.text).join(' ')}
+                  onSendToSubtitleStudio={(audioUrl, audioName, durationSeconds) => {
+                    setAudioSource({
+                      url: audioUrl,
+                      name: audioName,
+                      duration: durationSeconds,
+                      mimeType: 'audio/wav',
+                    });
+                    setDuration(durationSeconds);
+                    setCurrentTime(0);
+                    setActiveTab('studio');
+                  }}
+                  onOpenPricing={() => setIsPricingOpen(true)}
                 />
               </div>
             )}
@@ -851,7 +927,7 @@ function ScribyApp() {
                   <LockedModuleNotice
                     module="youtube_seo"
                     title="YouTube SEO & Metadata Studio"
-                    description="Generate high-converting Bengali video titles, descriptions, hashtags, and timestamps with AI. Upgrade your plan to unlock this module."
+                    description="Generate high-converting video titles, descriptions, hashtags, and timestamps with AI. Upgrade your plan to unlock this module."
                     onOpenPricing={() => setIsPricingOpen(true)}
                     onBackToStudio={() => setActiveTab('studio')}
                   />

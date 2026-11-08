@@ -94,6 +94,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   payments: many(payments),
   usageLogs: many(usageLogs),
   transcripts: many(transcripts),
+  voiceProfiles: many(voiceProfiles),
+  savedVoiceovers: many(savedVoiceovers),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -117,6 +119,54 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
   }),
 }));
 
+// User Cloned Voice Profiles table
+export const voiceProfiles = pgTable('voice_profiles', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  userUid: text('user_uid').notNull(),
+  name: text('name').notNull(),
+  language: text('language').notNull().default('bn'), // 'bn' | 'en' | 'multilingual'
+  gender: text('gender').notNull().default('custom'), // 'custom' | 'male' | 'female'
+  accent: text('accent').default('Standard'),
+  description: text('description').default(''),
+  sampleAudioPath: text('sample_audio_path').notNull(),
+  sampleAudioUrl: text('sample_audio_url').notNull(),
+  durationSeconds: integer('duration_seconds').notNull().default(0),
+  fingerprintJson: text('fingerprint_json').default('{}'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// Generated Voiceover Recordings / Exports table
+export const savedVoiceovers = pgTable('saved_voiceovers', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  userUid: text('user_uid').notNull(),
+  title: text('title').notNull(),
+  script: text('script').notNull(),
+  voiceId: text('voice_id').notNull(),
+  voiceName: text('voice_name').notNull(),
+  voiceGender: text('voice_gender').notNull().default('custom'),
+  audioPath: text('audio_path').notNull(),
+  audioUrl: text('audio_url').notNull(),
+  durationSeconds: integer('duration_seconds').notNull().default(0),
+  format: text('format').notNull().default('wav'), // 'wav' | 'mp3' | 'ogg'
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const voiceProfilesRelations = relations(voiceProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [voiceProfiles.userId],
+    references: [users.id],
+  }),
+}));
+
+export const savedVoiceoversRelations = relations(savedVoiceovers, ({ one }) => ({
+  user: one(users, {
+    fields: [savedVoiceovers.userId],
+    references: [users.id],
+  }),
+}));
+
 // Platform Legal Policies (Terms and Conditions, Privacy Policy, Refund Policy)
 export const policies = pgTable('policies', {
   id: serial('id').primaryKey(),
@@ -126,3 +176,4 @@ export const policies = pgTable('policies', {
   updatedAt: timestamp('updated_at').defaultNow(),
   updatedBy: text('updated_by').default('SuperAdmin'),
 });
+

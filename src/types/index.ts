@@ -66,9 +66,50 @@ export interface ThumbnailConfig {
   showAccentBar: boolean;
 }
 
-export type ActiveTab = 'landing' | 'studio' | 'youtube' | 'thumbnail' | 'history' | 'admin' | 'pricing' | 'auth';
+export type ActiveTab =
+  | 'landing'
+  | 'studio'
+  | 'voiceover'
+  | 'youtube'
+  | 'thumbnail'
+  | 'history'
+  | 'admin'
+  | 'pricing'
+  | 'auth';
 
 export type AuthPageMode = 'login' | 'register' | 'verify-otp' | 'forgot-password' | 'reset-password';
+
+// ================== Voice Studio & Voice Cloning Models ==================
+
+export type VoiceGender = 'male' | 'female' | 'custom';
+export type VoiceTone = 'natural' | 'broadcast' | 'storytelling' | 'energetic';
+export type AudioExportFormat = 'wav' | 'mp3' | 'ogg';
+
+export interface VoiceProfile {
+  id: string | number;
+  name: string;
+  gender: VoiceGender;
+  language: 'bn' | 'en' | 'multilingual';
+  accent?: string;
+  description?: string;
+  isCustom: boolean;
+  sampleAudioUrl?: string;
+  durationSeconds?: number;
+  createdAt?: string;
+}
+
+export interface SavedVoiceoverItem {
+  id: number;
+  title: string;
+  script: string;
+  voiceId: string;
+  voiceName: string;
+  voiceGender: string;
+  audioUrl: string;
+  durationSeconds: number;
+  format: AudioExportFormat;
+  createdAt: string;
+}
 
 // ================== SaaS & Database Credit Models ==================
 
@@ -78,6 +119,7 @@ export type PlanModule =
   | 'youtube_seo'
   | 'thumbnail_canvas'
   | 'voice_recorder'
+  | 'voiceover_studio'
   | 'batch_processing';
 
 export type UserRole = 'superadmin' | 'user';
