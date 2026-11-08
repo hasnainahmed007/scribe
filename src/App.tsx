@@ -16,6 +16,7 @@ import { PricingModal } from './components/PricingModal';
 import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from './data/sampleAudios';
+import { retrieveTranscriptAudio } from './utils/audioStorage';
 import {
   TranscriptSegment,
   AudioSource,
@@ -240,31 +241,59 @@ function ScribyApp() {
     }
   };
 
-  // Restore a saved transcript from history into the studio workspace
-  const handleLoadTranscript = (item: SavedTranscript) => {
-    setSegments(item.segments);
-    setFullTranscript(item.fullTranscript);
+  // Restore a saved transcript from history into the studio workspace with full audio playback
+  const handleLoadTranscript = async (item: SavedTranscript) => {
+    const safeDuration = Number(
+      item.durationSeconds ||
+      item.duration ||
+      (item.segments && item.segments.length > 0 ? item.segments[item.segments.length - 1].end : 30)
+    );
+
+    setSegments(item.segments || []);
+    setFullTranscript(item.fullTranscript || '');
     setSummary(item.summary || '');
-    setDuration(item.duration);
+    setDuration(safeDuration);
     setThumbnailTitle(item.title);
-    if (item.audioUrl) {
+
+    // 1. Try local client-side IndexedDB vault first (instant zero-latency playback of exact uploaded file)
+    let playableUrl = '';
+    let audioBlob: Blob | undefined = undefined;
+    try {
+      const cached = await retrieveTranscriptAudio(item.id, item.audioName || item.title);
+      if (cached) {
+        playableUrl = URL.createObjectURL(cached);
+        audioBlob = cached;
+      }
+    } catch (e) {
+      console.warn('Failed to retrieve audio from IndexedDB vault:', e);
+    }
+
+    // 2. If not in local vault, stream directly from the server endpoint
+    if (!playableUrl && (item.audioUrl || item.id)) {
+      playableUrl = item.audioUrl || `/api/audio/${item.id}`;
+    }
+
+    // 3. Fallback to synthetic audio tone if neither is available
+    if (playableUrl) {
       setAudioSource({
-        url: item.audioUrl,
-        name: item.title,
-        duration: item.duration,
-        mimeType: 'audio/wav',
+        url: playableUrl,
+        name: item.audioName || item.title,
+        duration: safeDuration,
+        blob: audioBlob,
+        mimeType: audioBlob?.type || 'audio/wav',
       });
     } else {
-      const blob = generateSyntheticAudioBlob(item.duration);
+      const blob = generateSyntheticAudioBlob(safeDuration);
       const url = URL.createObjectURL(blob);
       setAudioSource({
         url,
         name: item.title,
-        duration: item.duration,
+        duration: safeDuration,
         blob,
         mimeType: 'audio/wav',
       });
     }
+
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       setCurrentTime(0);

@@ -15,6 +15,7 @@ import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from '../data/sampleAudios'
 import { TranscriptSegment, AudioSource } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
 import { preparePlayableAudio } from '../utils/audioProcessing';
+import { cacheTranscriptAudio } from '../utils/audioStorage';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson } from '../utils/apiClient';
 import { Card } from './ui/card';
@@ -122,6 +123,14 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
 
           // Process and decode audio with universal WAV conversion for .ogg / .opus files
           const processed = await preparePlayableAudio(file, file.name, fallbackEnd);
+
+          // Persist in local client audio vault for instant playback in History
+          try {
+            const savedId = (json.data as any)?.savedTranscriptId;
+            await cacheTranscriptAudio(savedId, file.name, processed.blob);
+          } catch (storageErr) {
+            console.warn('[AudioVault] Could not cache uploaded audio locally:', storageErr);
+          }
 
           onTranscriptionComplete(
             {
@@ -273,16 +282,24 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
               ? recordingSeconds
               : 30;
 
+          const recName = `Live Voice Recording (${new Date().toLocaleTimeString()})`;
           const processed = await preparePlayableAudio(
             recordedBlob,
-            `Live Voice Recording (${new Date().toLocaleTimeString()}).wav`,
+            `${recName}.wav`,
             fallbackEnd
           );
+
+          try {
+            const savedId = (json.data as any)?.savedTranscriptId;
+            await cacheTranscriptAudio(savedId, recName, processed.blob);
+          } catch (storageErr) {
+            console.warn('[AudioVault] Could not cache recorded voice locally:', storageErr);
+          }
 
           onTranscriptionComplete(
             {
               url: processed.url,
-              name: `Live Voice Recording (${new Date().toLocaleTimeString()})`,
+              name: recName,
               duration: processed.duration,
               blob: processed.blob,
               mimeType: processed.mimeType,

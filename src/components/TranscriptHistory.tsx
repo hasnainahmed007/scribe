@@ -14,6 +14,7 @@ import { SavedTranscript } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { formatPlayerTime } from '../utils/timeFormat';
+import { deleteAudioBlob } from '../utils/audioStorage';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -36,6 +37,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const fetchHistory = async () => {
@@ -62,24 +64,38 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
     fetchHistory();
   }, [token]);
 
-  const handleDelete = async (id: number, e: React.MouseEvent) => {
+  const executeDelete = async (item: SavedTranscript, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Are you sure you want to delete this transcript?')) return;
-    setDeletingId(id);
+    setDeletingId(item.id);
     try {
-      const res = await safeFetchJson(`/api/transcripts/${id}`, {
+      const res = await safeFetchJson(`/api/transcripts/${item.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setTranscripts((prev) => prev.filter((t) => t.id !== id));
-        setActionMessage('Transcript removed from history.');
+        // Also remove local cached audio from vault
+        try {
+          await deleteAudioBlob(`transcript_${item.id}`);
+          if (item.audioName) await deleteAudioBlob(`title_${item.audioName.trim()}`);
+          if (item.title) await deleteAudioBlob(`title_${item.title.trim()}`);
+        } catch (vaultErr) {
+          console.warn('Failed to remove audio from vault:', vaultErr);
+        }
+
+        setTranscripts((prev) => prev.filter((t) => t.id !== item.id));
+        setActionMessage('Transcript permanently deleted from history.');
         setTimeout(() => setActionMessage(null), 3000);
+      } else {
+        setActionMessage(res.error || 'Failed to delete transcript.');
+        setTimeout(() => setActionMessage(null), 3500);
       }
     } catch (err) {
       console.warn('Delete transcript failed:', err);
+      setActionMessage('Failed to delete transcript.');
+      setTimeout(() => setActionMessage(null), 3500);
     } finally {
       setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -103,7 +119,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
             Transcription Archive
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Past Bengali audio sessions saved in PostgreSQL Cloud SQL
+            Archived audio transcription sessions saved in PostgreSQL Cloud SQL
           </p>
         </div>
 
@@ -168,7 +184,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
           </h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             {searchQuery
-              ? 'Try searching with a different Bengali word or title.'
+              ? 'Try searching with a different title or keyword.'
               : 'Whenever you transcribe an audio file, it will automatically appear here for later editing and export.'}
           </p>
           {!searchQuery && (
@@ -203,16 +219,50 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                     <h3 className="text-sm font-semibold text-white truncate flex-1">
                       {item.title}
                     </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={(e) => handleDelete(item.id, e)}
-                      disabled={deletingId === item.id}
-                      className="text-slate-500 hover:text-red-400"
-                      title="Delete transcript"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    {confirmDeleteId === item.id ? (
+                      <div
+                        className="flex items-center gap-1.5 bg-red-950/80 border border-red-500/40 px-2 py-1 rounded-md text-xs shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="text-red-300 font-medium text-[11px]">Delete?</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDeleteId(null);
+                          }}
+                          className="text-slate-400 hover:text-white px-1.5 py-0.5 rounded text-[11px] cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => executeDelete(item, e)}
+                          disabled={deletingId === item.id}
+                          className="bg-red-600 hover:bg-red-500 text-white font-semibold px-2 py-0.5 rounded text-[11px] flex items-center gap-1 cursor-pointer"
+                        >
+                          {deletingId === item.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            'Confirm'
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeleteId(item.id);
+                        }}
+                        disabled={deletingId === item.id}
+                        className="text-slate-500 hover:text-red-400 shrink-0"
+                        title="Delete transcript"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Unboxed Metadata Line with typographic separators */}
