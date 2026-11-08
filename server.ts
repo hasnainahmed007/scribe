@@ -2330,20 +2330,20 @@ app.get('/api/voices', async (req: Request, res: Response) => {
     const defaultVoices = [
       {
         id: 'male-default',
-        name: 'Kabir (কবির)',
+        name: 'Kabir (Male Studio)',
         gender: 'male',
         language: 'multilingual',
-        accent: 'Bengali & English Studio',
+        accent: 'Studio Broadcast',
         description: 'Deep, resonant, articulate broadcast tone for documentaries, news, podcasts, and explainers.',
         isCustom: false,
         sampleAudioUrl: '/api/voices/male-default/sample',
       },
       {
         id: 'female-default',
-        name: 'Fatima (ফাতিমা)',
+        name: 'Fatima (Female Studio)',
         gender: 'female',
         language: 'multilingual',
-        accent: 'Bengali & English Studio',
+        accent: 'Studio Narrative',
         description: 'Warm, clear, melodic storytelling tone ideal for tutorials, audiobooks, and social media reels.',
         isCustom: false,
         sampleAudioUrl: '/api/voices/female-default/sample',
@@ -2400,7 +2400,7 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
 
     if (id === 'male-default') {
       const sampleBuffer = createNaturalSpeechWavBuffer(
-        'নমস্কার, আমি কবির। এটি স্ক্রিবির কৃত্রিম বুদ্ধিমত্তা চালিত পুরুষ কণ্ঠস্বর। Hello, I am Kabir, your studio narrator.',
+        'Hello, I am Kabir, your studio voice narrator. Welcome to Scriby AI Voiceover Studio.',
         'male',
         1.0,
         0
@@ -2412,7 +2412,7 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
 
     if (id === 'female-default') {
       const sampleBuffer = createNaturalSpeechWavBuffer(
-        'স্বাগতম, আমি ফাতিমা। এটি স্ক্রিবির উচ্চমানের স্পষ্ট নারী কণ্ঠস্বর। Welcome, I am Fatima, your natural voice companion.',
+        'Hello, I am Fatima, your studio voice companion. Welcome to Scriby AI Voiceover Studio.',
         'female',
         1.0,
         0
@@ -2719,7 +2719,7 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
         id: voiceoverId,
         script: cleanScript,
         voiceId: String(voiceId || (isFemale ? 'female-default' : 'male-default')),
-        voiceName: voiceName || (isFemale ? 'Fatima (ফাতিমা)' : 'Kabir (কবির)'),
+        voiceName: voiceName || (isFemale ? 'Fatima (Female Studio)' : 'Kabir (Male Studio)'),
         gender: isFemale ? 'female' : 'male',
         format: exportFormat,
         durationSeconds,

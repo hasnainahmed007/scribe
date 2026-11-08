@@ -57,7 +57,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
   // Script & Synthesis Options
   const [script, setScript] = useState<string>(
-    'স্ক্রিবি এআই ভয়েসওভার স্টুডিওতে স্বাগতম। এখানে আপনি সহজে যেকোনো লেখাকে প্রাঞ্জল বাংলা ও ইংরেজি কণ্ঠে রূপান্তর করতে পারেন এবং আপনার নিজস্ব কণ্ঠও ক্লোন করতে পারবেন।'
+    'Welcome to Scriby AI Voiceover Studio. Easily synthesize high-fidelity voiceovers in English and Bengali or clone your personal voice profile for automated digital narration.'
   );
   const [tone, setTone] = useState<VoiceTone>('natural');
   const [speed, setSpeed] = useState<number>(1.0);
@@ -502,7 +502,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             </span>
           </div>
           <p className="text-xs text-[#b3b3b3] mt-1">
-            বাঙালি ও ইংরেজি ভয়েস ক্লোনিং, স্টুডিও টিটিএস এবং WAV / MP3 / OGG অডিও ফরম্যাটে এক্সপোর্ট
+            Professional AI voice cloning, studio text-to-speech, and direct audio export in WAV, MP3, and OGG formats
           </p>
         </div>
 
@@ -599,14 +599,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <option value="" disabled>
                       Sample Scripts...
                     </option>
-                    <option value="আজকের বিশেষ সংবাদ ও তথ্যপ্রযুক্তি আপডেট। কৃত্রিম বুদ্ধিমত্তার দ্রুত প্রসারে কনটেন্ট ক্রিয়েটরদের জন্য নতুন দিগন্ত উন্মোচিত হয়েছে।">
-                      বাংলা সংবাদ ও প্রতিবেদন
+                    <option value="Today's special report: Artificial intelligence and modern media technology are transforming digital content workflows for creators worldwide.">
+                      News & Documentary Report
                     </option>
-                    <option value="হ্যালো বন্ধুরা! আজকের ভিডিওতে আমরা আলোচনা করব কীভাবে ৫ মিনিটে প্রফেশনাল ইউটিউব সাবটাইটেল এবং ভিডিও অপ্টিমাইজেশন করতে পারেন। সাবস্ক্রাইব করে সাথে থাকুন!">
-                      ইউটিউব ভূমিকা ও হুক
+                    <option value="Hey creators! Welcome back to the channel. In today's video, we explore how to optimize video subtitles and boost audience retention. Don't forget to subscribe!">
+                      YouTube Hook & Intro
                     </option>
                     <option value="Welcome back to our channel! In today's masterclass, we will explore the latest advancements in AI speech synthesis and video production workflows.">
-                      English Tutorial Intro
+                      Tutorial & Masterclass
                     </option>
                   </select>
                 </div>
@@ -617,7 +617,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <textarea
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
-                  placeholder="Type or paste your voiceover script in Bengali (বাংলা) or English..."
+                  placeholder="Type or paste your voiceover script in English or Bengali..."
                   rows={7}
                   className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-white placeholder-[#535353] focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760] outline-none transition-all resize-y leading-relaxed"
                 />
@@ -1077,9 +1077,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
               {/* Sample Reading Prompt Helper */}
               <div className="p-3 bg-[#121212] rounded-xl border border-[#242424] text-xs text-[#b3b3b3] space-y-1">
-                <span className="font-bold text-white">Recommended sample reading text (বাংলা/English):</span>
+                <span className="font-bold text-white">Recommended sample reading text (English / Bengali):</span>
                 <p className="italic text-[#878787]">
-                  &quot;স্ক্রিবি এআই-এর মাধ্যমে আমি আমার ডিজিটাল কনটেন্টের কণ্ঠ তৈরি করছি। এটি আমার স্বাভাবিক কথ্য ভাষার শব্দশৈলী ও সঠিক সুর ধারণ করবে।&quot;
+                  &quot;I am recording this audio sample to clone my personal voice in Scriby AI. This recording will capture my natural cadence, tone, and pronunciation for automated voiceovers.&quot;
                 </p>
               </div>
 
@@ -1110,21 +1110,21 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     type="text"
                     value={cloneName}
                     onChange={(e) => setCloneName(e.target.value)}
-                    placeholder="e.g., My Bangla Podcast Voice"
+                    placeholder="e.g., My Studio Narrator Voice"
                     className="bg-[#121212] border-[#282828] text-white"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Gender / Tone</label>
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Gender / Timbre</label>
                   <select
                     value={cloneGender}
                     onChange={(e) => setCloneGender(e.target.value as VoiceGender)}
                     className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-lg p-2.5 outline-none focus:border-[#1ed760]"
                   >
-                    <option value="male">Male (পুরুষ কণ্ঠ)</option>
-                    <option value="female">Female (নারী কণ্ঠ)</option>
-                    <option value="custom">Custom Timbre</option>
+                    <option value="male">Male (Deep Studio Voice)</option>
+                    <option value="female">Female (Clear Narrative Voice)</option>
+                    <option value="custom">Custom Voice Timbre</option>
                   </select>
                 </div>
 
@@ -1135,19 +1135,19 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     onChange={(e) => setCloneLanguage(e.target.value as any)}
                     className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-lg p-2.5 outline-none focus:border-[#1ed760]"
                   >
-                    <option value="bn">Bengali (বাংলা)</option>
                     <option value="en">English</option>
-                    <option value="multilingual">Multilingual (বাংলা + English)</option>
+                    <option value="bn">Bengali</option>
+                    <option value="multilingual">Multilingual (English & Bengali)</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Accent / Dialect</label>
+                  <label className="text-xs font-semibold text-[#b3b3b3]">Accent / Style</label>
                   <Input
                     type="text"
                     value={cloneAccent}
                     onChange={(e) => setCloneAccent(e.target.value)}
-                    placeholder="e.g., Standard Dhaka / Kolkata / Neutral"
+                    placeholder="e.g., Standard Studio / Neutral / Clear"
                     className="bg-[#121212] border-[#282828] text-white"
                   />
                 </div>
