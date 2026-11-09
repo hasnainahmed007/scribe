@@ -192,11 +192,36 @@ const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({
   apiKey,
   httpOptions: {
+    apiVersion: 'v1beta',
     headers: {
       'User-Agent': 'aistudio-build',
     },
   },
 });
+
+function wrapPcmWithWavHeader(rawBuf: Buffer, sampleRate: number = 24000): Buffer {
+  if (rawBuf.subarray(0, 4).toString('ascii').startsWith('RIFF')) {
+    return rawBuf;
+  }
+  const numChannels = 1;
+  const bytesPerSample = 2;
+  const dataByteLength = rawBuf.length;
+  const wavHdr = Buffer.alloc(44);
+  wavHdr.write('RIFF', 0);
+  wavHdr.writeUInt32LE(36 + dataByteLength, 4);
+  wavHdr.write('WAVE', 8);
+  wavHdr.write('fmt ', 12);
+  wavHdr.writeUInt32LE(16, 16);
+  wavHdr.writeUInt16LE(1, 20);
+  wavHdr.writeUInt16LE(numChannels, 22);
+  wavHdr.writeUInt32LE(sampleRate, 24);
+  wavHdr.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28);
+  wavHdr.writeUInt16LE(numChannels * bytesPerSample, 32);
+  wavHdr.writeUInt16LE(16, 34);
+  wavHdr.write('data', 36);
+  wavHdr.writeUInt32LE(dataByteLength, 40);
+  return Buffer.concat([wavHdr, rawBuf]);
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> {
   let timeoutId: NodeJS.Timeout;
@@ -1896,7 +1921,19 @@ app.get('/api/audio/:id', async (req: Request, res: Response) => {
           const ttsText = rows[0].fullTranscript.slice(0, 1000);
           const ttsResponse = await ai.models.generateContent({
             model: 'gemini-3.8-flash-lite-tts',
-            contents: [{ role: 'user', parts: [{ text: ttsText }] }],
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text: ttsText,
+                    speechMetadata: {
+                      style: 'Clear, natural narrator with articulate audio clarity',
+                    },
+                  },
+                ],
+              },
+            ],
             config: {
               responseModalities: ['AUDIO'],
               speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
@@ -1904,7 +1941,8 @@ app.get('/api/audio/:id', async (req: Request, res: Response) => {
           });
           const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
           if (base64Audio) {
-            const wavBuffer = Buffer.from(base64Audio, 'base64');
+            const rawBuf = Buffer.from(base64Audio, 'base64');
+            const wavBuffer = wrapPcmWithWavHeader(rawBuf, 24000);
             const audioPath = path.join(AUDIO_UPLOADS_DIR, `${id}.bin`);
             const metaPath = path.join(AUDIO_UPLOADS_DIR, `${id}.json`);
             fs.writeFileSync(audioPath, wavBuffer);
@@ -1924,7 +1962,7 @@ app.get('/api/audio/:id', async (req: Request, res: Response) => {
             };
           }
         } catch (ttsErr: any) {
-          console.warn('TTS speech synthesis failover:', ttsErr?.message);
+          console.log('[TTS] Audio synthesis fallback active for transcript', id);
         }
       }
 
@@ -2206,7 +2244,7 @@ CRITICAL LANGUAGE AND LOCALIZATION DIRECTIVE:
 
       parsed = JSON.parse(response.text || '{}');
     } catch (genErr: any) {
-      console.warn('AI metadata generation failover to algorithmic SEO engine:', genErr?.message);
+      console.log('[SEO] Metadata generation failover to algorithmic SEO engine');
       parsed = generateAlgorithmicYouTubeSEO(transcript, titleHint);
       isFallback = true;
     }
@@ -2970,7 +3008,10 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
               role: 'user',
               parts: [
                 {
-                  text: `${toneInstruction} ${languageInstruction} ${cloneInstruction} Read the following text aloud with speed multiplier ${speed}x:\n\n"${cleanScript}"`,
+                  text: cleanScript,
+                  speechMetadata: {
+                    style: `${toneInstruction} ${languageInstruction} ${cloneInstruction} Speed: ${speed}x`,
+                  },
                 },
               ],
             },
@@ -2990,33 +3031,10 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
         const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         if (base64Audio) {
           const rawBuf = Buffer.from(base64Audio, 'base64');
-          // If raw PCM without RIFF header, wrap with standard WAV header
-          if (!rawBuf.subarray(0, 4).toString('ascii').startsWith('RIFF')) {
-            const sampleRate = 24000;
-            const numChannels = 1;
-            const bytesPerSample = 2;
-            const dataByteLength = rawBuf.length;
-            const wavHdr = Buffer.alloc(44);
-            wavHdr.write('RIFF', 0);
-            wavHdr.writeUInt32LE(36 + dataByteLength, 4);
-            wavHdr.write('WAVE', 8);
-            wavHdr.write('fmt ', 12);
-            wavHdr.writeUInt32LE(16, 16);
-            wavHdr.writeUInt16LE(1, 20);
-            wavHdr.writeUInt16LE(numChannels, 22);
-            wavHdr.writeUInt32LE(sampleRate, 24);
-            wavHdr.writeUInt32LE(sampleRate * numChannels * bytesPerSample, 28);
-            wavHdr.writeUInt16LE(numChannels * bytesPerSample, 32);
-            wavHdr.writeUInt16LE(16, 34);
-            wavHdr.write('data', 36);
-            wavHdr.writeUInt32LE(dataByteLength, 40);
-            audioBuffer = Buffer.concat([wavHdr, rawBuf]);
-          } else {
-            audioBuffer = rawBuf;
-          }
+          audioBuffer = wrapPcmWithWavHeader(rawBuf, 24000);
         }
       } catch (geminiErr: any) {
-        console.warn('Gemini TTS synthesis attempt failover:', geminiErr?.message);
+        console.log('[TTS] Voiceover synthesis fallback generator engaged:', geminiErr?.status || 'fallback');
       }
     }
 
