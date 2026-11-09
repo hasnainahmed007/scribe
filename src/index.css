@@ -53,3 +53,33 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
 }
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1) translate(0px, 0px);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.08) translate(15px, -15px);
+    opacity: 0.28;
+  }
+}
+
+@keyframes pulseGlow2 {
+  0%, 100% {
+    transform: scale(1) translate(0px, 0px);
+    opacity: 0.12;
+  }
+  50% {
+    transform: scale(1.12) translate(-20px, 15px);
+    opacity: 0.22;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 9s ease-in-out infinite;
+}
+
+.animate-pulse-glow-slow {
+  animation: pulseGlow2 12s ease-in-out infinite;
+}

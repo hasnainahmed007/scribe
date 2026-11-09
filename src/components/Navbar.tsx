@@ -151,6 +151,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Mic className="w-3.5 h-3.5 text-[#1ed760]" />
               <span>Voiceover</span>
+              {!hasModule('voiceover_studio') && (
+                <Lock className="w-3 h-3 text-[#7c7c7c]" />
+              )}
             </button>
 
             <button

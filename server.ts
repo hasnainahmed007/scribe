@@ -42,6 +42,7 @@ import {
   policyUpdateSchema,
   generateMetadataSchema,
   generateThumbnailSchema,
+  generateAiImageSchema,
   transcribeAudioSchema,
   formatZodError,
   formatZodFieldErrors,
@@ -165,7 +166,23 @@ function generateFallbackWavBuffer(durationSeconds: number): Buffer {
 }
 
 const app = express();
-const port = parseInt(process.env.PORT || '3000', 10);
+
+function parsePort(): number {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const val = parseInt(process.argv[portArgIndex + 1], 10);
+    if (!isNaN(val)) return val;
+  }
+  return parseInt(process.env.PORT || '3000', 10);
+}
+const port = parsePort();
+
+process.on('uncaughtException', (err) => {
+  console.error('Unhandled process exception caught:', err?.message || err);
+});
+process.on('unhandledRejection', (reason: any) => {
+  console.error('Unhandled promise rejection caught:', reason?.message || reason);
+});
 
 app.use(express.json({ limit: '60mb' }));
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
@@ -181,6 +198,14 @@ const ai = new GoogleGenAI({
   },
 });
 
+function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Promise<T> {
+  let timeoutId: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(errorMsg)), ms);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+}
+
 // Helper for resilient multi-model failover and retry on 503/429 demand spikes
 async function generateContentWithRetry(options: {
   models?: string[];
@@ -195,11 +220,15 @@ async function generateContentWithRetry(options: {
   for (const model of candidateModels) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: options.contents,
-          config: options.config,
-        });
+        const response = await withTimeout(
+          ai.models.generateContent({
+            model,
+            contents: options.contents,
+            config: options.config,
+          }),
+          4500,
+          `Request to model ${model} timed out after 4500ms`
+        );
 
         if (response && response.text) {
           return response;
@@ -215,7 +244,7 @@ async function generateContentWithRetry(options: {
           errMsg.includes('overloaded');
 
         if (attempt < maxRetries && isTransient) {
-          await new Promise((resolve) => setTimeout(resolve, attempt * 600));
+          await new Promise((resolve) => setTimeout(resolve, attempt * 400));
         } else {
           break; // Try next candidate model
         }
@@ -442,6 +471,25 @@ async function enrichUserWithPlanModules(userRecord: any): Promise<any> {
         'thumbnail_canvas',
         'voice_recorder',
         'batch_processing',
+        'voiceover_studio',
+      ];
+    } else if (userRecord.planId === 'plan-agency') {
+      planModules = [
+        'subtitles_editor',
+        'advanced_export',
+        'youtube_seo',
+        'thumbnail_canvas',
+        'voice_recorder',
+        'batch_processing',
+        'voiceover_studio',
+      ];
+    } else if (userRecord.planId === 'plan-pro') {
+      planModules = [
+        'subtitles_editor',
+        'advanced_export',
+        'youtube_seo',
+        'thumbnail_canvas',
+        'voice_recorder',
       ];
     }
 
@@ -450,9 +498,15 @@ async function enrichUserWithPlanModules(userRecord: any): Promise<any> {
       planModules,
     };
   } catch {
+    const isAgency = userRecord.planId === 'plan-agency';
+    const isPro = userRecord.planId === 'plan-pro';
     return {
       ...userRecord,
-      planModules: ['subtitles_editor', 'voice_recorder'],
+      planModules: isAgency
+        ? ['subtitles_editor', 'voice_recorder', 'youtube_seo', 'thumbnail_canvas', 'advanced_export', 'batch_processing', 'voiceover_studio']
+        : isPro
+        ? ['subtitles_editor', 'voice_recorder', 'youtube_seo', 'thumbnail_canvas', 'advanced_export']
+        : ['subtitles_editor', 'voice_recorder'],
     };
   }
 }
@@ -2174,7 +2228,245 @@ CRITICAL LANGUAGE AND LOCALIZATION DIRECTIVE:
   }
 });
 
-// AI YouTube Thumbnail Generator & Concept Creator
+// ===================== AI YouTube Thumbnail & Visual Image Generator =====================
+
+function escapeXml(unsafe: string): string {
+  return unsafe.replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+function generateVisualBackgroundSvg(
+  prompt: string,
+  style: string = 'cinematic',
+  customColors?: { bg1?: string; bg2?: string; accent?: string }
+): string {
+  const normStyle = (style || 'cinematic').toLowerCase();
+  
+  // Style-specific color themes
+  let c1 = customColors?.bg1 || '#080E1A';
+  let c2 = customColors?.bg2 || '#042F2E';
+  let accent = customColors?.accent || '#1ed760';
+  let secondary = '#38BDF8';
+
+  if (normStyle.includes('cyberpunk') || normStyle.includes('neon')) {
+    c1 = customColors?.bg1 || '#0B031E';
+    c2 = customColors?.bg2 || '#2E0854';
+    accent = customColors?.accent || '#06B6D4';
+    secondary = '#F43F5E';
+  } else if (normStyle.includes('3d') || normStyle.includes('clay') || normStyle.includes('tech')) {
+    c1 = customColors?.bg1 || '#0A0F1D';
+    c2 = customColors?.bg2 || '#1E1B4B';
+    accent = customColors?.accent || '#6366F1';
+    secondary = '#38BDF8';
+  } else if (normStyle.includes('minimal')) {
+    c1 = customColors?.bg1 || '#090D16';
+    c2 = customColors?.bg2 || '#0F172A';
+    accent = customColors?.accent || '#1ed760';
+    secondary = '#94A3B8';
+  } else if (normStyle.includes('viral') || normStyle.includes('energy') || normStyle.includes('fire')) {
+    c1 = customColors?.bg1 || '#180404';
+    c2 = customColors?.bg2 || '#7F1D1D';
+    accent = customColors?.accent || '#FACC15';
+    secondary = '#EF4444';
+  }
+
+  // Construct high-impact SVG composition
+  let specificVectorArt = '';
+  if (normStyle.includes('cyberpunk') || normStyle.includes('neon')) {
+    specificVectorArt = `
+      <!-- Cyberpunk Grid Lines -->
+      <g stroke="${accent}" stroke-opacity="0.18" stroke-width="1.5">
+        <line x1="0" y1="520" x2="1280" y2="520" />
+        <line x1="0" y1="580" x2="1280" y2="580" />
+        <line x1="0" y1="630" x2="1280" y2="630" />
+        <line x1="0" y1="670" x2="1280" y2="670" />
+        <line x1="0" y1="700" x2="1280" y2="700" />
+        <!-- Vanishing perspective rays -->
+        <line x1="640" y1="460" x2="0" y2="720" />
+        <line x1="640" y1="460" x2="250" y2="720" />
+        <line x1="640" y1="460" x2="500" y2="720" />
+        <line x1="640" y1="460" x2="780" y2="720" />
+        <line x1="640" y1="460" x2="1030" y2="720" />
+        <line x1="640" y1="460" x2="1280" y2="720" />
+      </g>
+      <!-- Neon Plasma Glow Rings -->
+      <circle cx="1020" cy="280" r="190" stroke="${secondary}" stroke-width="4" stroke-opacity="0.4" fill="none" filter="url(#glow)" />
+      <circle cx="1020" cy="280" r="140" stroke="${accent}" stroke-width="3" stroke-opacity="0.6" fill="none" />
+      <circle cx="1020" cy="280" r="80" fill="${secondary}" fill-opacity="0.25" filter="url(#blur-heavy)" />
+    `;
+  } else if (normStyle.includes('3d') || normStyle.includes('tech')) {
+    specificVectorArt = `
+      <!-- 3D Geometric Floating Polygons & Orbs -->
+      <g filter="url(#glow)">
+        <polygon points="980,180 1140,240 1080,410 920,350" fill="${accent}" fill-opacity="0.22" stroke="${secondary}" stroke-width="2" stroke-opacity="0.5" />
+        <polygon points="1050,120 1190,170 1150,290 1010,240" fill="${secondary}" fill-opacity="0.18" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.4" />
+        <circle cx="1080" cy="280" r="110" fill="url(#gradOrb)" filter="url(#glow)" />
+        <circle cx="820" cy="480" r="75" fill="${accent}" fill-opacity="0.15" stroke="${accent}" stroke-width="1.5" stroke-opacity="0.4" />
+      </g>
+    `;
+  } else if (normStyle.includes('viral') || normStyle.includes('energy')) {
+    specificVectorArt = `
+      <!-- Viral Impact Starburst Waves -->
+      <g filter="url(#glow)">
+        <polygon points="1280,0 850,260 1280,380" fill="${accent}" fill-opacity="0.2" />
+        <polygon points="1280,240 780,420 1280,560" fill="${secondary}" fill-opacity="0.25" />
+        <polygon points="1280,480 880,580 1280,720" fill="${accent}" fill-opacity="0.18" />
+        <circle cx="1120" cy="360" r="220" fill="url(#gradOrb)" filter="url(#blur-heavy)" />
+      </g>
+      <!-- High-Energy Particle Sparks -->
+      <circle cx="950" cy="220" r="6" fill="${accent}" filter="url(#glow)" />
+      <circle cx="870" cy="310" r="4" fill="#FFFFFF" />
+      <circle cx="1050" cy="460" r="8" fill="${secondary}" filter="url(#glow)" />
+      <circle cx="780" cy="400" r="5" fill="${accent}" />
+    `;
+  } else {
+    // Cinematic default
+    specificVectorArt = `
+      <!-- Cinematic Anamorphic Lens Flare Stream -->
+      <ellipse cx="640" cy="360" rx="600" ry="24" fill="${secondary}" fill-opacity="0.15" filter="url(#blur-heavy)" />
+      <ellipse cx="980" cy="300" rx="280" ry="160" fill="${accent}" fill-opacity="0.22" filter="url(#blur-heavy)" />
+      <circle cx="960" cy="300" r="90" fill="#FFFFFF" fill-opacity="0.12" filter="url(#glow)" />
+      <!-- Subtle Bokeh Dots -->
+      <circle cx="850" cy="210" r="26" fill="${accent}" fill-opacity="0.18" filter="url(#glow)" />
+      <circle cx="1060" cy="430" r="42" fill="${secondary}" fill-opacity="0.14" filter="url(#glow)" />
+      <circle cx="760" cy="470" r="18" fill="#FFFFFF" fill-opacity="0.15" filter="url(#glow)" />
+    `;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+    <defs>
+      <linearGradient id="mainBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${c1}" />
+        <stop offset="100%" stop-color="${c2}" />
+      </linearGradient>
+      <radialGradient id="gradOrb" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${accent}" stop-opacity="0.8" />
+        <stop offset="60%" stop-color="${secondary}" stop-opacity="0.3" />
+        <stop offset="100%" stop-color="${c1}" stop-opacity="0" />
+      </radialGradient>
+      <radialGradient id="leftScrim" cx="15%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="#000000" stop-opacity="0.8" />
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.1" />
+      </radialGradient>
+      <filter id="blur-heavy" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="60" />
+      </filter>
+      <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <!-- Deep Base Gradient -->
+    <rect width="1280" height="720" fill="url(#mainBgGrad)" />
+
+    <!-- Style-Specific Vector Graphic Atmosphere -->
+    ${specificVectorArt}
+
+    <!-- Contrast Scrim on Left Side (Ensures Typography Legibility) -->
+    <rect width="1280" height="720" fill="url(#leftScrim)" />
+  </svg>`;
+
+  const base64Svg = Buffer.from(svg).toString('base64');
+  return `data:image/svg+xml;base64,${base64Svg}`;
+}
+
+async function generateAiThumbnailImage(
+  promptText: string,
+  style: string = 'cinematic',
+  aspectRatio: string = '16:9'
+): Promise<{ imageUrl: string; source: 'gemini' | 'procedural-art' }> {
+  const normStyle = style || 'cinematic';
+  const cleanPrompt = promptText.trim();
+  const visualPrompt = `YouTube thumbnail visual wallpaper: "${cleanPrompt}". Visual aesthetic: ${normStyle}. High production value, dramatic cinematic studio lighting, vivid saturation, clean left-side negative space for bold headline typography, 8K wallpaper art.`;
+
+  if (apiKey) {
+    try {
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite-image',
+          contents: {
+            parts: [{ text: visualPrompt }],
+          },
+          config: {
+            imageConfig: {
+              aspectRatio: (aspectRatio as any) || '16:9',
+            },
+          },
+        }),
+        5000,
+        'Gemini image generation timed out after 5000ms'
+      );
+
+      for (const part of response.candidates?.[0]?.content?.parts ?? []) {
+        if (part.inlineData?.data) {
+          const mime = part.inlineData.mimeType || 'image/png';
+          return {
+            imageUrl: `data:${mime};base64,${part.inlineData.data}`,
+            source: 'gemini',
+          };
+        }
+      }
+    } catch (err: any) {
+      // Seamlessly fall back to high-res procedural artwork generator when image model hits free-tier quota (limit 0)
+    }
+  }
+
+  // Resilient procedural artwork generator
+  const svgDataUrl = generateVisualBackgroundSvg(cleanPrompt, normStyle);
+  return {
+    imageUrl: svgDataUrl,
+    source: 'procedural-art',
+  };
+}
+
+// Dedicated AI Image Generator Endpoint
+app.post('/api/generate-ai-image', async (req: Request, res: Response) => {
+  try {
+    const parse = generateAiImageSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const { prompt, style, aspectRatio } = parse.data;
+    const result = await generateAiThumbnailImage(prompt, style, aspectRatio);
+
+    return res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      source: result.source,
+      prompt,
+      style,
+      aspectRatio,
+    });
+  } catch {
+    const fallbackSvg = generateVisualBackgroundSvg(req.body?.prompt || 'YouTube Video', req.body?.style || 'cinematic');
+    return res.json({
+      success: true,
+      imageUrl: fallbackSvg,
+      source: 'procedural-art',
+      prompt: req.body?.prompt || 'Video Title',
+      style: req.body?.style || 'cinematic',
+      aspectRatio: req.body?.aspectRatio || '16:9',
+    });
+  }
+});
+
+// AI YouTube Thumbnail Generator & Concept Creator (Enhanced with Live AI Image Generation)
 app.post('/api/generate-thumbnail-background', async (req: Request, res: Response) => {
   try {
     const parse = generateThumbnailSchema.safeParse(req.body);
@@ -2185,14 +2477,7 @@ app.post('/api/generate-thumbnail-background', async (req: Request, res: Respons
       });
     }
 
-    const { title, style, badge } = parse.data;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
-    }
-
-    // Gemini designs the high-CTR thumbnail typography, badges, and contrast gradient styling
-    const generatedImageDataUrl: string | null = null;
+    const { title, style, badge, generateImage, aspectRatio } = parse.data;
 
     // Use Gemini to generate high-CTR thumbnail composition tokens
     const prompt = `You are a YouTube thumbnail design director for high-growth video channels.
@@ -2206,32 +2491,38 @@ Generate the optimal visual concept for a 1280x720 YouTube thumbnail:
 6. Return valid JSON only.`;
 
     let parsedConfig: any = null;
-    try {
-      const configRes = await generateContentWithRetry({
-        models: ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'],
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              headline: { type: Type.STRING },
-              subhead: { type: Type.STRING },
-              badge: { type: Type.STRING },
-              customBgColor1: { type: Type.STRING },
-              customBgColor2: { type: Type.STRING },
-              headlineColor: { type: Type.STRING },
-              strokeColor: { type: Type.STRING },
-              accentBarColor: { type: Type.STRING },
-              fontFamily: { type: Type.STRING },
+    if (apiKey) {
+      try {
+        const configRes = await generateContentWithRetry({
+          models: ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'],
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                headline: { type: Type.STRING },
+                subhead: { type: Type.STRING },
+                badge: { type: Type.STRING },
+                customBgColor1: { type: Type.STRING },
+                customBgColor2: { type: Type.STRING },
+                headlineColor: { type: Type.STRING },
+                strokeColor: { type: Type.STRING },
+                accentBarColor: { type: Type.STRING },
+                fontFamily: { type: Type.STRING },
+              },
+              required: ['headline', 'subhead', 'badge', 'customBgColor1', 'customBgColor2', 'headlineColor', 'accentBarColor'],
             },
-            required: ['headline', 'subhead', 'badge', 'customBgColor1', 'customBgColor2', 'headlineColor', 'accentBarColor'],
           },
-        },
-      });
+        });
 
-      parsedConfig = JSON.parse(configRes.text || '{}');
-    } catch {
+        parsedConfig = JSON.parse(configRes.text || '{}');
+      } catch {
+        // Fallback below
+      }
+    }
+
+    if (!parsedConfig) {
       const cleanTitleWords = title.trim().split(/\s+/);
       const headlineWords = cleanTitleWords.slice(0, 5).join(' ');
       const subheadWords = cleanTitleWords.length > 5 ? cleanTitleWords.slice(5, 12).join(' ') : 'Complete Breakdown & Key Insights';
@@ -2249,11 +2540,26 @@ Generate the optimal visual concept for a 1280x720 YouTube thumbnail:
       };
     }
 
+    // Generate AI image background if requested
+    let generatedImageDataUrl: string | null = null;
+    let imageSource: string = 'none';
+
+    if (generateImage !== false) {
+      const imgRes = await generateAiThumbnailImage(
+        parsedConfig.headline || title,
+        style || 'cinematic',
+        aspectRatio || '16:9'
+      );
+      generatedImageDataUrl = imgRes.imageUrl;
+      imageSource = imgRes.source;
+    }
+
     return res.json({
       success: true,
       data: {
         ...parsedConfig,
         bgImageDataUrl: generatedImageDataUrl,
+        imageSource,
       },
     });
   } catch (err: any) {
@@ -2455,6 +2761,17 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
 app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = req.user;
+    if (user.role !== 'superadmin') {
+      const planModules = user.planModules || [];
+      if (!planModules.includes('voiceover_studio')) {
+        return res.status(403).json({
+          error: 'Voice cloning is exclusive to the Agency Studio plan. Please upgrade to unlock.',
+          moduleLocked: true,
+          requiredPlan: 'plan-agency',
+        });
+      }
+    }
+
     const { name, language, gender, accent, description, audioBase64, durationSeconds } = req.body;
 
     if (!name || typeof name !== 'string' || !name.trim()) {
@@ -2581,6 +2898,17 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       const userUid = activeTokens.get(token);
       if (userUid) {
         authenticatedUser = await getUserByUid(userUid);
+      }
+    }
+
+    if (authenticatedUser && authenticatedUser.role !== 'superadmin') {
+      const planModules = authenticatedUser.planModules || [];
+      if (!planModules.includes('voiceover_studio')) {
+        return res.status(403).json({
+          error: 'The AI Voiceover & Voice Cloning Studio is exclusive to the Agency Studio plan. Please upgrade to unlock.',
+          moduleLocked: true,
+          requiredPlan: 'plan-agency',
+        });
       }
     }
 
@@ -2934,11 +3262,20 @@ async function startServer() {
     });
   }
 
-  await seedDefaultPoliciesIfEmpty();
-
-  app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(port, '0.0.0.0', () => {
     console.log(`Scriby SaaS server running at http://0.0.0.0:${port}`);
+  });
+
+  server.on('error', (err: any) => {
+    console.error('Server listen error:', err?.message || err);
+  });
+
+  // Seed default policies asynchronously in background without delaying server readiness
+  seedDefaultPoliciesIfEmpty().catch((err) => {
+    console.warn('[DB] Policy seeding deferred:', err?.message || err);
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('Fatal error during startServer:', err);
+});

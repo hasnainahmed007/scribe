@@ -809,6 +809,19 @@ function ScribyApp() {
                       </button>
 
                       <button
+                        onClick={() => setActiveTab('voiceover')}
+                        className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Mic className="w-4 h-4 text-emerald-400" />
+                          <span>AI Voiceover & Cloning</span>
+                        </span>
+                        {!user.planModules?.includes('voiceover_studio') && (
+                          <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-500/30">Agency</Badge>
+                        )}
+                      </button>
+
+                      <button
                         onClick={() => setActiveTab('history')}
                         className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
                       >
@@ -893,21 +906,39 @@ function ScribyApp() {
                   </button>
                   <span className="text-xs text-slate-400">Creator Workspace · AI Voiceover & Cloning</span>
                 </div>
-                <VoiceoverStudio
-                  currentSubtitleText={fullTranscript || segments.map((s) => s.text).join(' ')}
-                  onSendToSubtitleStudio={(audioUrl, audioName, durationSeconds) => {
-                    setAudioSource({
-                      url: audioUrl,
-                      name: audioName,
-                      duration: durationSeconds,
-                      mimeType: 'audio/wav',
-                    });
-                    setDuration(durationSeconds);
-                    setCurrentTime(0);
-                    setActiveTab('studio');
-                  }}
-                  onOpenPricing={() => setIsPricingOpen(true)}
-                />
+                {(!user.planModules || !user.planModules.includes('voiceover_studio')) ? (
+                  <LockedModuleNotice
+                    module="voiceover_studio"
+                    title="AI Voiceover & Voice Cloning Studio"
+                    description="Clone your voice from microphone recording or audio files, and synthesize natural AI voiceovers with studio male & female voices. Exclusive to the Agency Studio plan."
+                    requiredPlanName="Agency Studio"
+                    benefits={[
+                      'Custom voice cloning via microphone or audio file upload',
+                      'Studio male (Kabir) and female (Fatima) voice synthesis',
+                      'Multi-format audio export in WAV, MP3, and OGG formats',
+                      'Direct integration to load generated audio into the Subtitle Editor',
+                      '1,200 Audio Minutes/Month for high-volume creator workflows',
+                    ]}
+                    onOpenPricing={() => setIsPricingOpen(true)}
+                    onBackToStudio={() => setActiveTab('studio')}
+                  />
+                ) : (
+                  <VoiceoverStudio
+                    currentSubtitleText={fullTranscript || segments.map((s) => s.text).join(' ')}
+                    onSendToSubtitleStudio={(audioUrl, audioName, durationSeconds) => {
+                      setAudioSource({
+                        url: audioUrl,
+                        name: audioName,
+                        duration: durationSeconds,
+                        mimeType: 'audio/wav',
+                      });
+                      setDuration(durationSeconds);
+                      setCurrentTime(0);
+                      setActiveTab('studio');
+                    }}
+                    onOpenPricing={() => setIsPricingOpen(true)}
+                  />
+                )}
               </div>
             )}
 

@@ -323,9 +323,22 @@ export const generateThumbnailSchema = z.object({
     .min(2, 'Video title must be at least 2 characters.'),
   style: z.string().optional().default('bold'),
   badge: z.string().optional().default('NEW'),
+  generateImage: z.boolean().optional().default(true),
+  aspectRatio: z.enum(['16:9', '1:1', '9:16', '4:3', '3:4']).optional().default('16:9'),
 });
 
 export type GenerateThumbnailInput = z.infer<typeof generateThumbnailSchema>;
+
+export const generateAiImageSchema = z.object({
+  prompt: z
+    .string()
+    .trim()
+    .min(2, 'Image prompt or topic must be at least 2 characters.'),
+  style: z.string().optional().default('cinematic'),
+  aspectRatio: z.enum(['16:9', '1:1', '9:16', '4:3', '3:4']).optional().default('16:9'),
+});
+
+export type GenerateAiImageInput = z.infer<typeof generateAiImageSchema>;
 
 export const transcribeAudioSchema = z
   .object({
