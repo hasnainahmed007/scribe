@@ -17,10 +17,11 @@ import { formatPlayerTime } from '../utils/timeFormat';
 import { preparePlayableAudio } from '../utils/audioProcessing';
 import { cacheTranscriptAudio } from '../utils/audioStorage';
 import { useAuth } from '../context/AuthContext';
-import { safeFetchJson } from '../utils/apiClient';
+import { safeFetchJson, isQuotaExceededError, sanitizeErrorMessage, SAAS_AI_QUOTA_MESSAGE } from '../utils/apiClient';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { AiQuotaNotice } from './AiQuotaNotice';
 
 interface AudioInputHubProps {
   onTranscriptionComplete: (
@@ -32,6 +33,7 @@ interface AudioInputHubProps {
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   onOpenPricing?: () => void;
+  onQuotaExceeded?: (message: string) => void;
 }
 
 export const AudioInputHub: React.FC<AudioInputHubProps> = ({
@@ -39,11 +41,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
   isLoading,
   setIsLoading,
   onOpenPricing,
+  onQuotaExceeded,
 }) => {
   const { token, user, refreshProfile } = useAuth();
   const [activeMode, setActiveMode] = useState<'samples' | 'upload' | 'record'>('samples');
   const [dragOver, setDragOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isQuotaError, setIsQuotaError] = useState(false);
   const [isCreditExceeded, setIsCreditExceeded] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
 
@@ -109,6 +113,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             throw new Error(res.error || res.data?.error || 'Credit limit reached. Please upgrade your subscription plan.');
           }
 
+          if (res.isQuotaExceeded || res.status === 429) {
+            setIsQuotaError(true);
+            const msg = res.error || SAAS_AI_QUOTA_MESSAGE;
+            onQuotaExceeded?.(msg);
+            throw new Error(msg);
+          }
+
           if (!res.ok || !res.data?.success) {
             throw new Error(res.error || res.data?.error || 'Failed to transcribe audio. Please try again.');
           }
@@ -167,7 +178,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           setIsLoading(false);
           refreshProfile();
         } catch (err: any) {
-          setErrorMessage(err.message || 'Audio conversion failed.');
+          const quota = isQuotaExceededError(err);
+          const { message, isQuota } = sanitizeErrorMessage(err?.message || 'Audio conversion failed.');
+          if (quota || isQuota) {
+            setIsQuotaError(true);
+            onQuotaExceeded?.(message);
+          }
+          setErrorMessage(message);
           setIsLoading(false);
         }
       };
@@ -257,7 +274,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
     }
 
     setIsLoading(true);
-    setLoadingStep('Transcribing recorded voice into Bengali text...');
+    setLoadingStep('Transcribing spoken audio with universal speech model...');
 
     try {
       const reader = new FileReader();
@@ -277,7 +294,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             body: JSON.stringify({
               audioBase64: base64Data,
               mimeType: 'audio/webm',
-              contextHint: 'Live microphone recording in Bengali',
+              contextHint: 'Live microphone voice recording',
               estimatedDurationSeconds: recordingSeconds || 30,
             }),
           });
@@ -285,6 +302,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           if (res.status === 403) {
             setIsCreditExceeded(true);
             throw new Error(res.error || res.data?.error || 'Credit limit reached. Please upgrade your plan.');
+          }
+
+          if (res.isQuotaExceeded || res.status === 429) {
+            setIsQuotaError(true);
+            const msg = res.error || SAAS_AI_QUOTA_MESSAGE;
+            onQuotaExceeded?.(msg);
+            throw new Error(msg);
           }
 
           if (!res.ok || !res.data?.success) {
@@ -349,7 +373,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           setIsLoading(false);
           refreshProfile();
         } catch (err: any) {
-          setErrorMessage(err.message);
+          const quota = isQuotaExceededError(err);
+          const { message, isQuota } = sanitizeErrorMessage(err?.message || 'Failed to transcribe recording.');
+          if (quota || isQuota) {
+            setIsQuotaError(true);
+            onQuotaExceeded?.(message);
+          }
+          setErrorMessage(message);
           setIsLoading(false);
         }
       };
@@ -400,11 +430,11 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           <h2 className="text-xl font-bold text-white tracking-tight font-display flex items-center gap-2">
             Audio Input & Speech Studio
             <Badge variant="emerald">
-              Bengali Voice-to-Text
+              Universal Speech-to-Text
             </Badge>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Upload any Bengali audio/video file or speak directly into your microphone.
+            Upload any audio/video file in any language or speak directly into your microphone.
           </p>
         </div>
 
@@ -443,24 +473,37 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         </div>
       </div>
 
-      {/* Credit Exceeded or Error Alert */}
+      {/* Credit Exceeded, AI Quota Exceeded, or Error Alert */}
       {errorMessage && (
-        <div className="mt-4 p-4 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-            <div>
-              <span className="font-semibold">Notice:</span> {errorMessage}
-            </div>
+        isQuotaError ? (
+          <div className="mt-4">
+            <AiQuotaNotice
+              message={errorMessage}
+              onDismiss={() => {
+                setErrorMessage(null);
+                setIsQuotaError(false);
+              }}
+              onOpenPricing={onOpenPricing}
+            />
           </div>
-          {isCreditExceeded && onOpenPricing && (
-            <button
-              onClick={onOpenPricing}
-              className="px-3 py-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold rounded text-xs shrink-0 whitespace-nowrap shadow-sm"
-            >
-              Upgrade Plan
-            </button>
-          )}
-        </div>
+        ) : (
+          <div className="mt-4 p-4 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">Notice:</span> {errorMessage}
+              </div>
+            </div>
+            {isCreditExceeded && onOpenPricing && (
+              <button
+                onClick={onOpenPricing}
+                className="px-3 py-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold rounded text-xs shrink-0 whitespace-nowrap shadow-sm"
+              >
+                Upgrade Plan
+              </button>
+            )}
+          </div>
+        )
       )}
 
       {/* Loading Overlay State */}
@@ -471,7 +514,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             <Sparkles className="w-5 h-5 text-teal-300 absolute -top-1 -right-1 animate-pulse" />
           </div>
           <h3 className="text-base font-semibold text-white mb-2 font-display">
-            Transcribing Bengali Spoken Speech...
+            Transcribing Spoken Audio with AI...
           </h3>
           <p className="text-xs text-emerald-400 font-mono">{loadingStep}</p>
           <div className="mt-6 flex items-center gap-3 text-[11px] text-slate-500">
@@ -595,7 +638,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                     {formatPlayerTime(recordingSeconds)}
                   </div>
                   <p className="text-xs text-slate-400 mb-5">
-                    Recording Bengali voice... Speak clearly into your mic.
+                    Recording voice... Speak clearly in any language into your mic.
                   </p>
                   <button
                     onClick={stopRecording}
@@ -611,7 +654,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                     Recording Finished ({formatPlayerTime(recordingSeconds)})
                   </div>
                   <p className="text-xs text-slate-400 mb-4">
-                    Click below to transcribe this recording into Bengali text and subtitles.
+                    Click below to transcribe this recording into text and timed subtitles.
                   </p>
                   <div className="flex items-center justify-center gap-3">
                     <button
@@ -640,7 +683,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                     Speak Directly Into Your Microphone
                   </h4>
                   <p className="text-xs text-slate-400 mb-5 max-w-sm">
-                    Record voice notes or speech in Bengali; our speech AI will segment sentences into timecodes.
+                    Record voice notes or speech in any language; our speech AI will segment sentences into timecodes.
                   </p>
                   <button
                     onClick={startRecording}

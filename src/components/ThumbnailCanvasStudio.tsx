@@ -31,6 +31,7 @@ import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
+import { AiQuotaNotice } from './AiQuotaNotice';
 
 interface ThumbnailCanvasStudioProps {
   initialTitle?: string;
@@ -195,6 +196,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
   const [isGeneratingAiConcept, setIsGeneratingAiConcept] = useState<boolean>(false);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
   const [aiErrorMessage, setAiErrorMessage] = useState<string | null>(null);
+  const [isAiQuotaError, setIsAiQuotaError] = useState<boolean>(false);
   const [recentAiImages, setRecentAiImages] = useState<GeneratedImageItem[]>([]);
 
   // Export Suite Modal & Custom Dimension State
@@ -440,6 +442,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     setIsGeneratingAiImage(true);
     setAiSuccessMessage(null);
     setAiErrorMessage(null);
+    setIsAiQuotaError(false);
 
     try {
       const res = await safeFetchJson<{
@@ -457,7 +460,12 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         }),
       });
 
+      if (res.isQuotaExceeded || res.status === 429) {
+        setIsAiQuotaError(true);
+      }
+
       if (!res.ok || !res.data?.success || !res.data?.imageUrl) {
+        if (res.isQuotaExceeded) setIsAiQuotaError(true);
         throw new Error(res.error || res.data?.error || 'AI image generation failed.');
       }
 
@@ -479,6 +487,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
     setIsGeneratingAiConcept(true);
     setAiSuccessMessage(null);
     setAiErrorMessage(null);
+    setIsAiQuotaError(false);
 
     try {
       const res = await safeFetchJson<{
@@ -507,7 +516,12 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         }),
       });
 
+      if (res.isQuotaExceeded || res.status === 429) {
+        setIsAiQuotaError(true);
+      }
+
       if (!res.ok || !res.data?.success || !res.data?.data) {
+        if (res.isQuotaExceeded) setIsAiQuotaError(true);
         throw new Error(res.error || res.data?.error || 'AI thumbnail concept generation failed.');
       }
 
@@ -1263,9 +1277,21 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               )}
 
               {aiErrorMessage && (
-                <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
-                  {aiErrorMessage}
-                </div>
+                isAiQuotaError ? (
+                  <AiQuotaNotice
+                    message={aiErrorMessage}
+                    onRetry={() => handleGenerateAiImageOnly()}
+                    onDismiss={() => {
+                      setAiErrorMessage(null);
+                      setIsAiQuotaError(false);
+                    }}
+                    compact
+                  />
+                ) : (
+                  <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
+                    {aiErrorMessage}
+                  </div>
+                )
               )}
 
               {/* Active Image Layer Adjustments */}

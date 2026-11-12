@@ -18,6 +18,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from './data/sampleAudios';
 import { retrieveTranscriptAudio } from './utils/audioStorage';
+import { createSegmentsFromScript } from './utils/subtitleUtils';
+import { AiQuotaNotice } from './components/AiQuotaNotice';
 import {
   TranscriptSegment,
   AudioSource,
@@ -55,6 +57,7 @@ function ScribyApp() {
   const [fullTranscript, setFullTranscript] = useState<string>('');
   const [summary, setSummary] = useState<string>('');
   const [loadedTranscriptId, setLoadedTranscriptId] = useState<number | null>(null);
+  const [globalAiQuotaNotice, setGlobalAiQuotaNotice] = useState<string | null>(null);
 
   // Clear studio workspace and active editor state completely
   const handleClearStudioState = () => {
@@ -329,6 +332,44 @@ function ScribyApp() {
     setActiveTab(targetTab);
   };
 
+  // Transfer audio and synchronized subtitle segments from AI Voiceover & Cloning into Subtitle Studio
+  const handleSendToSubtitleStudio = (
+    audioUrl: string,
+    audioName: string,
+    durationSeconds: number,
+    scriptText?: string
+  ) => {
+    const safeDuration = Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 10;
+    const cleanScript = (scriptText || '').trim();
+    const newSegments = createSegmentsFromScript(cleanScript, safeDuration, audioName || 'Studio Voice');
+
+    setAudioSource({
+      url: audioUrl,
+      name: audioName,
+      duration: safeDuration,
+      mimeType: 'audio/wav',
+    });
+    setSegments(newSegments);
+    setFullTranscript(cleanScript || (newSegments.length > 0 ? newSegments.map((s) => s.text).join(' ') : ''));
+    setSummary(
+      cleanScript
+        ? `AI Voiceover recording: ${cleanScript.slice(0, 100)}${cleanScript.length > 100 ? '...' : ''}`
+        : 'Voice recording'
+    );
+    setDuration(safeDuration);
+    setCurrentTime(0);
+    setLoadedTranscriptId(null);
+    if (newSegments.length > 0) {
+      setThumbnailTitle(newSegments[0].text);
+    }
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.src = audioUrl;
+      setIsPlaying(false);
+    }
+    setActiveTab('studio');
+  };
+
   // Direct export from history list
   const handleExportTranscriptFromHistory = (item: SavedTranscript) => {
     setSegments(item.segments);
@@ -537,6 +578,10 @@ function ScribyApp() {
         }
       );
 
+      if (res.isQuotaExceeded || res.status === 429) {
+        setGlobalAiQuotaNotice(res.error || 'AI engine is at peak capacity. Please wait a moment and try again.');
+      }
+
       if (!res.ok || !res.data?.success || !res.data?.data) {
         throw new Error(res.error || res.data?.error || 'Failed to generate YouTube metadata.');
       }
@@ -673,6 +718,17 @@ function ScribyApp() {
         {/* ======================================================================== */}
         {user && user.role === 'user' && (
           <>
+            {/* Global AI Quota Notice if API rate limit or peak capacity occurs */}
+            {globalAiQuotaNotice && (
+              <div className="mb-4">
+                <AiQuotaNotice
+                  message={globalAiQuotaNotice}
+                  onDismiss={() => setGlobalAiQuotaNotice(null)}
+                  onOpenPricing={() => setIsPricingOpen(true)}
+                />
+              </div>
+            )}
+
             {/* 3A. SUBTITLES & WAVEFORM EDITOR */}
             {activeTab === 'studio' && (
               <div className="space-y-6">
@@ -681,7 +737,7 @@ function ScribyApp() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-base font-bold text-white tracking-tight font-display">
-                        {audioSource?.name || 'Bengali Audio Track'}
+                        {audioSource?.name || 'Spoken Audio Track'}
                       </h2>
                       {audioSource?.isSample && (
                         <span className="text-[11px] text-slate-500 font-mono">
@@ -925,17 +981,7 @@ function ScribyApp() {
                 ) : (
                   <VoiceoverStudio
                     currentSubtitleText={fullTranscript || segments.map((s) => s.text).join(' ')}
-                    onSendToSubtitleStudio={(audioUrl, audioName, durationSeconds) => {
-                      setAudioSource({
-                        url: audioUrl,
-                        name: audioName,
-                        duration: durationSeconds,
-                        mimeType: 'audio/wav',
-                      });
-                      setDuration(durationSeconds);
-                      setCurrentTime(0);
-                      setActiveTab('studio');
-                    }}
+                    onSendToSubtitleStudio={handleSendToSubtitleStudio}
                     onOpenPricing={() => setIsPricingOpen(true)}
                   />
                 )}
@@ -1026,6 +1072,7 @@ function ScribyApp() {
                 setShowInputModal(false);
                 setIsPricingOpen(true);
               }}
+              onQuotaExceeded={(msg) => setGlobalAiQuotaNotice(msg)}
             />
           </div>
         </div>
@@ -1036,7 +1083,7 @@ function ScribyApp() {
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         segments={segments}
-        audioName={audioSource?.name || 'bengali_transcript'}
+        audioName={audioSource?.name || 'audio_transcript'}
         summary={summary}
         onOpenPricing={() => {
           setIsExportOpen(false);

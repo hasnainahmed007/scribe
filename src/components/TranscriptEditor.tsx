@@ -137,12 +137,59 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = window.speechSynthesis.getVoices();
+
+    // Universal script & language detection
     const isBengali = /[\u0980-\u09FF]/.test(text);
+    const isArabic = /[\u0600-\u06FF]/.test(text);
+    const isDevanagari = /[\u0900-\u097F]/.test(text);
+    const isKorean = /[\uAC00-\uD7AF]/.test(text);
+    const isJapanese = /[\u3040-\u30FF]/.test(text);
+    const isChinese = /[\u4E00-\u9FFF]/.test(text);
+    const isCyrillic = /[\u0400-\u04FF]/.test(text);
+    const isSpanish = /[áéíóúüñ¿¡]/i.test(text);
+    const isFrench = /[àâçèéêëîïôùûüÿœæ]/i.test(text);
+    const isGerman = /[äöüß]/i.test(text);
 
     if (isBengali) {
       utterance.lang = 'bn-BD';
       const bnVoice = voices.find((v) => v.lang.startsWith('bn') || v.name.toLowerCase().includes('bengali'));
       if (bnVoice) utterance.voice = bnVoice;
+    } else if (isArabic) {
+      utterance.lang = 'ar-SA';
+      const arVoice = voices.find((v) => v.lang.startsWith('ar'));
+      if (arVoice) utterance.voice = arVoice;
+    } else if (isDevanagari) {
+      utterance.lang = 'hi-IN';
+      const hiVoice = voices.find((v) => v.lang.startsWith('hi'));
+      if (hiVoice) utterance.voice = hiVoice;
+    } else if (isKorean) {
+      utterance.lang = 'ko-KR';
+      const koVoice = voices.find((v) => v.lang.startsWith('ko'));
+      if (koVoice) utterance.voice = koVoice;
+    } else if (isJapanese) {
+      utterance.lang = 'ja-JP';
+      const jaVoice = voices.find((v) => v.lang.startsWith('ja'));
+      if (jaVoice) utterance.voice = jaVoice;
+    } else if (isChinese) {
+      utterance.lang = 'zh-CN';
+      const zhVoice = voices.find((v) => v.lang.startsWith('zh'));
+      if (zhVoice) utterance.voice = zhVoice;
+    } else if (isCyrillic) {
+      utterance.lang = 'ru-RU';
+      const ruVoice = voices.find((v) => v.lang.startsWith('ru'));
+      if (ruVoice) utterance.voice = ruVoice;
+    } else if (isSpanish) {
+      utterance.lang = 'es-ES';
+      const esVoice = voices.find((v) => v.lang.startsWith('es'));
+      if (esVoice) utterance.voice = esVoice;
+    } else if (isFrench) {
+      utterance.lang = 'fr-FR';
+      const frVoice = voices.find((v) => v.lang.startsWith('fr'));
+      if (frVoice) utterance.voice = frVoice;
+    } else if (isGerman) {
+      utterance.lang = 'de-DE';
+      const deVoice = voices.find((v) => v.lang.startsWith('de'));
+      if (deVoice) utterance.voice = deVoice;
     } else {
       utterance.lang = 'en-US';
       const enVoice = voices.find((v) => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('English')));

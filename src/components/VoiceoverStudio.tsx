@@ -25,18 +25,27 @@ import {
   Headphones,
   Upload,
   FolderOpen,
+  X,
+  FileCheck,
 } from 'lucide-react';
 import { VoiceProfile, SavedVoiceoverItem, AudioExportFormat, VoiceTone, VoiceGender } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { formatPlayerTime } from '../utils/timeFormat';
+import { parseSubtitleToPlainText } from '../utils/subtitleUtils';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
+import { AiQuotaNotice } from './AiQuotaNotice';
 
 interface VoiceoverStudioProps {
   currentSubtitleText?: string;
-  onSendToSubtitleStudio: (audioUrl: string, audioName: string, durationSeconds: number) => void;
+  onSendToSubtitleStudio: (
+    audioUrl: string,
+    audioName: string,
+    durationSeconds: number,
+    script?: string
+  ) => void;
   onOpenPricing?: () => void;
 }
 
@@ -57,7 +66,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
   // Script & Synthesis Options
   const [script, setScript] = useState<string>(
-    'Welcome to Scriby AI Voiceover Studio. Easily synthesize high-fidelity voiceovers in English and Bengali or clone your personal voice profile for automated digital narration.'
+    'Welcome to Scriby AI Voiceover Studio. Synthesize high-fidelity voiceovers in any language or clone your personal voice profile for automated digital narration across global languages.'
   );
   const [tone, setTone] = useState<VoiceTone>('natural');
   const [speed, setSpeed] = useState<number>(1.0);
@@ -65,9 +74,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   const [exportFormat, setExportFormat] = useState<AudioExportFormat>('wav');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [quotaErrorMessage, setQuotaErrorMessage] = useState<string | null>(null);
 
   // Current Generated Voiceover
   const [currentVoiceover, setCurrentVoiceover] = useState<{
+    id?: number;
     voiceoverId: string;
     audioUrl: string;
     durationSeconds: number;
@@ -75,6 +86,18 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     voiceName: string;
     script: string;
   } | null>(null);
+
+  // Deletion Confirmation Modal State
+  const [itemToDelete, setItemToDelete] = useState<{
+    id?: number;
+    voiceoverId?: string;
+    audioUrl?: string;
+    title?: string;
+    voiceName?: string;
+    format?: string;
+    source: 'generate' | 'recording';
+  } | null>(null);
+  const [isDeletingVoiceover, setIsDeletingVoiceover] = useState<boolean>(false);
 
   // Generated Audio Player State
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
@@ -112,10 +135,65 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   const [savedVoiceovers, setSavedVoiceovers] = useState<SavedVoiceoverItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
 
+  // Platform Subtitles Modal State
+  const [showPlatformSubtitlesModal, setShowPlatformSubtitlesModal] = useState<boolean>(false);
+  const [platformTranscripts, setPlatformTranscripts] = useState<
+    Array<{ id: number; title: string; fullTranscript: string; duration: number; createdAt?: string; segments?: any[] }>
+  >([]);
+  const [isLoadingPlatformTranscripts, setIsLoadingPlatformTranscripts] = useState<boolean>(false);
+  const srtFileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Show Toast
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 4000);
+  };
+
+  // Open Platform Subtitles selector modal
+  const handleOpenPlatformSubtitles = async () => {
+    setShowPlatformSubtitlesModal(true);
+    if (token) {
+      setIsLoadingPlatformTranscripts(true);
+      try {
+        const res = await safeFetchJson<{ success: boolean; data: any[] }>('/api/transcripts', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok && res.data?.data) {
+          setPlatformTranscripts(res.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch platform transcripts:', err);
+      } finally {
+        setIsLoadingPlatformTranscripts(false);
+      }
+    }
+  };
+
+  // Handle uploading external SRT/VTT file
+  const handleExternalSubtitleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const content = reader.result as string;
+        const parsed = parseSubtitleToPlainText(content);
+        if (parsed && parsed.trim().length > 0) {
+          setScript(parsed);
+          showToast(`Imported external subtitles from ${file.name}!`);
+        } else {
+          showToast('Could not extract subtitle text from file. Please check file format.', 'error');
+        }
+      } catch (err: any) {
+        showToast('Failed to parse subtitle file: ' + err.message, 'error');
+      }
+    };
+    reader.onerror = () => {
+      showToast('Failed to read external subtitle file.', 'error');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   // Fetch Voice Profiles
@@ -240,6 +318,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
       const res = await safeFetchJson<{
         success: boolean;
+        id?: number;
         voiceoverId: string;
         audioUrl: string;
         durationSeconds: number;
@@ -262,12 +341,48 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       });
 
       if (res.ok && res.data) {
-        setCurrentVoiceover(res.data);
+        const generatedItem = {
+          id: res.data.id,
+          voiceoverId: res.data.voiceoverId,
+          audioUrl: res.data.audioUrl,
+          durationSeconds: res.data.durationSeconds,
+          format: res.data.format,
+          voiceName: res.data.voiceName,
+          script: res.data.script,
+        };
+        setCurrentVoiceover(generatedItem);
         setIsPlaying(false);
         setCurrentTime(0);
-        showToast('Voiceover synthesized successfully!');
+
+        // Instantly add to savedVoiceovers ("Recordings" section)
+        const newSavedItem: SavedVoiceoverItem = {
+          id: res.data.id || Date.now(),
+          title: script.slice(0, 60) + (script.length > 60 ? '...' : ''),
+          script,
+          voiceId: String(selectedVoiceId),
+          voiceName: res.data.voiceName,
+          voiceGender: selectedVoice?.gender || 'male',
+          audioUrl: res.data.audioUrl,
+          durationSeconds: res.data.durationSeconds,
+          format: res.data.format,
+          createdAt: new Date().toISOString(),
+        };
+
+        setSavedVoiceovers((prev) => [
+          newSavedItem,
+          ...prev.filter(
+            (p) =>
+              p.audioUrl !== res.data?.audioUrl &&
+              (res.data?.id ? p.id !== res.data.id : true)
+          ),
+        ]);
+
+        showToast('Voiceover synthesized and added to Recordings!');
         if (token) fetchSavedVoiceovers();
       } else {
+        if (res.isQuotaExceeded || res.status === 429) {
+          setQuotaErrorMessage(res.error || 'AI speech engine is at peak capacity. Please wait a moment and try again.');
+        }
         showToast(res.error || 'Failed to generate voiceover.', 'error');
       }
     } catch (err: any) {
@@ -435,21 +550,68 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     }
   };
 
-  // Delete Saved Voiceover Item
-  const handleDeleteVoiceoverItem = async (id: number) => {
+  // Prompt deletion confirmation modal
+  const promptDeleteVoiceover = (item: {
+    id?: number;
+    voiceoverId?: string;
+    audioUrl?: string;
+    title?: string;
+    voiceName?: string;
+    format?: string;
+    source: 'generate' | 'recording';
+  }) => {
+    setItemToDelete(item);
+  };
+
+  // Confirm and execute deletion
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    setIsDeletingVoiceover(true);
     try {
-      const res = await safeFetchJson(`/api/voiceovers/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        showToast('Voiceover clip removed.');
-        setSavedVoiceovers((prev) => prev.filter((v) => v.id !== id));
-      } else {
-        showToast(res.error || 'Failed to remove voiceover.', 'error');
+      const deleteKey = itemToDelete.id || itemToDelete.voiceoverId;
+      if (deleteKey && token) {
+        await safeFetchJson(`/api/voiceovers/${deleteKey}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
+
+      // 1. Remove from savedVoiceovers (Recordings archive)
+      setSavedVoiceovers((prev) =>
+        prev.filter((v) => {
+          if (itemToDelete.id && v.id === itemToDelete.id) return false;
+          if (itemToDelete.audioUrl && v.audioUrl === itemToDelete.audioUrl) return false;
+          if (itemToDelete.voiceoverId && v.audioUrl.includes(itemToDelete.voiceoverId)) return false;
+          return true;
+        })
+      );
+
+      // 2. Also remove from Voice Generation preview section if matches current voiceover
+      const matchesCurrent =
+        currentVoiceover &&
+        (itemToDelete.source === 'generate' ||
+          (itemToDelete.id && currentVoiceover.id === itemToDelete.id) ||
+          (itemToDelete.voiceoverId && currentVoiceover.voiceoverId === itemToDelete.voiceoverId) ||
+          (itemToDelete.audioUrl && currentVoiceover.audioUrl === itemToDelete.audioUrl) ||
+          (itemToDelete.voiceoverId && currentVoiceover.audioUrl.includes(itemToDelete.voiceoverId)));
+
+      if (matchesCurrent) {
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.pause();
+          audioPlayerRef.current.currentTime = 0;
+        }
+        setCurrentVoiceover(null);
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setAudioDuration(0);
+      }
+
+      showToast('Voice recording deleted successfully.');
+      setItemToDelete(null);
     } catch (err: any) {
-      showToast(err.message || 'Failed to remove voiceover.', 'error');
+      showToast(err.message || 'Failed to delete voice recording.', 'error');
+    } finally {
+      setIsDeletingVoiceover(false);
     }
   };
 
@@ -572,43 +734,35 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <h3 className="text-sm font-bold text-white">Voiceover Script Text</h3>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {currentSubtitleText && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setScript(currentSubtitleText);
-                        showToast('Imported text from Subtitle Editor!');
-                      }}
-                      className="text-xs h-7 gap-1 border-[#3e3e3e] text-[#1ed760] hover:bg-[#282828]"
-                      title="Import transcript from Subtitle Studio"
-                    >
-                      <ArrowRight className="w-3 h-3" />
-                      <span>Import Subtitles</span>
-                    </Button>
-                  )}
-
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) setScript(e.target.value);
-                    }}
-                    defaultValue=""
-                    className="bg-[#242424] border border-[#3e3e3e] text-[11px] text-[#b3b3b3] rounded-lg px-2 py-1 outline-none"
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Option A: Use Platform Subtitles */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenPlatformSubtitles}
+                    className="text-xs h-7 gap-1.5 border-[#3e3e3e] text-[#1ed760] hover:bg-[#282828] hover:border-[#1ed760]/50 cursor-pointer"
+                    title="Import subtitles created in this platform"
                   >
-                    <option value="" disabled>
-                      Sample Scripts...
-                    </option>
-                    <option value="Today's special report: Artificial intelligence and modern media technology are transforming digital content workflows for creators worldwide.">
-                      News & Documentary Report
-                    </option>
-                    <option value="Hey creators! Welcome back to the channel. In today's video, we explore how to optimize video subtitles and boost audience retention. Don't forget to subscribe!">
-                      YouTube Hook & Intro
-                    </option>
-                    <option value="Welcome back to our channel! In today's masterclass, we will explore the latest advancements in AI speech synthesis and video production workflows.">
-                      Tutorial & Masterclass
-                    </option>
-                  </select>
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Use Platform Subtitles</span>
+                  </Button>
+
+                  {/* Option B: Import External SRT / VTT */}
+                  <label
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs h-7 rounded-md border border-[#3e3e3e] text-white hover:border-blue-400/60 hover:text-blue-300 bg-[#242424] hover:bg-[#2a2a2a] cursor-pointer transition-colors"
+                    title="Upload external .SRT, .VTT, or text file"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Import External .SRT</span>
+                    <input
+                      ref={srtFileInputRef}
+                      type="file"
+                      accept=".srt,.vtt,.txt,.json,.sub"
+                      onChange={handleExternalSubtitleUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -617,7 +771,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <textarea
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
-                  placeholder="Type or paste your voiceover script in English or Bengali..."
+                  placeholder="Type or paste your voiceover script in any language (English, Bengali, Spanish, Hindi, Arabic, French, German, Japanese, etc.)..."
                   rows={7}
                   className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-white placeholder-[#535353] focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760] outline-none transition-all resize-y leading-relaxed"
                 />
@@ -704,6 +858,19 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
               </div>
 
+              {/* Quota Notice if API rate limit or high demand */}
+              {quotaErrorMessage && (
+                <div className="pt-2">
+                  <AiQuotaNotice
+                    message={quotaErrorMessage}
+                    onRetry={handleGenerateVoiceover}
+                    onDismiss={() => setQuotaErrorMessage(null)}
+                    onOpenPricing={onOpenPricing}
+                    compact
+                  />
+                </div>
+              )}
+
               {/* Synthesize Button */}
               <div className="pt-2">
                 <Button
@@ -762,15 +929,36 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         onSendToSubtitleStudio(
                           currentVoiceover.audioUrl,
                           `Voiceover - ${currentVoiceover.voiceName}`,
-                          audioDuration || currentVoiceover.durationSeconds
+                          audioDuration || currentVoiceover.durationSeconds,
+                          currentVoiceover.script
                         );
                         showToast('Voiceover loaded into Subtitle Editor!');
                       }}
-                      className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold"
+                      className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Send to Subtitles</span>
                     </Button>
+
+                    {/* Delete Voiceover from Generator & Recordings */}
+                    <button
+                      onClick={() =>
+                        promptDeleteVoiceover({
+                          id: currentVoiceover.id,
+                          voiceoverId: currentVoiceover.voiceoverId,
+                          audioUrl: currentVoiceover.audioUrl,
+                          title: currentVoiceover.script.slice(0, 60),
+                          voiceName: currentVoiceover.voiceName,
+                          format: currentVoiceover.format,
+                          source: 'generate',
+                        })
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#282828] hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 text-xs font-bold rounded-lg border border-rose-500/30 hover:border-rose-500/50 transition-all cursor-pointer"
+                      title="Delete this generated voiceover"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1077,7 +1265,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
               {/* Sample Reading Prompt Helper */}
               <div className="p-3 bg-[#121212] rounded-xl border border-[#242424] text-xs text-[#b3b3b3] space-y-1">
-                <span className="font-bold text-white">Recommended sample reading text (English / Bengali):</span>
+                <span className="font-bold text-white">Recommended sample reading text (any language):</span>
                 <p className="italic text-[#878787]">
                   &quot;I am recording this audio sample to clone my personal voice in Scriby AI. This recording will capture my natural cadence, tone, and pronunciation for automated voiceovers.&quot;
                 </p>
@@ -1135,9 +1323,18 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     onChange={(e) => setCloneLanguage(e.target.value as any)}
                     className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-lg p-2.5 outline-none focus:border-[#1ed760]"
                   >
+                    <option value="multilingual">Universal Multilingual (All Languages)</option>
                     <option value="en">English</option>
-                    <option value="bn">Bengali</option>
-                    <option value="multilingual">Multilingual (English & Bengali)</option>
+                    <option value="bn">Bengali (বাংলা)</option>
+                    <option value="es">Spanish (Español)</option>
+                    <option value="hi">Hindi (हिन्दी)</option>
+                    <option value="ar">Arabic (العربية)</option>
+                    <option value="fr">French (Français)</option>
+                    <option value="de">German (Deutsch)</option>
+                    <option value="pt">Portuguese (Português)</option>
+                    <option value="ja">Japanese (日本語)</option>
+                    <option value="zh">Chinese (中文)</option>
+                    <option value="other">Other Global Language</option>
                   </select>
                 </div>
 
@@ -1266,22 +1463,67 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <span>Download Audio (WAV)</span>
                   </a>
 
-                  {/* Send to Subtitle Studio */}
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      onSendToSubtitleStudio(
-                        liveRecordedUrl,
-                        `Live Voice Recording - ${new Date().toLocaleTimeString()}`,
-                        recordingSeconds
-                      );
-                      showToast('Live recording loaded into Subtitle Editor!');
-                    }}
-                    className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send to Subtitles</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {/* Save to Recordings archive */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (liveRecordedUrl) {
+                          const newRec: SavedVoiceoverItem = {
+                            id: Date.now(),
+                            title: `Live Voice Recording (${formatPlayerTime(recordingSeconds)})`,
+                            script: 'Microphone live voice capture',
+                            voiceId: 'live-mic',
+                            voiceName: 'Live Microphone',
+                            voiceGender: 'custom',
+                            audioUrl: liveRecordedUrl,
+                            durationSeconds: recordingSeconds,
+                            format: 'wav',
+                            createdAt: new Date().toISOString(),
+                          };
+                          setSavedVoiceovers((prev) => [newRec, ...prev]);
+                          showToast('Live recording saved to Recordings archive!');
+                        }
+                      }}
+                      className="text-xs h-8 gap-1.5 border-[#3e3e3e] text-white hover:border-[#1ed760] hover:text-[#1ed760] cursor-pointer"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
+                      <span>Save to Recordings</span>
+                    </Button>
+
+                    {/* Send to Subtitle Studio */}
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        onSendToSubtitleStudio(
+                          liveRecordedUrl,
+                          `Live Voice Recording - ${new Date().toLocaleTimeString()}`,
+                          recordingSeconds,
+                          script.trim() || 'Live microphone voice capture'
+                        );
+                        showToast('Live recording loaded into Subtitle Editor with synced subtitles!');
+                      }}
+                      className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send to Subtitles</span>
+                    </Button>
+
+                    {/* Discard Recording */}
+                    <button
+                      onClick={() => {
+                        setLiveRecordedBlob(null);
+                        setLiveRecordedUrl(null);
+                        setRecordingSeconds(0);
+                        showToast('Live recording discarded.');
+                      }}
+                      className="p-1.5 text-[#535353] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Discard recording"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1367,18 +1609,27 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <Button
                       size="sm"
                       onClick={() => {
-                        onSendToSubtitleStudio(item.audioUrl, item.title, item.durationSeconds);
-                        showToast('Loaded into Subtitle Editor!');
+                        onSendToSubtitleStudio(item.audioUrl, item.title, item.durationSeconds, item.script);
+                        showToast('Loaded into Subtitle Editor with synced subtitles!');
                       }}
-                      className="text-[11px] h-7 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold"
+                      className="text-[11px] h-7 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
                     >
                       Use in Studio
                     </Button>
 
                     <button
-                      onClick={() => handleDeleteVoiceoverItem(item.id)}
-                      className="p-1.5 text-[#535353] hover:text-red-400 rounded-lg hover:bg-[#282828] transition-colors"
-                      title="Delete"
+                      onClick={() =>
+                        promptDeleteVoiceover({
+                          id: item.id,
+                          audioUrl: item.audioUrl,
+                          title: item.title,
+                          voiceName: item.voiceName,
+                          format: item.format,
+                          source: 'recording',
+                        })
+                      }
+                      className="p-1.5 text-[#535353] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      title="Delete recording"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1388,6 +1639,217 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             </div>
           )}
         </Card>
+      )}
+
+      {/* ========================================================================= */}
+      {/* CONFIRMATION MODAL: DELETE VOICE RECORDING                                */}
+      {/* ========================================================================= */}
+      {itemToDelete && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => {
+            if (!isDeletingVoiceover) setItemToDelete(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#181818] border border-rose-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 text-left"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white font-display">
+                  Delete Voice Recording?
+                </h3>
+                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                  Are you sure you want to delete this voiceover recording? This will permanently remove the audio file from your recordings archive and voice generation workspace.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-[#121212] border border-[#282828] rounded-xl space-y-1.5 text-xs">
+              <div className="font-semibold text-white line-clamp-2">
+                {itemToDelete.title || itemToDelete.voiceName || 'Voiceover Clip'}
+              </div>
+              <div className="text-[11px] text-[#878787] flex items-center gap-2">
+                <span className="text-[#1ed760] font-semibold">{itemToDelete.voiceName || 'Studio Voice'}</span>
+                <span>·</span>
+                <span className="uppercase font-mono">{itemToDelete.format || 'WAV'}</span>
+                <span>·</span>
+                <span className="text-rose-400 font-medium">Permanent Removal</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setItemToDelete(null)}
+                disabled={isDeletingVoiceover}
+                className="border-[#3e3e3e] text-[#b3b3b3] hover:text-white hover:bg-[#282828] text-xs h-9 px-4 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleConfirmDelete}
+                disabled={isDeletingVoiceover}
+                className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs h-9 px-4 gap-1.5 shadow-md shadow-rose-950/40 cursor-pointer"
+              >
+                {isDeletingVoiceover ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: SELECT PLATFORM SUBTITLES / TRANSCRIPTS                             */}
+      {/* ========================================================================= */}
+      {showPlatformSubtitlesModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setShowPlatformSubtitlesModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#181818] border border-[#282828] rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 text-left"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#1ed760]" />
+                <h3 className="text-base font-bold text-white font-display">
+                  Import Platform Subtitles
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowPlatformSubtitlesModal(false)}
+                className="p-1 text-[#878787] hover:text-white rounded-lg hover:bg-[#282828] transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#b3b3b3]">
+              Choose from your active subtitle editor session or saved transcripts previously created on this platform.
+            </p>
+
+            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+              {/* Option 1: Current Active Subtitle Session */}
+              {currentSubtitleText ? (
+                <div
+                  onClick={() => {
+                    setScript(currentSubtitleText);
+                    showToast('Imported active subtitles into Voiceover Studio!');
+                    setShowPlatformSubtitlesModal(false);
+                  }}
+                  className="p-3.5 bg-[#121212] border border-[#1ed760]/40 hover:border-[#1ed760] rounded-xl cursor-pointer transition-all hover:bg-[#1a1a1a] group"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-bold text-white flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#1ed760] animate-pulse" />
+                      Current Subtitle Editor Transcript
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/30">
+                      Active Session
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#b3b3b3] line-clamp-2 italic">
+                    "{currentSubtitleText}"
+                  </p>
+                  <div className="text-[11px] text-[#878787] mt-2 flex items-center gap-2">
+                    <span>{currentSubtitleText.split(/\s+/).filter(Boolean).length} words</span>
+                    <span>·</span>
+                    <span className="text-[#1ed760] group-hover:underline">Click to load into script</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-[#121212] border border-[#282828] rounded-xl text-xs text-[#878787]">
+                  No active subtitle session open in editor. Choose from your saved transcripts below or type a script.
+                </div>
+              )}
+
+              {/* Option 2: Saved Platform Transcripts from Cloud SQL */}
+              <div className="pt-2">
+                <div className="text-xs font-semibold text-[#878787] uppercase tracking-wider mb-2">
+                  Saved Platform Transcripts ({platformTranscripts.length})
+                </div>
+
+                {isLoadingPlatformTranscripts && (
+                  <div className="py-6 text-center text-xs text-[#878787]">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#1ed760] mx-auto mb-1.5" />
+                    Loading saved platform transcripts...
+                  </div>
+                )}
+
+                {!isLoadingPlatformTranscripts && platformTranscripts.length === 0 && (
+                  <div className="p-3 text-center text-xs text-[#878787] bg-[#121212] rounded-xl border border-[#282828]">
+                    No saved transcripts found in history.
+                  </div>
+                )}
+
+                {!isLoadingPlatformTranscripts &&
+                  platformTranscripts.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => {
+                        const targetText =
+                          t.fullTranscript ||
+                          (t.segments && t.segments.length > 0 ? t.segments.map((s: any) => s.text).join(' ') : '') ||
+                          t.title;
+                        setScript(targetText);
+                        showToast(`Imported subtitles from "${t.title}"!`);
+                        setShowPlatformSubtitlesModal(false);
+                      }}
+                      className="p-3 bg-[#121212] border border-[#282828] hover:border-[#1ed760]/60 rounded-xl cursor-pointer transition-all hover:bg-[#1a1a1a] mb-2 group"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-white group-hover:text-[#1ed760] transition-colors truncate max-w-[300px]">
+                          {t.title}
+                        </span>
+                        <span className="text-[10px] text-[#878787] font-mono">
+                          ~{Math.round(t.duration || 30)}s
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#878787] line-clamp-2">
+                        {t.fullTranscript || 'Transcript audio session'}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#282828]">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPlatformSubtitlesModal(false)}
+                className="border-[#3e3e3e] text-[#b3b3b3] hover:text-white hover:bg-[#282828] text-xs h-8 px-4 cursor-pointer"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
