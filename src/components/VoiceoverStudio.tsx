@@ -27,12 +27,22 @@ import {
   FolderOpen,
   X,
   FileCheck,
+  Globe,
 } from 'lucide-react';
 import { VoiceProfile, SavedVoiceoverItem, AudioExportFormat, VoiceTone, VoiceGender } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { formatPlayerTime } from '../utils/timeFormat';
 import { parseSubtitleToPlainText } from '../utils/subtitleUtils';
+import {
+  CUSTOM_ACCENT_ID,
+  getSynthesisLanguages,
+  getCloningLanguages,
+  getAccentsForLanguage,
+  getDefaultAccentForLanguage,
+  getShortLanguageLabel,
+  resolveSelectionForVoiceProfile,
+} from '../utils/voiceLanguages';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
@@ -71,6 +81,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   const [tone, setTone] = useState<VoiceTone>('natural');
   const [speed, setSpeed] = useState<number>(1.0);
   const [pitch, setPitch] = useState<number>(0);
+  const [ttsLanguage, setTtsLanguage] = useState<string>('auto');
+  const [ttsAccent, setTtsAccent] = useState<string>(getDefaultAccentForLanguage('auto'));
+  const [ttsCustomAccent, setTtsCustomAccent] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<AudioExportFormat>('wav');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -84,6 +97,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     durationSeconds: number;
     format: AudioExportFormat;
     voiceName: string;
+    language?: string;
+    languageLabel?: string;
+    accent?: string;
     script: string;
   } | null>(null);
 
@@ -114,8 +130,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   // Voice Cloning Modal / Form State
   const [cloneName, setCloneName] = useState<string>('');
   const [cloneGender, setCloneGender] = useState<VoiceGender>('custom');
-  const [cloneLanguage, setCloneLanguage] = useState<'bn' | 'en' | 'multilingual'>('bn');
-  const [cloneAccent, setCloneAccent] = useState<string>('Standard Bangla');
+  const [cloneLanguage, setCloneLanguage] = useState<string>('multilingual');
+  const [cloneAccent, setCloneAccent] = useState<string>(getDefaultAccentForLanguage('multilingual'));
+  const [cloneCustomAccent, setCloneCustomAccent] = useState<string>('');
   const [cloneDescription, setCloneDescription] = useState<string>('');
   const [cloneAudioBlob, setCloneAudioBlob] = useState<Blob | null>(null);
   const [cloneAudioUrl, setCloneAudioUrl] = useState<string | null>(null);
@@ -302,6 +319,49 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     }
   };
 
+  // Linked Primary Language & Accent Options
+  const synthesisLanguages = getSynthesisLanguages();
+  const cloningLanguages = getCloningLanguages();
+  const ttsAccentOptions = getAccentsForLanguage(ttsLanguage);
+  const cloneAccentOptions = getAccentsForLanguage(cloneLanguage);
+  const selectedVoice = voices.find((v) => String(v.id) === String(selectedVoiceId));
+  const effectiveTtsAccent =
+    ttsAccent === CUSTOM_ACCENT_ID ? ttsCustomAccent.trim() : ttsAccent;
+
+  const handleTtsLanguageChange = (nextLang: string) => {
+    setTtsLanguage(nextLang);
+    setTtsAccent(getDefaultAccentForLanguage(nextLang));
+    setTtsCustomAccent('');
+  };
+
+  const handleCloneLanguageChange = (nextLang: string) => {
+    setCloneLanguage(nextLang);
+    setCloneAccent(getDefaultAccentForLanguage(nextLang));
+    setCloneCustomAccent('');
+  };
+
+  const handleSelectVoice = (voice: VoiceProfile) => {
+    setSelectedVoiceId(voice.id);
+    if (voice.isCustom) {
+      const synced = resolveSelectionForVoiceProfile(voice);
+      setTtsLanguage(synced.language);
+      setTtsAccent(synced.accent);
+      setTtsCustomAccent(synced.customAccent);
+    }
+  };
+
+  const selectedVoiceCloneDefaults = selectedVoice?.isCustom
+    ? resolveSelectionForVoiceProfile(selectedVoice)
+    : null;
+
+  const isOverridingCloneDefaults = Boolean(
+    selectedVoiceCloneDefaults &&
+      (ttsLanguage !== selectedVoiceCloneDefaults.language ||
+        ttsAccent !== selectedVoiceCloneDefaults.accent ||
+        (ttsAccent === CUSTOM_ACCENT_ID &&
+          ttsCustomAccent.trim() !== selectedVoiceCloneDefaults.customAccent))
+  );
+
   // Synthesize Voiceover
   const handleGenerateVoiceover = async () => {
     if (!script.trim()) {
@@ -309,7 +369,12 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       return;
     }
 
-    const selectedVoice = voices.find((v) => String(v.id) === String(selectedVoiceId));
+    if (ttsAccent === CUSTOM_ACCENT_ID && !ttsCustomAccent.trim()) {
+      showToast('Please enter your custom accent or dialect before generating.', 'error');
+      return;
+    }
+
+    const activeVoice = voices.find((v) => String(v.id) === String(selectedVoiceId));
     setIsGenerating(true);
 
     try {
@@ -324,6 +389,12 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         durationSeconds: number;
         format: AudioExportFormat;
         voiceName: string;
+        gender?: string;
+        ttsVoiceName?: string;
+        engine?: string;
+        language?: string;
+        languageLabel?: string;
+        accent?: string;
         script: string;
       }>('/api/voiceover/generate', {
         method: 'POST',
@@ -331,16 +402,22 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         body: JSON.stringify({
           script,
           voiceId: selectedVoiceId,
-          voiceName: selectedVoice?.name || 'Studio Voice',
-          gender: selectedVoice?.gender || 'male',
+          voiceName: activeVoice?.name || 'Studio Voice',
+          gender: activeVoice?.gender || 'male',
           tone,
           speed,
           pitch,
+          language: ttsLanguage,
+          accent: effectiveTtsAccent,
           format: exportFormat,
         }),
       });
 
       if (res.ok && res.data) {
+        const resolvedLangLabel =
+          res.data.languageLabel || getShortLanguageLabel(res.data.language || ttsLanguage);
+        const resolvedAccentLabel = res.data.accent || effectiveTtsAccent;
+
         const generatedItem = {
           id: res.data.id,
           voiceoverId: res.data.voiceoverId,
@@ -348,6 +425,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           durationSeconds: res.data.durationSeconds,
           format: res.data.format,
           voiceName: res.data.voiceName,
+          language: res.data.language || ttsLanguage,
+          languageLabel: resolvedLangLabel,
+          accent: resolvedAccentLabel,
           script: res.data.script,
         };
         setCurrentVoiceover(generatedItem);
@@ -361,7 +441,10 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           script,
           voiceId: String(selectedVoiceId),
           voiceName: res.data.voiceName,
-          voiceGender: selectedVoice?.gender || 'male',
+          voiceGender: res.data.gender || activeVoice?.gender || 'male',
+          language: res.data.language || ttsLanguage,
+          languageLabel: resolvedLangLabel,
+          accent: resolvedAccentLabel,
           audioUrl: res.data.audioUrl,
           durationSeconds: res.data.durationSeconds,
           format: res.data.format,
@@ -377,7 +460,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           ),
         ]);
 
-        showToast('Voiceover synthesized and added to Recordings!');
+        if (res.data.engine === 'fallback') {
+          showToast('AI TTS engine was temporarily unavailable; synthesized backup audio track.', 'error');
+        } else {
+          showToast('Voiceover synthesized and added to Recordings!');
+        }
         if (token) fetchSavedVoiceovers();
       } else {
         if (res.isQuotaExceeded || res.status === 429) {
@@ -480,6 +567,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       return;
     }
 
+    const effectiveCloneAccent =
+      cloneAccent === CUSTOM_ACCENT_ID ? cloneCustomAccent.trim() : cloneAccent;
+
+    if (cloneAccent === CUSTOM_ACCENT_ID && !effectiveCloneAccent) {
+      showToast('Please enter a custom accent or dialect for your voice profile.', 'error');
+      return;
+    }
+
     setIsCloning(true);
     try {
       // Convert blob to base64
@@ -503,7 +598,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             name: cloneName,
             gender: cloneGender,
             language: cloneLanguage,
-            accent: cloneAccent,
+            accent: effectiveCloneAccent,
             description: cloneDescription,
             audioBase64,
             durationSeconds: cloneDuration || 15,
@@ -512,14 +607,18 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       );
 
       if (res.ok && res.data?.voice) {
+        const savedVoice = res.data.voice;
         showToast('Voice cloned and saved successfully!');
         setCloneName('');
         setCloneDescription('');
+        setCloneLanguage('multilingual');
+        setCloneAccent(getDefaultAccentForLanguage('multilingual'));
+        setCloneCustomAccent('');
         setCloneAudioBlob(null);
         setCloneAudioUrl(null);
         fetchVoices();
         setActiveSubTab('tts');
-        setSelectedVoiceId(res.data.voice.id);
+        handleSelectVoice(savedVoice);
       } else {
         showToast(res.error || 'Failed to clone voice.', 'error');
       }
@@ -793,9 +892,103 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
             {/* Vocal Modulation & Output Format Card */}
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-[#1ed760]" />
-                <h3 className="text-sm font-bold text-white">Audio Tuning & Format</h3>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-[#1ed760]" />
+                  <h3 className="text-sm font-bold text-white">Language, Accent &amp; Audio Tuning</h3>
+                </div>
+                {isOverridingCloneDefaults && selectedVoiceCloneDefaults && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTtsLanguage(selectedVoiceCloneDefaults.language);
+                      setTtsAccent(selectedVoiceCloneDefaults.accent);
+                      setTtsCustomAccent(selectedVoiceCloneDefaults.customAccent);
+                    }}
+                    className="text-xs font-semibold text-[#1ed760] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    Reset to clone default
+                  </button>
+                )}
+              </div>
+
+              {/* Linked Primary Language & Regional Accent Row */}
+              <div className="space-y-3 pb-3 border-b border-[#282828]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Primary Language Select */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="tts-primary-language"
+                      className="text-xs font-semibold text-[#b3b3b3] flex items-center gap-1.5"
+                    >
+                      <Globe className="w-3.5 h-3.5 text-[#1ed760]" />
+                      <span>Primary Language</span>
+                    </label>
+                    <select
+                      id="tts-primary-language"
+                      value={ttsLanguage}
+                      onChange={(e) => handleTtsLanguageChange(e.target.value)}
+                      className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    >
+                      {synthesisLanguages.map((lang) => (
+                        <option key={lang.code} value={lang.code}>
+                          {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Linked Accent / Dialect Select */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="tts-accent-select"
+                      className="text-xs font-semibold text-[#b3b3b3]"
+                    >
+                      Accent / Dialect
+                    </label>
+                    <select
+                      id="tts-accent-select"
+                      value={ttsAccent}
+                      onChange={(e) => setTtsAccent(e.target.value)}
+                      className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    >
+                      {ttsAccentOptions.map((acc) => (
+                        <option key={acc.id} value={acc.label}>
+                          {acc.label}
+                        </option>
+                      ))}
+                      <option value={CUSTOM_ACCENT_ID}>Custom Accent...</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Inline Custom Accent Input when Custom Accent is selected */}
+                {ttsAccent === CUSTOM_ACCENT_ID && (
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="tts-custom-accent"
+                      className="text-xs font-semibold text-[#b3b3b3]"
+                    >
+                      Custom Accent / Dialect Description
+                    </label>
+                    <Input
+                      id="tts-custom-accent"
+                      type="text"
+                      maxLength={80}
+                      autoFocus
+                      value={ttsCustomAccent}
+                      onChange={(e) => setTtsCustomAccent(e.target.value)}
+                      placeholder="e.g., Scottish Highlands, Rioplatense Buenos Aires, Warm Documentary"
+                      className="h-10 bg-[#121212] border-[#3e3e3e] text-xs text-white focus:border-[#1ed760]"
+                    />
+                  </div>
+                )}
+
+                {selectedVoice?.isCustom && selectedVoice.accent && (
+                  <p className="text-xs text-[#878787]">
+                    Synced with cloned voice <span className="text-[#b3b3b3] font-medium">{selectedVoice.name}</span> ({getShortLanguageLabel(selectedVoice.language)} · {selectedVoice.accent}) — change above anytime to override.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -805,7 +998,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <select
                     value={tone}
                     onChange={(e) => setTone(e.target.value as VoiceTone)}
-                    className="w-full bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg p-2 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
                   >
                     <option value="natural">Natural Conversational</option>
                     <option value="broadcast">Professional Broadcast / News</option>
@@ -818,7 +1011,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold text-[#b3b3b3]">
                     <span>Speed</span>
-                    <span className="font-mono text-[#1ed760]">{speed}x</span>
+                    <span className="font-mono text-[#1ed760] tabular-nums">{speed}x</span>
                   </div>
                   <input
                     type="range"
@@ -839,13 +1032,13 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 {/* Export Audio Format */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-[#b3b3b3]">Export Format</label>
-                  <div className="grid grid-cols-3 gap-1 bg-[#121212] p-1 rounded-lg border border-[#282828]">
+                  <div className="grid grid-cols-3 gap-1 bg-[#121212] p-1 rounded-lg border border-[#282828] h-10 items-center">
                     {(['wav', 'mp3', 'ogg'] as AudioExportFormat[]).map((fmt) => (
                       <button
                         key={fmt}
                         type="button"
                         onClick={() => setExportFormat(fmt)}
-                        className={`py-1 text-xs font-bold rounded uppercase transition-colors cursor-pointer ${
+                        className={`h-full text-xs font-bold rounded uppercase transition-colors cursor-pointer ${
                           exportFormat === fmt
                             ? 'bg-[#1ed760] text-black shadow'
                             : 'text-[#b3b3b3] hover:text-white'
@@ -904,8 +1097,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         Ready: {currentVoiceover.voiceName}
                       </h4>
                       <p className="text-xs text-[#b3b3b3] font-mono tabular-nums">
-                        Format: {currentVoiceover.format.toUpperCase()} · Duration: ~
-                        {formatPlayerTime(audioDuration || currentVoiceover.durationSeconds)}
+                        {currentVoiceover.format.toUpperCase()} · {formatPlayerTime(audioDuration || currentVoiceover.durationSeconds)}
+                        {currentVoiceover.languageLabel ? ` · ${currentVoiceover.languageLabel}` : ''}
+                        {currentVoiceover.accent ? ` · ${currentVoiceover.accent}` : ''}
                       </p>
                     </div>
                   </div>
@@ -1087,7 +1281,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 return (
                   <div
                     key={voice.id}
-                    onClick={() => setSelectedVoiceId(voice.id)}
+                    onClick={() => handleSelectVoice(voice)}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
                       isSelected
                         ? 'bg-[#242424] border-[#1ed760] shadow-[0_0_12px_rgba(30,215,96,0.15)]'
@@ -1099,32 +1293,53 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         {/* Voice Avatar Badge */}
                         <div
                           className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                            voice.gender === 'female'
+                            voice.gender === 'female' || voice.vocalFingerprint?.detectedGender === 'female'
                               ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                               : voice.isCustom
                               ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
                               : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                           }`}
                         >
-                          {voice.gender === 'female' ? 'F' : voice.isCustom ? 'C' : 'M'}
+                          {voice.gender === 'female' || voice.vocalFingerprint?.detectedGender === 'female'
+                            ? 'F'
+                            : voice.gender === 'male' || voice.vocalFingerprint?.detectedGender === 'male'
+                            ? 'M'
+                            : 'C'}
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm text-white">{voice.name}</span>
-                            {voice.isCustom ? (
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                                Cloned Voice
-                              </span>
-                            ) : (
-                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1ed760]/10 text-[#1ed760]">
-                                Default
-                              </span>
-                            )}
+                            <span
+                              className={`text-xs font-semibold ${
+                                voice.isCustom ? 'text-blue-300' : 'text-[#1ed760]'
+                              }`}
+                            >
+                              {voice.isCustom ? '· Cloned' : '· Studio'}
+                            </span>
                           </div>
-                          <p className="text-xs text-[#b3b3b3] mt-0.5 line-clamp-2">
-                            {voice.description}
+                          <p className="text-xs text-[#878787] mt-0.5 font-mono tabular-nums">
+                            {voice.gender === 'female'
+                              ? 'Female'
+                              : voice.gender === 'male'
+                              ? 'Male'
+                              : voice.vocalFingerprint?.detectedGender === 'female'
+                              ? 'Female'
+                              : voice.vocalFingerprint?.detectedGender === 'male'
+                              ? 'Male'
+                              : 'Custom'}
+                            {` · ${getShortLanguageLabel(voice.language)}`}
+                            {voice.accent ? ` · ${voice.accent}` : ''}
+                            {voice.isCustom && voice.durationSeconds ? ` · ${voice.durationSeconds}s` : ''}
                           </p>
+                          {(voice.description || voice.vocalFingerprint?.pitchRegister) && (
+                            <p className="text-xs text-[#b3b3b3] mt-1 line-clamp-2">
+                              {voice.description ||
+                                [voice.vocalFingerprint?.pitchRegister, voice.vocalFingerprint?.vocalTimbre]
+                                  .filter(Boolean)
+                                  .join(' — ')}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -1308,47 +1523,69 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <select
                     value={cloneGender}
                     onChange={(e) => setCloneGender(e.target.value as VoiceGender)}
-                    className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-lg p-2.5 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
                   >
+                    <option value="custom">Auto-Detect from Voice Sample</option>
                     <option value="male">Male (Deep Studio Voice)</option>
                     <option value="female">Female (Clear Narrative Voice)</option>
-                    <option value="custom">Custom Voice Timbre</option>
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Primary Language</label>
+                  <label htmlFor="clone-primary-language" className="text-xs font-semibold text-[#b3b3b3]">
+                    Primary Language
+                  </label>
                   <select
+                    id="clone-primary-language"
                     value={cloneLanguage}
-                    onChange={(e) => setCloneLanguage(e.target.value as any)}
-                    className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-lg p-2.5 outline-none focus:border-[#1ed760]"
+                    onChange={(e) => handleCloneLanguageChange(e.target.value)}
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
                   >
-                    <option value="multilingual">Universal Multilingual (All Languages)</option>
-                    <option value="en">English</option>
-                    <option value="bn">Bengali (বাংলা)</option>
-                    <option value="es">Spanish (Español)</option>
-                    <option value="hi">Hindi (हिन्दी)</option>
-                    <option value="ar">Arabic (العربية)</option>
-                    <option value="fr">French (Français)</option>
-                    <option value="de">German (Deutsch)</option>
-                    <option value="pt">Portuguese (Português)</option>
-                    <option value="ja">Japanese (日本語)</option>
-                    <option value="zh">Chinese (中文)</option>
-                    <option value="other">Other Global Language</option>
+                    {cloningLanguages.map((lang) => (
+                      <option key={lang.code} value={lang.code}>
+                        {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Accent / Style</label>
-                  <Input
-                    type="text"
+                  <label htmlFor="clone-accent-select" className="text-xs font-semibold text-[#b3b3b3]">
+                    Accent / Dialect
+                  </label>
+                  <select
+                    id="clone-accent-select"
                     value={cloneAccent}
                     onChange={(e) => setCloneAccent(e.target.value)}
-                    placeholder="e.g., Standard Studio / Neutral / Clear"
-                    className="bg-[#121212] border-[#282828] text-white"
-                  />
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                  >
+                    {cloneAccentOptions.map((acc) => (
+                      <option key={acc.id} value={acc.label}>
+                        {acc.label}
+                      </option>
+                    ))}
+                    <option value={CUSTOM_ACCENT_ID}>Custom Accent...</option>
+                  </select>
                 </div>
               </div>
+
+              {cloneAccent === CUSTOM_ACCENT_ID && (
+                <div className="space-y-1.5">
+                  <label htmlFor="clone-custom-accent" className="text-xs font-semibold text-[#b3b3b3]">
+                    Custom Accent / Dialect Style
+                  </label>
+                  <Input
+                    id="clone-custom-accent"
+                    type="text"
+                    maxLength={80}
+                    autoFocus
+                    value={cloneCustomAccent}
+                    onChange={(e) => setCloneCustomAccent(e.target.value)}
+                    placeholder="e.g., Sylheti-inflected Warm, Scottish Highlands, Calm Documentary"
+                    className="h-10 bg-[#121212] border-[#282828] text-xs text-white focus:border-[#1ed760]"
+                  />
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-[#b3b3b3]">Description (Optional)</label>
@@ -1371,7 +1608,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   {isCloning ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                      <span>Saving Voice Profile...</span>
+                      <span>Analyzing Voice &amp; Saving Profile...</span>
                     </>
                   ) : (
                     <>
@@ -1584,10 +1821,22 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                     <div className="truncate">
                       <h4 className="text-xs font-bold text-white truncate">{item.title}</h4>
-                      <p className="text-[11px] text-[#878787] flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-[#1ed760]">{item.voiceName}</span>
+                      <p className="text-xs text-[#878787] flex items-center gap-2 mt-0.5 flex-wrap font-mono tabular-nums">
+                        <span className="font-semibold text-[#1ed760] font-sans">{item.voiceName}</span>
                         <span>·</span>
                         <span className="uppercase">{item.format}</span>
+                        {item.languageLabel && (
+                          <>
+                            <span>·</span>
+                            <span className="font-sans">{item.languageLabel}</span>
+                          </>
+                        )}
+                        {item.accent && (
+                          <>
+                            <span>·</span>
+                            <span className="font-sans">{item.accent}</span>
+                          </>
+                        )}
                         <span>·</span>
                         <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                       </p>

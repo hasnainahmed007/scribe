@@ -47,6 +47,13 @@ import {
   formatZodError,
   formatZodFieldErrors,
 } from './src/schemas/validation.ts';
+import {
+  normalizeLanguageCode,
+  resolveVoiceoverStyleDirective,
+  getDefaultAccentForLanguage,
+  selectGenderLockedPrebuiltVoice,
+  VoiceCloneAcousticProfile,
+} from './src/utils/voiceLanguages.ts';
 
 dotenv.config();
 
@@ -2746,6 +2753,160 @@ function createNaturalSpeechWavBuffer(
   return buffer;
 }
 
+// Helper to sniff actual audio MIME type from magic bytes or data URL prefix
+function detectAudioMimeType(buffer: Buffer, dataUri?: string): string {
+  if (buffer && buffer.length >= 12) {
+    const hdr4 = buffer.subarray(0, 4).toString('ascii');
+    const hdr8_12 = buffer.subarray(8, 12).toString('ascii');
+    if (hdr4 === 'RIFF' && hdr8_12 === 'WAVE') return 'audio/wav';
+    if (hdr4 === 'OggS') return 'audio/ogg';
+    if (hdr4 === 'fLaC') return 'audio/flac';
+    if (buffer.subarray(4, 8).toString('ascii') === 'ftyp') return 'audio/mp4';
+    if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
+      return 'audio/webm';
+    }
+    if (hdr4.startsWith('ID3') || (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0)) {
+      return 'audio/mpeg';
+    }
+  }
+  if (dataUri) {
+    const m = dataUri.match(/^data:(audio\/[a-zA-Z0-9.+-]+)(?:;[^,]*)?;base64,/i);
+    if (m && m[1]) {
+      const normalized = m[1].toLowerCase();
+      if (normalized === 'audio/x-wav') return 'audio/wav';
+      if (normalized === 'audio/mp3') return 'audio/mpeg';
+      return normalized;
+    }
+  }
+  return 'audio/wav';
+}
+
+// Helper to analyze an uploaded/recorded voice sample using Gemini multimodal audio intelligence
+async function analyzeClonedVoiceSample(
+  audioBuffer: Buffer,
+  mimeType: string,
+  requestedGender: string,
+  voiceName: string
+): Promise<VoiceCloneAcousticProfile | null> {
+  const lockedGender =
+    requestedGender === 'female' ? 'female' : requestedGender === 'male' ? 'male' : undefined;
+
+  const buildDefaultProfile = (): VoiceCloneAcousticProfile => {
+    const g = lockedGender || 'male';
+    return {
+      detectedGender: g,
+      pitchRegister: g === 'female' ? 'Clear mid-range female register (~190-220 Hz)' : 'Grounded male studio baritone register (~105-135 Hz)',
+      vocalTimbre: g === 'female' ? 'Warm, articulate studio voice' : 'Resonant, steady chest-voice studio tone',
+      cadenceAndPacing: 'Natural conversational phrasing with clear pauses',
+      recommendedBaseVoice: g === 'female' ? 'Aoede' : 'Charon',
+      voiceDesignDirective:
+        g === 'female'
+          ? `Speak as an adult woman matching "${voiceName}" with a warm, steady, natural narrative delivery.`
+          : `Speak as an adult man matching "${voiceName}" with a grounded chest-voice baritone pitch and natural cadence.`,
+    };
+  };
+
+  if (!apiKey || !audioBuffer || audioBuffer.length < 500) {
+    return buildDefaultProfile();
+  }
+
+  try {
+    // Limit audio inline sample size safely (<= 8MB)
+    const sampleData = audioBuffer.length > 8 * 1024 * 1024 ? audioBuffer.subarray(0, 8 * 1024 * 1024) : audioBuffer;
+    const analysisRes = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: mimeType || 'audio/wav',
+                data: sampleData.toString('base64'),
+              },
+            },
+            {
+              text: `Listen closely to the speaker in this voice sample (for voice profile "${voiceName}"${
+                lockedGender ? `, user specified gender: ${lockedGender}` : ''
+              }). Analyze ONLY the acoustic voice qualities of the speaker so a text-to-speech Voice Design model can faithfully replicate their voice.
+
+Return strict JSON describing:
+1. detectedGender: "male" or "female" based on vocal cord pitch & formants${lockedGender ? ` (respect user gender "${lockedGender}")` : ''}.
+2. pitchRegister: exact pitch range and vocal register (e.g. "Deep baritone (~95-115 Hz)", "Warm tenor (~130-150 Hz)", "Clear alto (~180-210 Hz)").
+3. vocalTimbre: vocal resonance, warmth, texture, breathiness, crispness (e.g. "Chesty, slightly gravelly warm baritone with crisp consonants").
+4. cadenceAndPacing: speaking speed, pause rhythm, and inflection habits.
+5. accentCharacteristics: audible regional pronunciation or cadence features from the recording.
+6. recommendedBaseVoice: pick the single best Gemini base voice match:
+   - Male options: "Charon" (deep warm grounded male), "Fenrir" (resonant expressive deeper male), "Puck" (lighter energetic conversational male)
+   - Female options: "Kore" (clear crisp studio female), "Aoede" (warm melodic expressive female), "Zephyr" (soft calm breezy female)
+7. voiceDesignDirective: one vivid, concrete voice-acting direction sentence describing this exact speaker's vocal timbre, register, warmth, and delivery rhythm.`,
+            },
+          ],
+        },
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              detectedGender: { type: Type.STRING },
+              pitchRegister: { type: Type.STRING },
+              vocalTimbre: { type: Type.STRING },
+              cadenceAndPacing: { type: Type.STRING },
+              accentCharacteristics: { type: Type.STRING },
+              recommendedBaseVoice: { type: Type.STRING },
+              voiceDesignDirective: { type: Type.STRING },
+            },
+            required: [
+              'detectedGender',
+              'pitchRegister',
+              'vocalTimbre',
+              'cadenceAndPacing',
+              'recommendedBaseVoice',
+              'voiceDesignDirective',
+            ],
+          },
+        },
+      }),
+      18000,
+      'Voice sample acoustic analysis timed out'
+    );
+
+    const parsed = JSON.parse(analysisRes.text || '{}');
+    const rawDetected = String(parsed.detectedGender || '').toLowerCase();
+    const detectedGender: 'male' | 'female' =
+      lockedGender || (rawDetected.includes('female') ? 'female' : 'male');
+
+    const { prebuiltVoiceName } = selectGenderLockedPrebuiltVoice({
+      requestedGender: detectedGender,
+      fingerprint: { recommendedBaseVoice: parsed.recommendedBaseVoice },
+      isCustom: true,
+    });
+
+    return {
+      detectedGender,
+      pitchRegister: String(parsed.pitchRegister || '').trim().slice(0, 140),
+      vocalTimbre: String(parsed.vocalTimbre || '').trim().slice(0, 180),
+      cadenceAndPacing: String(parsed.cadenceAndPacing || '').trim().slice(0, 160),
+      accentCharacteristics: String(parsed.accentCharacteristics || '').trim().slice(0, 160),
+      recommendedBaseVoice: prebuiltVoiceName,
+      voiceDesignDirective: String(parsed.voiceDesignDirective || '').trim().slice(0, 320),
+    };
+  } catch (err: any) {
+    console.warn('[VoiceClone] Acoustic analysis fallback used:', err?.message || err);
+    return buildDefaultProfile();
+  }
+}
+
+function parseVoiceFingerprintJson(raw?: string | null): (VoiceCloneAcousticProfile & { mimeType?: string }) | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      return parsed;
+    }
+  } catch {}
+  return null;
+}
+
 // 1. Get available voices (built-in default voices + authenticated user's custom clones)
 app.get('/api/voices', async (req: Request, res: Response) => {
   try {
@@ -2787,18 +2948,32 @@ app.get('/api/voices', async (req: Request, res: Response) => {
             .where(sql`${voiceProfilesTable.userId} = ${user.id} OR ${voiceProfilesTable.userUid} = ${user.uid}`)
             .orderBy(desc(voiceProfilesTable.createdAt));
 
-          customVoices = profiles.map((p) => ({
-            id: p.id,
-            name: p.name,
-            gender: p.gender,
-            language: p.language,
-            accent: p.accent || 'Custom Voice Clone',
-            description: p.description || 'Personal cloned voice profile',
-            isCustom: true,
-            sampleAudioUrl: `/api/voices/${p.id}/sample`,
-            durationSeconds: p.durationSeconds,
-            createdAt: p.createdAt,
-          }));
+          customVoices = profiles.map((p) => {
+            const fp = parseVoiceFingerprintJson(p.fingerprintJson);
+            return {
+              id: p.id,
+              name: p.name,
+              gender: p.gender,
+              language: p.language,
+              accent: p.accent || 'Custom Voice Clone',
+              description: p.description || '',
+              vocalFingerprint: fp
+                ? {
+                    detectedGender: fp.detectedGender,
+                    pitchRegister: fp.pitchRegister,
+                    vocalTimbre: fp.vocalTimbre,
+                    cadenceAndPacing: fp.cadenceAndPacing,
+                    accentCharacteristics: fp.accentCharacteristics,
+                    recommendedBaseVoice: fp.recommendedBaseVoice,
+                    voiceDesignDirective: fp.voiceDesignDirective,
+                  }
+                : undefined,
+              isCustom: true,
+              sampleAudioUrl: `/api/voices/${p.id}/sample`,
+              durationSeconds: p.durationSeconds,
+              createdAt: p.createdAt,
+            };
+          });
         }
       }
     }
@@ -2863,7 +3038,16 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
     }
 
     const stat = fs.statSync(rows[0].sampleAudioPath);
-    res.setHeader('Content-Type', 'audio/wav');
+    const headerBuf = Buffer.alloc(Math.min(16, stat.size));
+    const fd = fs.openSync(rows[0].sampleAudioPath, 'r');
+    try {
+      fs.readSync(fd, headerBuf, 0, headerBuf.length, 0);
+    } finally {
+      fs.closeSync(fd);
+    }
+    const fp = parseVoiceFingerprintJson(rows[0].fingerprintJson);
+    const detectedMime = detectAudioMimeType(headerBuf) || fp?.mimeType || 'audio/wav';
+    res.setHeader('Content-Type', detectedMime);
     res.setHeader('Content-Length', stat.size);
     const readStream = fs.createReadStream(rows[0].sampleAudioPath);
     return readStream.pipe(res);
@@ -2903,9 +3087,32 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
       return res.status(400).json({ error: 'Audio sample is too short or empty.' });
     }
 
+    const sampleMimeType = detectAudioMimeType(buffer, audioBase64);
     const sampleId = `${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
     const sampleAudioPath = path.join(VOICES_UPLOADS_DIR, `voice-clone-${sampleId}.bin`);
     fs.writeFileSync(sampleAudioPath, buffer);
+
+    const normalizedLanguage = normalizeLanguageCode(language, 'multilingual');
+    const sanitizedAccent = (
+      typeof accent === 'string' && accent.trim()
+        ? accent.trim()
+        : getDefaultAccentForLanguage(normalizedLanguage)
+    ).slice(0, 80);
+
+    const requestedGenderNormalized =
+      gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'custom';
+
+    const acousticProfile = await analyzeClonedVoiceSample(
+      buffer,
+      sampleMimeType,
+      requestedGenderNormalized,
+      name.trim()
+    );
+
+    const storedGender =
+      requestedGenderNormalized !== 'custom'
+        ? requestedGenderNormalized
+        : acousticProfile?.detectedGender || 'custom';
 
     const inserted = await db
       .insert(voiceProfilesTable)
@@ -2913,9 +3120,9 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
         userId: user.id,
         userUid: user.uid,
         name: name.trim().slice(0, 80),
-        language: language === 'en' ? 'en' : language === 'multilingual' ? 'multilingual' : 'bn',
-        gender: gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'custom',
-        accent: (accent || 'Standard Accent').trim().slice(0, 60),
+        language: normalizedLanguage,
+        gender: storedGender,
+        accent: sanitizedAccent,
         description: (description || '').trim().slice(0, 300),
         sampleAudioPath,
         sampleAudioUrl: `/api/voices/${sampleId}/sample`,
@@ -2923,7 +3130,9 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
         fingerprintJson: JSON.stringify({
           size: buffer.length,
           recordedAt: new Date().toISOString(),
-          format: 'audio/wav',
+          format: sampleMimeType,
+          mimeType: sampleMimeType,
+          ...acousticProfile,
         }),
       })
       .returning();
@@ -2932,7 +3141,7 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
 
     return res.status(201).json({
       success: true,
-      message: 'Voice cloned successfully and saved to your voice library.',
+      message: 'Voice analyzed, cloned, and saved to your voice library.',
       voice: {
         id: createdProfile.id,
         name: createdProfile.name,
@@ -2940,6 +3149,7 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
         language: createdProfile.language,
         accent: createdProfile.accent,
         description: createdProfile.description,
+        vocalFingerprint: acousticProfile || undefined,
         isCustom: true,
         sampleAudioUrl: `/api/voices/${createdProfile.id}/sample`,
         durationSeconds: createdProfile.durationSeconds,
@@ -2994,6 +3204,7 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       speed = 1.0,
       pitch = 0,
       language = 'auto',
+      accent = '',
       format = 'wav',
     } = req.body;
 
@@ -3027,19 +3238,9 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       }
     }
 
-    // Determine voice config
-    let ttsVoiceName = 'Charon'; // Male default
-    let isFemale = gender === 'female';
-    if (voiceId === 'female-default' || gender === 'female') {
-      ttsVoiceName = 'Kore';
-      isFemale = true;
-    } else if (voiceId === 'male-default' || gender === 'male') {
-      ttsVoiceName = 'Charon';
-      isFemale = false;
-    }
-
-    // If custom cloned voice, check if custom profile has specific gender/characteristics
+    // Load custom cloned voice profile if selected
     let customVoiceProfile: any = null;
+    let vocalFingerprint: (VoiceCloneAcousticProfile & { mimeType?: string }) | null = null;
     if (voiceId && voiceId !== 'male-default' && voiceId !== 'female-default') {
       const customId = parseInt(voiceId, 10);
       if (!isNaN(customId)) {
@@ -3050,80 +3251,138 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
           .limit(1);
         if (rows[0]) {
           customVoiceProfile = rows[0];
-          isFemale = customVoiceProfile.gender === 'female';
-          ttsVoiceName = isFemale ? 'Aoede' : 'Fenrir';
+          vocalFingerprint = parseVoiceFingerprintJson(customVoiceProfile.fingerprintJson);
+
+          // Lazy-upgrade legacy clone profiles that lack acoustic voice analysis
+          if (
+            (!vocalFingerprint || !vocalFingerprint.voiceDesignDirective) &&
+            customVoiceProfile.sampleAudioPath &&
+            fs.existsSync(customVoiceProfile.sampleAudioPath)
+          ) {
+            try {
+              const sampleBuf = fs.readFileSync(customVoiceProfile.sampleAudioPath);
+              const sampleMime = detectAudioMimeType(sampleBuf);
+              const analyzed = await analyzeClonedVoiceSample(
+                sampleBuf,
+                sampleMime,
+                customVoiceProfile.gender,
+                customVoiceProfile.name
+              );
+              if (analyzed) {
+                vocalFingerprint = { ...(vocalFingerprint || {}), mimeType: sampleMime, ...analyzed };
+                await db
+                  .update(voiceProfilesTable)
+                  .set({ fingerprintJson: JSON.stringify(vocalFingerprint) })
+                  .where(eq(voiceProfilesTable.id, customVoiceProfile.id));
+              }
+            } catch (upgradeErr) {
+              console.warn('[VoiceClone] Lazy sample profiling skipped:', upgradeErr);
+            }
+          }
         }
       }
     }
+
+    // Strict gender-locked prebuilt base voice selection
+    const {
+      effectiveGender,
+      prebuiltVoiceName: ttsVoiceName,
+    } = selectGenderLockedPrebuiltVoice({
+      requestedGender:
+        customVoiceProfile?.gender ||
+        (voiceId === 'female-default' ? 'female' : voiceId === 'male-default' ? 'male' : gender),
+      fingerprint: vocalFingerprint,
+      isCustom: Boolean(customVoiceProfile),
+    });
+    const isFemale = effectiveGender === 'female';
+
+    const {
+      resolvedLanguage,
+      resolvedLanguageLabel,
+      resolvedAccent,
+      resolvedGender,
+      styleDirective,
+    } = resolveVoiceoverStyleDirective({
+      language,
+      accent,
+      tone,
+      speed: parseFloat(String(speed)) || 1.0,
+      voiceName,
+      gender: effectiveGender,
+      customVoiceProfile,
+      vocalFingerprint,
+    });
 
     let audioBuffer: Buffer | null = null;
+    let usedEngine = 'fallback';
 
-    // Try Gemini TTS model first if API key configured
+    // Use gemini-3.8-flash-tts (Voice Design flagship) first for custom cloned profiles,
+    // and gemini-3.8-flash-lite-tts first for standard studio personas.
+    const candidateTtsModels = customVoiceProfile
+      ? ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']
+      : ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
+
     if (apiKey) {
-      try {
-        const toneInstruction =
-          tone === 'broadcast'
-            ? 'Professional authoritative news and documentary broadcast tone.'
-            : tone === 'storytelling'
-            ? 'Warm, expressive, dramatic narrative cadence with rich dynamic pauses.'
-            : tone === 'energetic'
-            ? 'Fast, upbeat, enthusiastic promotional delivery.'
-            : 'Natural, conversational, clear human speaking style.';
-
-        const languageInstruction =
-          'Language: Universal model-based multilingual speech synthesis. Speak naturally and accurately in the exact language of the script (all global languages supported including English, Bengali, Spanish, Hindi, French, German, Arabic, Japanese, Chinese, Portuguese, Italian, Turkish, etc.) with native pronunciation, cadence, and clear articulation.';
-
-        const cloneInstruction = customVoiceProfile
-          ? `Voice Persona: Match the voice profile "${customVoiceProfile.name}" with ${customVoiceProfile.accent || 'natural studio tone'} and ${customVoiceProfile.description || 'vocal characteristics'}.`
-          : `Voice Character: ${voiceName || (isFemale ? 'Nova' : 'Atlas')}.`;
-
-        const ttsResponse = await ai.models.generateContent({
-          model: 'gemini-3.8-flash-lite-tts',
-          contents: [
-            {
-              role: 'user',
-              parts: [
+      for (const ttsModel of candidateTtsModels) {
+        try {
+          const ttsResponse = await withTimeout(
+            ai.models.generateContent({
+              model: ttsModel,
+              contents: [
                 {
-                  text: cleanScript,
-                  speechMetadata: {
-                    style: `${toneInstruction} ${languageInstruction} ${cloneInstruction} Speed: ${speed}x`,
-                  },
+                  role: 'user',
+                  parts: [
+                    {
+                      text: cleanScript,
+                      speechMetadata: {
+                        style: styleDirective,
+                      },
+                    },
+                  ],
                 },
               ],
-            },
-          ],
-          config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: {
-                  voiceName: ttsVoiceName,
+              config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                  voiceConfig: {
+                    prebuiltVoiceConfig: {
+                      voiceName: ttsVoiceName,
+                    },
+                  },
                 },
               },
-            },
-          },
-        });
+            }),
+            35000,
+            `TTS synthesis timed out on ${ttsModel}`
+          );
 
-        const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (base64Audio) {
-          const rawBuf = Buffer.from(base64Audio, 'base64');
-          audioBuffer = wrapPcmWithWavHeader(rawBuf, 24000);
+          const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          if (base64Audio) {
+            const rawBuf = Buffer.from(base64Audio, 'base64');
+            const hasWavHeader =
+              rawBuf.length >= 12 &&
+              rawBuf.subarray(0, 4).toString('ascii') === 'RIFF' &&
+              rawBuf.subarray(8, 12).toString('ascii') === 'WAVE';
+            audioBuffer = hasWavHeader ? rawBuf : wrapPcmWithWavHeader(rawBuf, 24000);
+            usedEngine = ttsModel;
+            break;
+          }
+        } catch (geminiErr: any) {
+          if (isGeminiQuotaError(geminiErr)) {
+            console.warn('[TTS] Gemini voice synthesis quota exceeded, returning 429 quota notice:', geminiErr?.message || geminiErr);
+            return res.status(429).json({
+              error: PROFESSIONAL_QUOTA_MESSAGE,
+              isQuotaExceeded: true,
+              code: 'AI_QUOTA_EXCEEDED',
+              retryAfterSeconds: 25,
+            });
+          }
+          console.warn(`[TTS] Model ${ttsModel} failed (${ttsVoiceName}, gender=${resolvedGender}):`, geminiErr?.message || geminiErr);
         }
-      } catch (geminiErr: any) {
-        if (isGeminiQuotaError(geminiErr)) {
-          console.warn('[TTS] Gemini voice synthesis quota exceeded, returning 429 quota notice:', geminiErr?.message || geminiErr);
-          return res.status(429).json({
-            error: PROFESSIONAL_QUOTA_MESSAGE,
-            isQuotaExceeded: true,
-            code: 'AI_QUOTA_EXCEEDED',
-            retryAfterSeconds: 25,
-          });
-        }
-        console.log('[TTS] Voiceover synthesis fallback generator engaged:', geminiErr?.status || 'fallback');
       }
     }
 
-    // High-fidelity speech cadence failover generator if API is unavailable or busy
+    // High-fidelity speech cadence failover generator if API is unavailable
     if (!audioBuffer) {
       audioBuffer = createNaturalSpeechWavBuffer(
         cleanScript,
@@ -3152,6 +3411,9 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
         voiceId: String(voiceId || (isFemale ? 'female-default' : 'male-default')),
         voiceName: voiceName || (isFemale ? 'Fatima (Female Studio)' : 'Kabir (Male Studio)'),
         gender: isFemale ? 'female' : 'male',
+        language: resolvedLanguage,
+        languageLabel: resolvedLanguageLabel,
+        accent: resolvedAccent,
         format: exportFormat,
         durationSeconds,
         createdAt: new Date().toISOString(),
@@ -3206,6 +3468,12 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       durationSeconds,
       format: exportFormat,
       voiceName: voiceName || (isFemale ? 'Fatima' : 'Kabir'),
+      gender: resolvedGender,
+      ttsVoiceName,
+      engine: usedEngine,
+      language: resolvedLanguage,
+      languageLabel: resolvedLanguageLabel,
+      accent: resolvedAccent,
       script: cleanScript,
     });
   } catch (err: any) {
@@ -3301,9 +3569,28 @@ app.get('/api/voiceovers', authMiddleware, async (req: AuthenticatedRequest, res
       ? await query.where(condition).orderBy(desc(savedVoiceoversTable.createdAt))
       : await query.orderBy(desc(savedVoiceoversTable.createdAt));
 
+    const enrichedList = list.map((item) => {
+      const voMatch = item.audioUrl?.match(/vo-[a-zA-Z0-9-]+/);
+      if (voMatch) {
+        const metaPath = path.join(VOICEOVER_UPLOADS_DIR, `${voMatch[0]}.json`);
+        if (fs.existsSync(metaPath)) {
+          try {
+            const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+            return {
+              ...item,
+              language: meta.language,
+              languageLabel: meta.languageLabel,
+              accent: meta.accent,
+            };
+          } catch {}
+        }
+      }
+      return item;
+    });
+
     return res.json({
       success: true,
-      data: list,
+      data: enrichedList,
     });
   } catch (err: any) {
     console.error('Error fetching voiceovers:', err);

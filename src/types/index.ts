@@ -85,13 +85,25 @@ export type VoiceGender = 'male' | 'female' | 'custom';
 export type VoiceTone = 'natural' | 'broadcast' | 'storytelling' | 'energetic';
 export type AudioExportFormat = 'wav' | 'mp3' | 'ogg';
 
+export interface VocalFingerprint {
+  detectedGender?: 'male' | 'female';
+  pitchRegister?: string;
+  vocalTimbre?: string;
+  cadenceAndPacing?: string;
+  accentCharacteristics?: string;
+  recommendedBaseVoice?: string;
+  voiceDesignDirective?: string;
+  mimeType?: string;
+}
+
 export interface VoiceProfile {
   id: string | number;
   name: string;
   gender: VoiceGender;
-  language: 'bn' | 'en' | 'multilingual';
+  language: string;
   accent?: string;
   description?: string;
+  vocalFingerprint?: VocalFingerprint;
   isCustom: boolean;
   sampleAudioUrl?: string;
   durationSeconds?: number;
@@ -105,6 +117,9 @@ export interface SavedVoiceoverItem {
   voiceId: string;
   voiceName: string;
   voiceGender: string;
+  language?: string;
+  languageLabel?: string;
+  accent?: string;
   audioUrl: string;
   durationSeconds: number;
   format: AudioExportFormat;
