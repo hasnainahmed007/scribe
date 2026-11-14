@@ -831,7 +831,7 @@ function ScribyApp() {
                   <div className="lg:col-span-1 space-y-4">
                     {/* Creator Tools & Repurposing */}
                     <Card className="p-4 space-y-2.5">
-                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-[#b3b3b3] uppercase tracking-wider mb-2">
                         Creator Extensions
                       </div>
 
@@ -840,66 +840,66 @@ function ScribyApp() {
                           setActiveTab('youtube');
                           if (!youtubeMetadata) handleGenerateMetadata();
                         }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
                           <Youtube className="w-4 h-4 text-red-400" />
                           <span>YouTube SEO & Titles</span>
                         </span>
                         {!user.planModules?.includes('youtube_seo') && (
-                          <Badge variant="outline" className="text-[10px]">Pro</Badge>
+                          <Badge variant="outline" className="text-xs">Pro</Badge>
                         )}
                       </button>
 
                       <button
                         onClick={() => setActiveTab('thumbnail')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
                           <ImageIcon className="w-4 h-4 text-amber-400" />
                           <span>16:9 Thumbnail Canvas</span>
                         </span>
                         {!user.planModules?.includes('thumbnail_canvas') && (
-                          <Badge variant="outline" className="text-[10px]">Pro</Badge>
+                          <Badge variant="outline" className="text-xs">Pro</Badge>
                         )}
                       </button>
 
                       <button
                         onClick={() => setActiveTab('voiceover')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <Mic className="w-4 h-4 text-emerald-400" />
+                          <Mic className="w-4 h-4 text-[#1ed760]" />
                           <span>AI Voiceover & Cloning</span>
                         </span>
                         {!user.planModules?.includes('voiceover_studio') && (
-                          <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-500/30">Agency</Badge>
+                          <Badge variant="outline" className="text-xs text-purple-400 border-purple-500/30">Agency</Badge>
                         )}
                       </button>
 
                       <button
                         onClick={() => setActiveTab('history')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800/80 transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <History className="w-4 h-4 text-emerald-400" />
+                          <History className="w-4 h-4 text-[#1ed760]" />
                           <span>Saved History</span>
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                        <ChevronRight className="w-3.5 h-3.5 text-[#878787]" />
                       </button>
                     </Card>
 
                     {/* Credit balance widget */}
                     <Card className="p-4">
-                      <div className="text-xs font-medium text-slate-400 mb-1 flex items-center justify-between">
+                      <div className="text-xs font-medium text-[#b3b3b3] mb-1 flex items-center justify-between">
                         <span>Audio Minutes</span>
                         <Zap className="w-3.5 h-3.5 text-amber-400" />
                       </div>
-                      <div className="text-xl font-bold font-mono text-emerald-400 tabular-nums">
-                        {user.creditsRemaining} <span className="text-xs text-slate-400 font-normal">minutes</span>
+                      <div className="text-xl font-bold font-mono text-[#1ed760] tabular-nums">
+                        {user.creditsRemaining} <span className="text-xs text-[#b3b3b3] font-sans font-normal">minutes</span>
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-1 mb-3">
-                        Plan: <strong className="text-slate-300 font-medium">{user.planName}</strong>
+                      <div className="text-xs text-[#b3b3b3] mt-1 mb-3">
+                        Plan: <strong className="text-white font-medium">{user.planName}</strong>
                       </div>
                       <Button
                         variant="outline"
@@ -918,14 +918,14 @@ function ScribyApp() {
             {/* 3B. TRANSCRIPT HISTORY ARCHIVE */}
             {activeTab === 'history' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-slate-400">Creator Workspace · Cloud SQL History Archive</span>
+                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · Saved History Archive</span>
                 </div>
                 <TranscriptHistory
                   onLoadTranscript={handleLoadTranscript}
@@ -953,14 +953,14 @@ function ScribyApp() {
             {/* 3B-2. AI VOICEOVER & VOICE CLONING STUDIO */}
             {activeTab === 'voiceover' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-slate-400">Creator Workspace · AI Voiceover & Cloning</span>
+                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · AI Voiceover & Cloning</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('voiceover_studio')) ? (
                   <LockedModuleNotice
@@ -991,14 +991,14 @@ function ScribyApp() {
             {/* 3C. YOUTUBE METADATA STUDIO (With module gatekeeper) */}
             {activeTab === 'youtube' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-slate-400">Creator Workspace · YouTube SEO</span>
+                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · YouTube SEO</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('youtube_seo')) ? (
                   <LockedModuleNotice
@@ -1026,14 +1026,14 @@ function ScribyApp() {
             {/* 3D. THUMBNAIL CANVAS STUDIO (With module gatekeeper) */}
             {activeTab === 'thumbnail' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-slate-400">Creator Workspace · 16:9 Thumbnail Canvas</span>
+                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · 16:9 Thumbnail Canvas</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('thumbnail_canvas')) ? (
                   <LockedModuleNotice
@@ -1054,12 +1054,12 @@ function ScribyApp() {
 
       {/* Input Modal */}
       {showInputModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-2xl">
             <div className="flex justify-end mb-2">
               <button
                 onClick={() => setShowInputModal(false)}
-                className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg border border-slate-700 cursor-pointer"
+                className="px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-white text-xs font-semibold rounded-full border border-[#3e3e3e] cursor-pointer"
               >
                 Close
               </button>

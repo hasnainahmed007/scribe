@@ -136,7 +136,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 : 'text-[#b3b3b3] hover:text-white'
             }`}
           >
-            Account & Cloud SQL
+            Account & Cloud Sync
           </button>
         </div>
 
@@ -156,7 +156,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="Speaker 1"
                     className="max-w-xs text-xs"
                   />
-                  <span className="text-[11px] text-[#b3b3b3]">
+                  <span className="text-xs text-[#b3b3b3]">
                     Used when inserting new speech segments
                   </span>
                 </div>
@@ -200,7 +200,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="text-xs font-semibold text-white">
                       Autoplay on Segment Click
                     </div>
-                    <div className="text-[11px] text-[#b3b3b3]">
+                    <div className="text-xs text-[#b3b3b3]">
                       Immediately play audio from segment start time when clicking in the transcript
                     </div>
                   </div>
@@ -217,7 +217,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="text-xs font-semibold text-white">
                       Auto-scroll with Audio Playback
                     </div>
-                    <div className="text-[11px] text-[#b3b3b3]">
+                    <div className="text-xs text-[#b3b3b3]">
                       Keep active playing subtitle segment visible in viewport
                     </div>
                   </div>
@@ -234,7 +234,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="text-xs font-semibold text-white">
                       Text & Punctuation Auto-Normalization
                     </div>
-                    <div className="text-[11px] text-[#b3b3b3]">
+                    <div className="text-xs text-[#b3b3b3]">
                       Clean Unicode diacritics, whitespace, and punctuation for crisp rendering across all languages
                     </div>
                   </div>
@@ -323,16 +323,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </Card>
 
-              {/* Cloud SQL Connection Status */}
+              {/* Cloud Sync Connection Status */}
               <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] space-y-2">
                 <div className="flex items-center gap-2 text-xs font-semibold text-white">
                   <Database className="w-4 h-4 text-[#1ed760]" />
-                  <span>Google Cloud SQL Backend (PostgreSQL)</span>
+                  <span>Workspace Cloud Synchronization</span>
                 </div>
                 <p className="text-xs text-[#b3b3b3] leading-relaxed">
-                  Persistent multi-tenant storage connected. All transcript segments, metadata, and user quotas are safely synchronized in real time.
+                  Persistent cloud workspace storage connected. All transcript segments, metadata, and audio credits are safely synchronized in real time.
                 </p>
-                <div className="text-[11px] font-mono text-[#7c7c7c]">
+                <div className="text-xs font-mono text-[#878787]">
                   Status: Connected · Encryption: SSL/TLS
                 </div>
               </div>

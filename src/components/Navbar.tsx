@@ -107,12 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
-        {/* SuperAdmin View Header Indicator */}
-        {isAuthenticated && isSuperAdmin && (
-          <div className="text-xs text-[#b3b3b3] font-medium">
-            Platform Administration & SaaS Governance
-          </div>
-        )}
+
 
         {/* Creator Studio Workspace Navigation (Spotify Pill Segmented Control) */}
         {isAuthenticated && !isSuperAdmin && (

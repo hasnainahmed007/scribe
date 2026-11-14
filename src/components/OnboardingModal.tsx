@@ -72,12 +72,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 Scriby delivers state-of-the-art speech intelligence across 100+ global languages with accurate punctuation, timestamps, and speaker recognition. Upload MP3/WAV/M4A files or record directly from your microphone.
               </p>
 
-              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-2">
-                <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
+              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-1.5">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-[#1ed760]" />
                   <span>30 Free Audio Minutes Included</span>
                 </div>
-                <p className="text-[11px] text-[#b3b3b3]">
+                <p className="text-xs text-[#b3b3b3] leading-relaxed">
                   Start testing immediately using your complimentary starter quota or try our preloaded demo tracks.
                 </p>
               </div>
@@ -93,15 +93,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 2. Live Synchronized Subtitle Editing
               </h2>
               <p className="text-xs text-[#b3b3b3] leading-relaxed">
-                Click any subtitle block to jump the audio player instantly to that exact moment. Use keyboard shortcuts like <kbd className="px-1.5 py-0.5 text-[10px] bg-[#121212] text-white rounded border border-[#383838]">Space</kbd> for play/pause and <kbd className="px-1.5 py-0.5 text-[10px] bg-[#121212] text-white rounded border border-[#383838]">Ctrl+Enter</kbd> to split segments.
+                Click any subtitle block to jump the audio player instantly to that exact moment. Use keyboard shortcuts like <kbd className="px-1.5 py-0.5 text-xs font-mono bg-[#121212] text-white rounded border border-[#383838]">Space</kbd> for play/pause and <kbd className="px-1.5 py-0.5 text-xs font-mono bg-[#121212] text-white rounded border border-[#383838]">Ctrl+Enter</kbd> to split segments.
               </p>
 
-              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-2">
-                <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
+              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-1.5">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
                   <Keyboard className="w-3.5 h-3.5 text-[#1ed760]" />
                   <span>Editorial Hotkeys</span>
                 </div>
-                <p className="text-[11px] text-[#b3b3b3]">
+                <p className="text-xs text-[#b3b3b3] leading-relaxed">
                   Rapidly proofread text, adjust start/end timestamps to the millisecond, and merge adjacent phrases.
                 </p>
               </div>
@@ -120,12 +120,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 Export standard SubRip (.srt) for YouTube and premiere video editing tools, or download formatted Word documents (.docx) and plain text for transcripts.
               </p>
 
-              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-2">
-                <div className="text-[11px] font-bold text-white flex items-center gap-1.5">
-                  <Youtube className="w-3.5 h-3.5 text-red-400" />
+              <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-1.5">
+                <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Youtube className="w-3.5 h-3.5 text-rose-400" />
                   <span>YouTube SEO & 16:9 Thumbnail Studio</span>
                 </div>
-                <p className="text-[11px] text-[#b3b3b3]">
+                <p className="text-xs text-[#b3b3b3] leading-relaxed">
                   Automatically generate high-CTR video titles, descriptions, chapters, and hashtags, and design matching 16:9 thumbnails.
                 </p>
               </div>

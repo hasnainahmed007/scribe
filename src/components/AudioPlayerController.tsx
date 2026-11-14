@@ -112,7 +112,7 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
       {/* Audio Track Header & Timecode Readout */}
       <div className="flex items-center justify-between text-xs mb-3 text-[#b3b3b3]">
         <div className="flex items-center gap-2 truncate max-w-[60%]">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${isPlaying ? 'bg-[#1ed760] animate-pulse' : 'bg-[#4d4d4d]'}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${isPlaying ? 'bg-[#1ed760]' : 'bg-[#4d4d4d]'}`} />
           <span className="font-bold text-white truncate font-display">
             {audioName || 'Active Audio Recording'}
           </span>
@@ -143,7 +143,7 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
         {/* Hover Timecode Tooltip */}
         {hoverTime !== null && (
           <div
-            className="absolute -top-7 -translate-x-1/2 px-2 py-0.5 bg-[#282828] text-white text-[10px] font-mono rounded-full border border-[#3e3e3e] shadow-md pointer-events-none"
+            className="absolute -top-7 -translate-x-1/2 px-2.5 py-0.5 bg-[#282828] text-white text-xs font-mono tabular-nums rounded-full border border-[#3e3e3e] shadow-md pointer-events-none"
             style={{ left: `${hoverPosition}px` }}
           >
             {formatPlayerTime(hoverTime)}

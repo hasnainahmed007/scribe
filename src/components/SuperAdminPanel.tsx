@@ -203,14 +203,14 @@ export const SuperAdminPanel: React.FC = () => {
           headers,
           body: JSON.stringify(payload),
         });
-        if (res.ok) showNotification('Plan updated successfully in PostgreSQL!');
+        if (res.ok) showNotification('Plan updated successfully.');
       } else {
         const res = await safeFetchJson('/api/admin/plans', {
           method: 'POST',
           headers,
           body: JSON.stringify(payload),
         });
-        if (res.ok) showNotification('New subscription plan created in PostgreSQL!');
+        if (res.ok) showNotification('New subscription plan created.');
       }
       setShowPlanModal(false);
       setEditingPlan(null);
@@ -323,7 +323,7 @@ export const SuperAdminPanel: React.FC = () => {
       );
 
       if (res.ok && res.data?.success) {
-        showNotification(res.data.message || 'Policy saved to PostgreSQL database!');
+        showNotification(res.data.message || 'Policy updated successfully.');
         fetchAdminData();
       } else {
         setPolicyFormErrors({ _global: res.data?.message || 'Failed to save policy.' });
@@ -349,8 +349,8 @@ export const SuperAdminPanel: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & KPI Bar */}
-      <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800/80">
+      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#282828]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/30">
               <ShieldCheck className="w-6 h-6" />
@@ -361,7 +361,7 @@ export const SuperAdminPanel: React.FC = () => {
                   SuperAdmin Control Center
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-[#b3b3b3] mt-0.5">
                 Manage subscription plans, user audio minute credits, subscriptions, and payment invoices.
               </p>
             </div>
@@ -381,68 +381,68 @@ export const SuperAdminPanel: React.FC = () => {
 
         {/* Action Notification */}
         {actionSuccess && (
-          <div className="mt-4 p-3 bg-emerald-950/40 border border-emerald-800/80 rounded-xl text-xs text-emerald-200 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div className="mt-4 p-3 bg-[#132517] border border-[#1ed760]/40 rounded-xl text-xs text-white flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-[#1ed760] shrink-0" />
             <span>{actionSuccess}</span>
           </div>
         )}
 
         {/* 4 Revenue & SaaS KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <Card className="p-4 bg-slate-900/60">
-            <div className="text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+          <Card className="p-4 bg-[#181818] border-[#282828]">
+            <div className="text-xs text-[#b3b3b3] mb-1 flex items-center justify-between">
               <span>Total Revenue</span>
-              <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+              <DollarSign className="w-4 h-4 text-[#1ed760]" />
             </div>
-            <div className="text-xl font-bold font-mono text-emerald-400 tabular-nums">
+            <div className="text-2xl font-bold font-mono text-[#1ed760] tabular-nums">
               ${analytics.totalRevenue.toLocaleString()}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Processed from paid subscriptions</div>
+            <div className="text-xs text-[#878787] mt-1">Processed from paid subscriptions</div>
           </Card>
 
-          <Card className="p-4 bg-slate-900/60">
-            <div className="text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+          <Card className="p-4 bg-[#181818] border-[#282828]">
+            <div className="text-xs text-[#b3b3b3] mb-1 flex items-center justify-between">
               <span>Monthly Recurring Revenue (MRR)</span>
-              <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
+              <TrendingUp className="w-4 h-4 text-blue-400" />
             </div>
-            <div className="text-xl font-bold font-mono text-blue-400 tabular-nums">
+            <div className="text-2xl font-bold font-mono text-blue-400 tabular-nums">
               ${analytics.mrr.toLocaleString()}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Active subscriber monthly cadence</div>
+            <div className="text-xs text-[#878787] mt-1">Active subscriber monthly cadence</div>
           </Card>
 
-          <Card className="p-4 bg-slate-900/60">
-            <div className="text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+          <Card className="p-4 bg-[#181818] border-[#282828]">
+            <div className="text-xs text-[#b3b3b3] mb-1 flex items-center justify-between">
               <span>Active Paid Subscribers</span>
-              <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+              <CreditCard className="w-4 h-4 text-purple-400" />
             </div>
-            <div className="text-xl font-bold font-mono text-purple-400 tabular-nums">
+            <div className="text-2xl font-bold font-mono text-purple-400 tabular-nums">
               {analytics.activeSubscribersCount}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Pro & Agency accounts</div>
+            <div className="text-xs text-[#878787] mt-1">Pro & Agency accounts</div>
           </Card>
 
-          <Card className="p-4 bg-slate-900/60">
-            <div className="text-[11px] text-slate-400 mb-1 flex items-center justify-between">
+          <Card className="p-4 bg-[#181818] border-[#282828]">
+            <div className="text-xs text-[#b3b3b3] mb-1 flex items-center justify-between">
               <span>Total Registered Users</span>
-              <Users className="w-3.5 h-3.5 text-amber-400" />
+              <Users className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-xl font-bold font-mono text-slate-100 tabular-nums">
+            <div className="text-2xl font-bold font-mono text-white tabular-nums">
               {creatorUsers.length}
             </div>
-            <div className="text-[10px] text-slate-500 mt-1">Creator accounts (excluding admin)</div>
+            <div className="text-xs text-[#878787] mt-1">Creator accounts (excluding admin)</div>
           </Card>
         </div>
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-[#0f1726] rounded-lg border border-slate-800 overflow-x-auto text-xs">
+      <div className="flex items-center gap-1 p-1 bg-[#181818] rounded-full border border-[#282828] overflow-x-auto text-xs">
         <button
           onClick={() => setActiveAdminTab('plans')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
             activeAdminTab === 'plans'
-              ? 'bg-slate-800 text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#282828] text-white font-semibold'
+              : 'text-[#b3b3b3] hover:text-white'
           }`}
         >
           <Package className="w-3.5 h-3.5" />
@@ -451,10 +451,10 @@ export const SuperAdminPanel: React.FC = () => {
 
         <button
           onClick={() => setActiveAdminTab('users')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
             activeAdminTab === 'users'
-              ? 'bg-slate-800 text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#282828] text-white font-semibold'
+              : 'text-[#b3b3b3] hover:text-white'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -463,10 +463,10 @@ export const SuperAdminPanel: React.FC = () => {
 
         <button
           onClick={() => setActiveAdminTab('subscriptions')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
             activeAdminTab === 'subscriptions'
-              ? 'bg-slate-800 text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#282828] text-white font-semibold'
+              : 'text-[#b3b3b3] hover:text-white'
           }`}
         >
           <CreditCard className="w-3.5 h-3.5" />
@@ -475,10 +475,10 @@ export const SuperAdminPanel: React.FC = () => {
 
         <button
           onClick={() => setActiveAdminTab('payments')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
             activeAdminTab === 'payments'
-              ? 'bg-slate-800 text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#282828] text-white font-semibold'
+              : 'text-[#b3b3b3] hover:text-white'
           }`}
         >
           <Receipt className="w-3.5 h-3.5" />
@@ -487,10 +487,10 @@ export const SuperAdminPanel: React.FC = () => {
 
         <button
           onClick={() => setActiveAdminTab('policies')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md font-medium transition-colors whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
             activeAdminTab === 'policies'
-              ? 'bg-slate-800 text-white font-semibold'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#282828] text-white font-semibold'
+              : 'text-[#b3b3b3] hover:text-white'
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
@@ -503,7 +503,7 @@ export const SuperAdminPanel: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white font-display">
-              Subscription Tiers in PostgreSQL ({plans.length} Total)
+              Subscription Tiers ({plans.length} Total)
             </h3>
             <Button
               onClick={() => {
@@ -538,7 +538,7 @@ export const SuperAdminPanel: React.FC = () => {
                     <span className="text-xs font-mono text-purple-400 font-semibold">
                       {plan.id}
                     </span>
-                    <Badge variant={plan.isActive ? 'emerald' : 'destructive'} className="text-[10px]">
+                    <Badge variant={plan.isActive ? 'emerald' : 'destructive'} className="text-xs">
                       {plan.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
@@ -546,38 +546,38 @@ export const SuperAdminPanel: React.FC = () => {
                   <h4 className="text-lg font-bold text-white font-display mb-1">
                     {plan.name}
                   </h4>
-                  <p className="text-xs text-slate-400 mb-4">{plan.description}</p>
+                  <p className="text-sm text-[#b3b3b3] mb-4">{plan.description}</p>
 
-                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 mb-4">
+                  <div className="p-3 rounded-xl bg-[#121212] border border-[#282828] mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold font-mono text-white">
+                      <span className="text-2xl font-bold font-mono tabular-nums text-white">
                         ${plan.priceUsd}
                       </span>
-                      <span className="text-xs text-slate-400">/mo (৳{plan.priceBdt})</span>
+                      <span className="text-xs text-[#b3b3b3]">/mo (৳{plan.priceBdt})</span>
                     </div>
-                    <div className="text-xs text-emerald-400 font-semibold mt-1">
+                    <div className="text-xs text-[#1ed760] font-semibold mt-1">
                       {plan.creditsGranted} Audio Minutes Granted
                     </div>
                   </div>
 
                   {/* Module Access Tags */}
                   <div className="mb-4">
-                    <div className="text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">
+                    <div className="text-xs uppercase font-bold text-[#b3b3b3] mb-1.5 tracking-wider">
                       Module Access:
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {plan.modules && plan.modules.length > 0 ? (
                         plan.modules.map((m) => (
                           <Badge
                             key={m}
                             variant="purple"
-                            className="text-[10px] capitalize"
+                            className="text-xs capitalize"
                           >
                             {m.replace(/_/g, ' ')}
                           </Badge>
                         ))
                       ) : (
-                        <span className="text-[10px] text-slate-500 italic">No modules enabled</span>
+                        <span className="text-xs text-[#878787] italic">No modules enabled</span>
                       )}
                     </div>
                   </div>
@@ -630,17 +630,17 @@ export const SuperAdminPanel: React.FC = () => {
 
       {/* ================= TAB 2: USERS & AUDIO CREDITS ================= */}
       {activeAdminTab === 'users' && (
-        <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+        <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
             <h3 className="text-sm font-bold text-white font-display">
               Creator Accounts & Audio Credits ({creatorUsers.length} Users)
             </h3>
-            <span className="text-xs text-slate-400">Manage audio minute allowances and account status</span>
+            <span className="text-xs text-[#b3b3b3]">Manage audio minute allowances and account status</span>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="relative flex-1 max-w-sm">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#878787] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <Input
                 type="text"
                 placeholder="Search creator by name or email..."
@@ -651,11 +651,11 @@ export const SuperAdminPanel: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Status Filter:</span>
+              <span className="text-xs text-[#b3b3b3]">Status Filter:</span>
               <select
                 value={userStatusFilter}
                 onChange={(e: any) => setUserStatusFilter(e.target.value)}
-                className="px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none"
+                className="px-3 py-1.5 bg-[#121212] border border-[#282828] rounded-full text-xs text-white focus:outline-none focus:border-[#1ed760]"
               >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
@@ -664,9 +664,9 @@ export const SuperAdminPanel: React.FC = () => {
             </div>
           </div>
 
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          <div className="border border-[#282828] rounded-xl overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 text-slate-300 border-b border-slate-800">
+              <thead className="bg-[#121212] text-[#b3b3b3] border-b border-[#282828]">
                 <tr>
                   <th className="p-3">Creator Account</th>
                   <th className="p-3">Active Plan</th>
@@ -675,55 +675,55 @@ export const SuperAdminPanel: React.FC = () => {
                   <th className="p-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/70">
+              <tbody className="divide-y divide-[#282828]">
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-6 text-center text-slate-400">
+                    <td colSpan={5} className="p-6 text-center text-[#b3b3b3]">
                       No creator accounts found matching search or filter criteria.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((u) => {
                     return (
-                      <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
+                      <tr key={u.id} className="hover:bg-[#1f1f1f] transition-colors">
                         <td className="p-3">
-                          <div className="font-semibold text-slate-100">{u.name}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{u.email}</div>
+                          <div className="font-semibold text-white">{u.name}</div>
+                          <div className="text-xs text-[#b3b3b3] font-mono">{u.email}</div>
                         </td>
-                        <td className="p-3 font-medium text-slate-200">
-                          <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-200 border border-slate-700">
+                        <td className="p-3 font-medium text-white">
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#121212] text-[#d4d4d4] border border-[#282828]">
                             {u.planName}
                           </span>
                         </td>
                         <td className="p-3">
-                          <div className="flex items-center gap-1.5 font-mono text-xs">
-                            <span className={`font-semibold ${u.creditsRemaining <= 5 ? 'text-red-400' : 'text-emerald-400'}`}>
+                          <div className="flex items-center gap-1.5 font-mono tabular-nums text-xs">
+                            <span className={`font-semibold ${u.creditsRemaining <= 5 ? 'text-red-400' : 'text-[#1ed760]'}`}>
                               {u.creditsRemaining}
                             </span>
-                            <span className="text-slate-500">
+                            <span className="text-[#878787]">
                               / {u.creditsTotal} mins
                             </span>
                           </div>
                         </td>
                         <td className="p-3">
-                          <span className={`text-xs font-medium ${u.status === 'active' ? 'text-emerald-400' : 'text-red-400'}`}>
+                          <span className={`text-xs font-medium ${u.status === 'active' ? 'text-[#1ed760]' : 'text-red-400'}`}>
                             {u.status === 'active' ? 'Active' : 'Suspended'}
                           </span>
                         </td>
                         <td className="p-3 text-right space-x-2">
                           <button
                             onClick={() => setSelectedUserForCredit(u)}
-                            className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                            className="px-3 py-1 bg-[#1ed760]/15 hover:bg-[#1ed760]/25 text-[#1ed760] rounded-full text-xs font-medium transition-colors cursor-pointer"
                           >
                             + Add Credits
                           </button>
 
                           <button
                             onClick={() => handleToggleUserStatus(u)}
-                            className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                               u.status === 'active'
                                 ? 'bg-red-950/60 text-red-300 hover:bg-red-900/60'
-                                : 'bg-emerald-950/60 text-emerald-300 hover:bg-emerald-900/60'
+                                : 'bg-[#1ed760]/15 text-[#1ed760] hover:bg-[#1ed760]/25'
                             }`}
                           >
                             {u.status === 'active' ? 'Suspend' : 'Activate'}
@@ -741,14 +741,14 @@ export const SuperAdminPanel: React.FC = () => {
 
       {/* ================= TAB 3: SUBSCRIPTIONS ================= */}
       {activeAdminTab === 'subscriptions' && (
-        <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl space-y-4">
           <h3 className="text-sm font-bold text-white font-display">
             Active Subscriptions ({subscriptionsList.length} Total)
           </h3>
 
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          <div className="border border-[#282828] rounded-xl overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 text-slate-300 border-b border-slate-800">
+              <thead className="bg-[#121212] text-[#b3b3b3] border-b border-[#282828]">
                 <tr>
                   <th className="p-3">Subscriber</th>
                   <th className="p-3">Plan</th>
@@ -758,23 +758,23 @@ export const SuperAdminPanel: React.FC = () => {
                   <th className="p-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/70">
+              <tbody className="divide-y divide-[#282828]">
                 {subscriptionsList.map((sub) => (
-                  <tr key={sub.id} className="hover:bg-slate-900/40 transition-colors">
+                  <tr key={sub.id} className="hover:bg-[#1f1f1f] transition-colors">
                     <td className="p-3">
-                      <div className="font-semibold text-slate-100">{sub.userName || 'Subscriber'}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">{sub.userEmail}</div>
+                      <div className="font-semibold text-white">{sub.userName || 'Subscriber'}</div>
+                      <div className="text-xs text-[#b3b3b3] font-mono">{sub.userEmail}</div>
                     </td>
                     <td className="p-3 font-semibold text-purple-300">{sub.planName}</td>
-                    <td className="p-3 uppercase font-mono text-slate-400">{sub.billingCycle}</td>
-                    <td className="p-3 font-mono font-bold text-white">
+                    <td className="p-3 uppercase font-mono text-[#b3b3b3]">{sub.billingCycle}</td>
+                    <td className="p-3 font-mono tabular-nums font-bold text-white">
                       ${sub.amount} {sub.currency}
                     </td>
-                    <td className="p-3 font-mono text-slate-400">
+                    <td className="p-3 font-mono tabular-nums text-[#b3b3b3]">
                       {new Date(sub.currentPeriodEnd).toLocaleDateString()}
                     </td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/20">
                         {sub.status}
                       </span>
                     </td>
@@ -788,14 +788,14 @@ export const SuperAdminPanel: React.FC = () => {
 
       {/* ================= TAB 4: PAYMENTS & INVOICES ================= */}
       {activeAdminTab === 'payments' && (
-        <div className="bg-[#101726] border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl space-y-4">
           <h3 className="text-sm font-bold text-white font-display">
             Transaction Ledger & Invoices ({paymentsList.length} Total)
           </h3>
 
-          <div className="border border-slate-800 rounded-xl overflow-hidden">
+          <div className="border border-[#282828] rounded-xl overflow-hidden">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 text-slate-300 border-b border-slate-800">
+              <thead className="bg-[#121212] text-[#b3b3b3] border-b border-[#282828]">
                 <tr>
                   <th className="p-3">Txn Reference</th>
                   <th className="p-3">Customer</th>
@@ -806,23 +806,23 @@ export const SuperAdminPanel: React.FC = () => {
                   <th className="p-3">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/70">
+              <tbody className="divide-y divide-[#282828]">
                 {paymentsList.map((pay) => (
-                  <tr key={pay.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="p-3 font-mono text-slate-300 font-semibold">{pay.transactionId}</td>
-                    <td className="p-3 text-slate-200">{pay.userEmail}</td>
-                    <td className="p-3 font-medium text-slate-300">{pay.planName}</td>
+                  <tr key={pay.id} className="hover:bg-[#1f1f1f] transition-colors">
+                    <td className="p-3 font-mono text-[#d4d4d4] font-semibold">{pay.transactionId}</td>
+                    <td className="p-3 text-white">{pay.userEmail}</td>
+                    <td className="p-3 font-medium text-[#d4d4d4]">{pay.planName}</td>
                     <td className="p-3 uppercase font-mono font-bold text-amber-400">{pay.method}</td>
-                    <td className="p-3 font-mono font-bold text-white">${pay.amount}</td>
-                    <td className="p-3 font-mono text-slate-400">
+                    <td className="p-3 font-mono tabular-nums font-bold text-white">${pay.amount}</td>
+                    <td className="p-3 font-mono tabular-nums text-[#b3b3b3]">
                       {new Date(pay.createdAt).toLocaleDateString()}
                     </td>
                     <td className="p-3">
                       <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
                           pay.status === 'paid'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            ? 'bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/20'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                         }`}
                       >
                         {pay.status}
@@ -842,11 +842,11 @@ export const SuperAdminPanel: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-bold text-white font-display flex items-center gap-2">
-                <FileText className="w-4 h-4 text-purple-400" />
+                <FileText className="w-4 h-4 text-[#1ed760]" />
                 <span>Legal Agreements & Platform Policies</span>
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Manage Terms & Conditions, Privacy Policy, and Refund Policy stored in PostgreSQL. These policies are displayed dynamically to users when clicking the public landing page footer.
+              <p className="text-xs text-[#b3b3b3] mt-0.5">
+                Manage Terms & Conditions, Privacy Policy, and Refund Policy displayed dynamically on the public landing page.
               </p>
             </div>
           </div>
@@ -881,18 +881,15 @@ export const SuperAdminPanel: React.FC = () => {
                         <IconComp className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+                        <div className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-200'}`}>
                           {item.label}
                         </div>
-                        <div className="text-[10px] text-slate-400">{item.sub}</div>
+                        <div className="text-xs text-[#b3b3b3]">{item.sub}</div>
                       </div>
                     </div>
-                    {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-                    )}
                   </div>
-                  <div className="text-[10px] text-slate-500 flex items-center justify-between pt-2 border-t border-slate-800/60">
-                    <span>Slug: <span className="font-mono text-slate-400">{item.slug}</span></span>
+                  <div className="text-xs text-[#878787] flex items-center justify-between pt-2 border-t border-[#282828]">
+                    <span>Slug: <span className="font-mono text-[#b3b3b3]">{item.slug}</span></span>
                     <span>
                       {policyData?.updatedAt ? `Updated: ${new Date(policyData.updatedAt).toLocaleDateString()}` : 'Ready to save'}
                     </span>
@@ -903,14 +900,14 @@ export const SuperAdminPanel: React.FC = () => {
           </div>
 
           {/* Policy Editor Card */}
-          <Card className="p-6 bg-[#101726] border-slate-800 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <Card className="p-6 bg-[#181818] border-[#282828] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#282828]">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono uppercase font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                   Editing: {selectedPolicySlug}
                 </span>
-                <span className="text-xs text-slate-400">
-                  Validated with Zod schema before database write
+                <span className="text-xs text-[#b3b3b3]">
+                  Validated before saving
                 </span>
               </div>
 
@@ -954,7 +951,7 @@ export const SuperAdminPanel: React.FC = () => {
                     <label className="text-xs font-semibold text-slate-300">
                       Policy Content (Markdown & Plain Text):
                     </label>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-xs text-[#878787] font-mono tabular-nums">
                       {policyContentInput.length} characters
                     </span>
                   </div>
@@ -963,30 +960,30 @@ export const SuperAdminPanel: React.FC = () => {
                     value={policyContentInput}
                     onChange={(e) => setPolicyContentInput(e.target.value)}
                     placeholder="Enter policy terms in markdown or plain text with headings (##), bullet points (- ), and bold text (**)..."
-                    className="w-full px-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="w-full px-4 py-3 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white font-mono leading-relaxed focus:outline-none focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760]"
                   />
                   {policyFormErrors.content && (
-                    <p className="text-[11px] text-red-400 mt-1">{policyFormErrors.content}</p>
+                    <p className="text-xs text-rose-400 mt-1">{policyFormErrors.content}</p>
                   )}
-                  <p className="text-[10px] text-slate-500 mt-1.5">
-                    Supports headings (## Title), bold text (**bold**), bullet points (- item), and paragraphs. Changes are immediately visible in the public landing page footer modal once saved.
+                  <p className="text-xs text-[#878787] mt-1.5">
+                    Supports headings (## Title), bold text (**bold**), bullet points (- item), and paragraphs. Changes appear on the public footer modal once saved.
                   </p>
                 </div>
               ) : (
-                <div className="border border-slate-800 rounded-xl bg-slate-900/40 p-5 space-y-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-400 mb-2">
+                <div className="border border-[#282828] rounded-xl bg-[#121212] p-5 space-y-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[#1ed760] mb-2">
                     Live Formatted Preview
                   </div>
-                  <h4 className="text-base font-bold text-white border-b border-slate-800 pb-2">
+                  <h4 className="text-lg font-bold text-white border-b border-[#282828] pb-2">
                     {policyTitleInput || 'Untitled Policy'}
                   </h4>
-                  <div className="text-xs text-slate-300 leading-relaxed space-y-3 whitespace-pre-wrap font-sans max-h-96 overflow-y-auto pr-2">
+                  <div className="text-sm text-[#b3b3b3] leading-relaxed space-y-3 whitespace-pre-wrap font-sans max-h-96 overflow-y-auto pr-2">
                     {policyContentInput}
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#282828]">
                 <button
                   type="button"
                   onClick={() => {
@@ -997,24 +994,24 @@ export const SuperAdminPanel: React.FC = () => {
                     }
                     setPolicyFormErrors({});
                   }}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-[#242424] hover:bg-[#303030] text-[#b3b3b3] hover:text-white text-xs font-semibold rounded-full transition-colors cursor-pointer"
                 >
                   Reset
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingPolicy}
-                  className="px-5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2 bg-[#1ed760] hover:bg-[#1fdf64] disabled:opacity-50 text-black text-xs font-bold rounded-full shadow-md transition-all flex items-center gap-2 cursor-pointer"
                 >
                   {isSavingPolicy ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving to PostgreSQL...</span>
+                      <span>Saving Policy...</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Save Policy to Database</span>
+                      <span>Save Policy</span>
                     </>
                   )}
                 </button>
@@ -1026,14 +1023,14 @@ export const SuperAdminPanel: React.FC = () => {
 
       {/* Bonus Credit Adjustment Modal */}
       {selectedUserForCredit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#101726] border border-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-6">
-            <h4 className="text-sm font-bold text-white font-display mb-1 flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#181818] border border-[#282828] rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl p-6">
+            <h4 className="text-base font-bold text-white font-display mb-1 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-[#1ed760]" />
               <span>Grant Bonus Audio Credits</span>
             </h4>
-            <p className="text-xs text-slate-400 mb-4">
-              Add audio minutes to {selectedUserForCredit.name}&apos;s balance in PostgreSQL.
+            <p className="text-xs text-[#b3b3b3] mb-4">
+              Add audio minutes to {selectedUserForCredit.name}&apos;s account balance.
             </p>
 
             <form onSubmit={handleAddBonusCredits} className="space-y-4">
@@ -1071,15 +1068,15 @@ export const SuperAdminPanel: React.FC = () => {
 
       {/* Plan Create / Edit Modal */}
       {showPlanModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#101726] border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#181818] border border-[#282828] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between">
               <h3 className="text-sm font-bold text-white font-display">
                 {editingPlan ? 'Edit Subscription Plan' : 'Create New Subscription Plan'}
               </h3>
               <button
                 onClick={() => setShowPlanModal(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                className="p-1.5 text-[#b3b3b3] hover:text-white rounded-full hover:bg-[#282828] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1087,68 +1084,68 @@ export const SuperAdminPanel: React.FC = () => {
 
             <form onSubmit={handleSavePlan} className="p-6 space-y-4">
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Plan Name:</label>
+                <label className="text-xs text-[#b3b3b3] block mb-1">Plan Name:</label>
                 <input
                   type="text"
                   value={planForm.name}
                   onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })}
                   placeholder="e.g. Creator Plus"
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full px-3.5 py-2 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white focus:outline-none focus:border-[#1ed760]"
                 />
                 {planFormErrors.name && (
-                  <p className="text-[10px] text-red-400 mt-1">{planFormErrors.name}</p>
+                  <p className="text-xs text-rose-400 mt-1">{planFormErrors.name}</p>
                 )}
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Description:</label>
+                <label className="text-xs text-[#b3b3b3] block mb-1">Description:</label>
                 <input
                   type="text"
                   value={planForm.description}
                   onChange={(e) => setPlanForm({ ...planForm, description: e.target.value })}
                   placeholder="e.g. Best for growing YouTube creators..."
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="w-full px-3.5 py-2 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white focus:outline-none focus:border-[#1ed760]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-slate-300 block mb-1">Price (USD $):</label>
+                  <label className="text-xs text-[#b3b3b3] block mb-1">Price (USD $):</label>
                   <input
                     type="number"
                     value={planForm.priceUsd}
                     onChange={(e) => setPlanForm({ ...planForm, priceUsd: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                    className="w-full px-3.5 py-2 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white font-mono focus:outline-none focus:border-[#1ed760]"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs text-slate-300 block mb-1">Audio Credits (Minutes):</label>
+                  <label className="text-xs text-[#b3b3b3] block mb-1">Audio Credits (Minutes):</label>
                   <input
                     type="number"
                     value={planForm.creditsGranted}
                     onChange={(e) => setPlanForm({ ...planForm, creditsGranted: parseInt(e.target.value, 10) || 0 })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-purple-500"
+                    className="w-full px-3.5 py-2 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white font-mono focus:outline-none focus:border-[#1ed760]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1">Features List (One item per line):</label>
+                <label className="text-xs text-[#b3b3b3] block mb-1">Features List (One item per line):</label>
                 <textarea
                   rows={3}
                   value={planForm.featuresText}
                   onChange={(e) => setPlanForm({ ...planForm, featuresText: e.target.value })}
                   placeholder="SRT Subtitles&#10;AI YouTube Titles&#10;16:9 HD Thumbnails"
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-purple-500 leading-relaxed font-sans"
+                  className="w-full px-3.5 py-2 bg-[#121212] border border-[#282828] rounded-xl text-sm text-white focus:outline-none focus:border-[#1ed760] leading-relaxed font-sans"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">
+                <label className="text-xs text-[#b3b3b3] block mb-1.5 font-semibold">
                   Module-Wise Access Permissions:
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-900/90 border border-slate-800 rounded-xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-[#121212] border border-[#282828] rounded-xl">
                   {AVAILABLE_MODULES.map((mod) => {
                     const isChecked = planForm.modules.includes(mod.id);
                     return (
@@ -1156,8 +1153,8 @@ export const SuperAdminPanel: React.FC = () => {
                         key={mod.id}
                         className={`flex items-start gap-2.5 p-2 rounded-lg border text-left cursor-pointer transition-colors ${
                           isChecked
-                            ? 'bg-purple-950/40 border-purple-500/50 text-white'
-                            : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200'
+                            ? 'bg-[#1ed760]/10 border-[#1ed760]/50 text-white'
+                            : 'bg-[#181818] border-[#282828] text-[#b3b3b3] hover:text-white'
                         }`}
                       >
                         <input
@@ -1176,11 +1173,11 @@ export const SuperAdminPanel: React.FC = () => {
                               });
                             }
                           }}
-                          className="mt-0.5 rounded border-slate-700 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                          className="mt-0.5 rounded border-[#383838] accent-[#1ed760] cursor-pointer"
                         />
                         <div className="flex-1">
-                          <div className="text-xs font-semibold text-slate-200">{mod.label}</div>
-                          <div className="text-[10px] text-slate-400 leading-tight">{mod.desc}</div>
+                          <div className="text-xs font-semibold text-white">{mod.label}</div>
+                          <div className="text-xs text-[#b3b3b3] leading-snug">{mod.desc}</div>
                         </div>
                       </label>
                     );
@@ -1188,19 +1185,19 @@ export const SuperAdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#282828]">
                 <button
                   type="button"
                   onClick={() => setShowPlanModal(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg"
+                  className="px-4 py-2 bg-[#282828] hover:bg-[#383838] text-white text-xs font-semibold rounded-full cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-purple-500 hover:bg-purple-400 text-white text-xs font-bold rounded-lg shadow-md transition-all"
+                  className="px-5 py-2 bg-[#1ed760] hover:bg-[#1fdf64] text-black text-xs font-extrabold rounded-full shadow-md transition-all cursor-pointer"
                 >
-                  {editingPlan ? 'Update Plan' : 'Save Plan to PostgreSQL'}
+                  {editingPlan ? 'Update Plan' : 'Save Subscription Plan'}
                 </button>
               </div>
             </form>

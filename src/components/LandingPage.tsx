@@ -84,7 +84,7 @@ const DEFAULT_PLANS: SaaSPlan[] = [
       'AI YouTube title and chapter generation',
       '16:9 HD thumbnail canvas studio',
       'Priority audio transcription queue',
-      'Cloud SQL transcript archive & search',
+      'Cloud transcript archive & search',
     ],
     modules: ['subtitles_editor', 'voice_recorder', 'youtube_seo', 'thumbnail_canvas', 'advanced_export'],
     isPopular: true,
@@ -178,7 +178,7 @@ const FAQS = [
   },
   {
     q: 'What happens when I consume all my audio minutes?',
-    a: 'You can upgrade your subscription tier at any time or add top-up audio minutes. Your saved transcripts, voice clones, and thumbnail templates remain permanently archived in your secure Cloud SQL history.',
+    a: 'You can upgrade your subscription tier at any time or add top-up audio minutes. Your saved transcripts, voice clones, and thumbnail templates remain permanently archived in your secure workspace history.',
   },
 ];
 
@@ -341,8 +341,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* ========================================================= */}
         <section id="home" className="pt-10 sm:pt-20 max-w-5xl mx-auto px-4 text-center">
           {/* Subtle Metadata Kicker */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#181818] border border-[#282828] text-xs font-semibold text-[#b3b3b3] mb-8 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-[#1ed760] animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#181818] border border-[#282828] text-xs font-semibold text-[#b3b3b3] mb-8 shadow-sm">
             <span className="text-white">Multilingual Speech AI</span>
             <span className="text-[#4d4d4d]">·</span>
             <span>Subtitle Studio</span>
@@ -353,7 +352,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Primary Headline */}
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6 font-display">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08] mb-6 font-display text-balance">
             The Complete AI Audio, Subtitle & Creator Intelligence Suite.
           </h1>
 
@@ -464,7 +463,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 <Mic className="w-4 h-4 text-purple-400" />
                 <span className="truncate">Voiceover & Clone</span>
-                <span className="hidden sm:inline-block text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-mono">Agency</span>
+                <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold uppercase tracking-wider">Agency</span>
               </button>
 
               <button
@@ -501,7 +500,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>Synchronized Subtitle Timestamp Alignment</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#1ed760]/10 text-[#1ed760] font-mono border border-[#1ed760]/20">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#1ed760]/10 text-[#1ed760] font-semibold border border-[#1ed760]/20">
                         Live Demo
                       </span>
                     </h3>
@@ -542,7 +541,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       <p className="text-xs text-white leading-relaxed flex-1 font-medium">
                         {seg.text}
                       </p>
-                      <span className="text-[10px] text-[#666666] font-mono shrink-0">
+                      <span className="text-xs text-[#878787] font-mono tabular-nums shrink-0">
                         #{idx + 1}
                       </span>
                     </div>
@@ -578,16 +577,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       <h3 className="text-base font-bold text-white">
                         AI Voiceover & Voice Cloning Studio
                       </h3>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold border border-purple-500/30">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">
                         Agency Studio Module
                       </span>
                     </div>
-                    <p className="text-xs text-[#878787] mt-0.5">
+                    <p className="text-xs text-[#b3b3b3] mt-0.5">
                       Synthesize natural speech with studio voices or clone your own voice from a 15-second recording:
                     </p>
                   </div>
 
-                  <span className="text-xs font-mono text-purple-300 bg-purple-500/10 px-3 py-1 rounded-lg border border-purple-500/20">
+                  <span className="text-xs font-semibold text-purple-300 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
                     Export: WAV · MP3 · OGG
                   </span>
                 </div>
@@ -603,10 +602,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                         <div>
                           <div className="text-xs font-bold text-white">Kabir (Male Studio Broadcast)</div>
-                          <div className="text-[10px] text-[#878787]">Deep, articulate, resonant tone for explainers & news</div>
+                          <div className="text-xs text-[#b3b3b3]">Deep, articulate, resonant tone for explainers & news</div>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-mono">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 font-semibold">
                         Studio 24kHz
                       </span>
                     </div>
@@ -647,10 +646,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                         <div>
                           <div className="text-xs font-bold text-white">Fatima (Female Studio Narrative)</div>
-                          <div className="text-[10px] text-[#878787]">Warm, melodic, articulate storytelling tone for tutorials</div>
+                          <div className="text-xs text-[#b3b3b3]">Warm, melodic, articulate storytelling tone for tutorials</div>
                         </div>
                       </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-rose-500/10 text-rose-300 font-mono">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-semibold">
                         Studio 24kHz
                       </span>
                     </div>
@@ -717,7 +716,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>16:9 Thumbnail Canvas & AI Style Generator</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-semibold border border-amber-500/20">
                         Live Preview
                       </span>
                     </h3>
@@ -780,7 +779,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </div>
 
                   {/* Resolution Footnote */}
-                  <div className="flex justify-between items-center text-[10px] text-white/70 font-mono">
+                  <div className="flex justify-between items-center text-xs text-white/80 font-mono tabular-nums">
                     <span>16:9 YouTube Standard</span>
                     <span>1280 × 720 HD · Export PNG / JPEG / WEBP</span>
                   </div>
@@ -808,7 +807,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>AI YouTube SEO & Metadata Optimizer</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-mono border border-red-500/20">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 font-semibold border border-red-500/20">
                         Live Preview
                       </span>
                     </h3>
@@ -829,15 +828,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="space-y-1.5 text-xs">
                       <div className="p-2.5 rounded-xl bg-[#121212] border border-[#242424] text-white font-medium flex items-center justify-between">
                         <span>1. Turn Audio into Subtitles in 1 Click (2026 Guide)</span>
-                        <Badge variant="outline" className="text-[10px] text-[#1ed760]">98% Score</Badge>
+                        <span className="text-xs text-[#1ed760] font-semibold shrink-0 ml-2">High CTR</span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-[#121212] border border-[#242424] text-white font-medium flex items-center justify-between">
                         <span>2. How to Auto-Generate Bengali Subtitles Fast</span>
-                        <Badge variant="outline" className="text-[10px] text-[#1ed760]">95% Score</Badge>
+                        <span className="text-xs text-[#1ed760] font-semibold shrink-0 ml-2">Curated</span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-[#121212] border border-[#242424] text-white font-medium flex items-center justify-between">
                         <span>3. Multimodal Speech Intelligence Explained Simply</span>
-                        <Badge variant="outline" className="text-[10px] text-blue-400">Trending</Badge>
+                        <span className="text-xs text-blue-400 font-semibold shrink-0 ml-2">Viral Pick</span>
                       </div>
                     </div>
                   </div>
@@ -908,8 +907,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               },
               {
                 step: '02',
-                title: 'AI Alignment',
-                desc: 'Gemini transcribes speech and synchronizes subtitle timestamps',
+                title: 'Speech Alignment',
+                desc: 'Scriby transcribes speech and synchronizes subtitle timestamps',
                 icon: Clock,
               },
               {
@@ -942,8 +941,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       <span className="text-[#1ed760] font-bold">Step {st.step}</span>
                       <Icon className="w-4 h-4 text-[#878787]" />
                     </div>
-                    <h3 className="text-sm font-bold text-white mt-2">{st.title}</h3>
-                    <p className="text-[11px] text-[#878787] mt-1 leading-relaxed">{st.desc}</p>
+                    <h3 className="text-base font-bold text-white mt-2">{st.title}</h3>
+                    <p className="text-xs text-[#b3b3b3] mt-1.5 leading-relaxed">{st.desc}</p>
                   </div>
                 </div>
               );
@@ -972,27 +971,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <Card className="p-6 sm:p-7 flex flex-col justify-between bg-[#181818] border-[#282828] hover:border-[#383838] transition-all">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-[#1ed760] font-bold">Pillar 01</span>
+                  <span className="text-xs font-semibold text-[#1ed760] uppercase tracking-wider">01. Subtitle Studio</span>
                   <FileAudio className="w-5 h-5 text-[#1ed760]" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   Multilingual Subtitle Editor
                 </h3>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-sm text-[#b3b3b3] leading-relaxed">
                   Universal script transcription supporting all major global languages and Bengali (বাংলা) with punctuation, speaker separation, timestamp adjustments, split points, and seekable waveform audio playback.
                 </p>
-                <ul className="space-y-1.5 pt-2 text-xs text-[#878787]">
+                <ul className="space-y-2 pt-2 text-xs text-[#b3b3b3]">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-[#1ed760]" />
+                    <Check className="w-3.5 h-3.5 text-[#1ed760] shrink-0" />
                     <span>Synchronized audio player timeline with active highlight</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-[#1ed760]" />
+                    <Check className="w-3.5 h-3.5 text-[#1ed760] shrink-0" />
                     <span>Exports in SRT, WebVTT, Word DOCX tables, TXT, JSON</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#282828] text-xs font-mono text-[#7c7c7c]">
+              <div className="mt-6 pt-4 border-t border-[#282828] text-xs text-[#b3b3b3]">
                 100+ Global Languages · Live Audio Sync
               </div>
             </Card>
@@ -1001,28 +1000,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <Card className="p-6 sm:p-7 flex flex-col justify-between bg-[#181818] border-[#282828] hover:border-[#383838] transition-all">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-purple-400 font-bold">Pillar 02 · Agency</span>
+                  <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">02. Voice Cloning (Agency)</span>
                   <Mic className="w-5 h-5 text-purple-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   Voice Cloning & AI Voiceover Studio
                 </h3>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-sm text-[#b3b3b3] leading-relaxed">
                   Clone your own voice from a microphone recording or generate professional narration using built-in studio voices (Kabir & Fatima). Send synthesized audio directly to the Subtitle Editor with 1 click.
                 </p>
-                <ul className="space-y-1.5 pt-2 text-xs text-[#878787]">
+                <ul className="space-y-2 pt-2 text-xs text-[#b3b3b3]">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-purple-400" />
+                    <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                     <span>Instant voice clone profile from 15-second speech sample</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-purple-400" />
+                    <Check className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                     <span>Multi-format audio export in high-fidelity WAV, MP3, and OGG</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#282828] text-xs font-mono text-[#7c7c7c]">
-                Exclusive to Agency Studio Plan · 24kHz Studio Output
+              <div className="mt-6 pt-4 border-t border-[#282828] text-xs text-[#b3b3b3]">
+                Agency Studio Plan · 24kHz Studio Output
               </div>
             </Card>
 
@@ -1030,27 +1029,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <Card className="p-6 sm:p-7 flex flex-col justify-between bg-[#181818] border-[#282828] hover:border-[#383838] transition-all">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-amber-400 font-bold">Pillar 03</span>
+                  <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">03. Thumbnail Canvas</span>
                   <ImageIcon className="w-5 h-5 text-amber-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   16:9 Thumbnail Canvas Studio
                 </h3>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-sm text-[#b3b3b3] leading-relaxed">
                   Design high-CTR YouTube thumbnails with live side-by-side sticky canvas preview. Generate background art with AI in 6 distinct styles, tweak typography, and export at custom resolutions.
                 </p>
-                <ul className="space-y-1.5 pt-2 text-xs text-[#878787]">
+                <ul className="space-y-2 pt-2 text-xs text-[#b3b3b3]">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-amber-400" />
+                    <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>AI style background generator (Cinematic, Cyberpunk, 3D)</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-amber-400" />
+                    <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>Custom dimensions up to 4K UHD with PNG, JPEG, WEBP exports</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#282828] text-xs font-mono text-[#7c7c7c]">
+              <div className="mt-6 pt-4 border-t border-[#282828] text-xs text-[#b3b3b3]">
                 Sticky Live 16:9 Canvas · Multi-Format Downloads
               </div>
             </Card>
@@ -1059,28 +1058,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <Card className="p-6 sm:p-7 flex flex-col justify-between bg-[#181818] border-[#282828] hover:border-[#383838] transition-all">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono text-red-500 font-bold">Pillar 04</span>
-                  <Youtube className="w-5 h-5 text-red-500" />
+                  <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider">04. YouTube SEO</span>
+                  <Youtube className="w-5 h-5 text-rose-400" />
                 </div>
                 <h3 className="text-lg font-bold text-white">
                   YouTube SEO & Metadata Suite
                 </h3>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-sm text-[#b3b3b3] leading-relaxed">
                   Transform spoken words into ranking YouTube titles, description summaries, hashtags, and chapter timestamps with bilingual Bengali & English support.
                 </p>
-                <ul className="space-y-1.5 pt-2 text-xs text-[#878787]">
+                <ul className="space-y-2 pt-2 text-xs text-[#b3b3b3]">
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-500" />
-                    <span>High-converting titles scored for click-through rate</span>
+                    <Check className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                    <span>High-converting titles tailored for click-through rate</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-red-500" />
+                    <Check className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                     <span>Exact chapter timestamps mapped to transcript audio times</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#282828] text-xs font-mono text-[#7c7c7c]">
-                Bilingual SEO Engine · 1-Click Copy
+              <div className="mt-6 pt-4 border-t border-[#282828] text-xs text-[#b3b3b3]">
+                Multilingual SEO Engine · 1-Click Copy
               </div>
             </Card>
           </div>
@@ -1123,12 +1122,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 >
                   <div>
                     {isAgency && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold bg-purple-600 text-white shadow-md uppercase tracking-wider">
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-purple-600 text-white shadow-md uppercase tracking-wider">
                         Includes Voice Cloning
                       </div>
                     )}
                     {isPro && !isAgency && (
-                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[10px] font-bold bg-[#1ed760] text-black shadow-md uppercase tracking-wider">
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-[11px] font-bold bg-[#1ed760] text-black shadow-md uppercase tracking-wider">
                         Most Popular
                       </div>
                     )}
@@ -1146,36 +1145,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       </span>
                     </div>
 
-                    <p className="text-xs text-[#b3b3b3] mb-6 min-h-[36px] leading-relaxed">
+                    <p className="text-sm text-[#b3b3b3] mb-6 min-h-[42px] leading-relaxed">
                       {plan.description}
                     </p>
 
                     <div className="pb-5 border-b border-[#282828] mb-6">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-4xl font-extrabold font-mono text-white">
+                        <span className="text-4xl font-extrabold font-mono tabular-nums text-white">
                           {priceLabel}
                         </span>
-                        <span className="text-xs text-[#878787]">/ month</span>
+                        <span className="text-xs text-[#b3b3b3]">/ month</span>
                       </div>
-                      <div className="text-xs text-[#1ed760] font-mono mt-1 font-semibold">
+                      <div className="text-xs text-[#1ed760] font-mono tabular-nums mt-1 font-semibold">
                         {bdtSubLabel}
                       </div>
                     </div>
 
                     {/* Features List */}
                     <div className="space-y-2.5 mb-8">
-                      <div className="text-[11px] font-bold text-[#b3b3b3] uppercase tracking-wider mb-2">
-                        Included Features:
+                      <div className="text-xs font-bold text-[#b3b3b3] uppercase tracking-wider mb-2">
+                        Included Features
                       </div>
-                      <ul className="space-y-2 text-xs text-[#cccccc]">
+                      <ul className="space-y-2.5 text-sm text-[#d4d4d4]">
                         {plan.features.map((feat, idx) => {
                           const isVoiceFeature = feat.toLowerCase().includes('voiceover') || feat.toLowerCase().includes('voice cloning');
                           return (
                             <li key={idx} className="flex items-start gap-2">
-                              <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
+                              <Check className={`w-4 h-4 shrink-0 mt-0.5 ${
                                 isVoiceFeature ? 'text-purple-400 font-bold' : 'text-[#1ed760]'
                               }`} />
-                              <span className={isVoiceFeature ? 'text-purple-200 font-bold' : ''}>
+                              <span className={isVoiceFeature ? 'text-purple-200 font-semibold' : ''}>
                                 {feat}
                               </span>
                             </li>
@@ -1190,7 +1189,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     disabled={Boolean(user?.planId && user.planId !== 'plan-free' && plan.priceUsd === 0)}
                     variant={isAgency ? 'default' : isPro ? 'default' : 'outline'}
                     size="default"
-                    className={`w-full py-2.5 font-extrabold text-xs cursor-pointer rounded-xl ${
+                    className={`w-full py-2.5 font-extrabold text-sm cursor-pointer rounded-full ${
                       isAgency
                         ? 'bg-purple-600 hover:bg-purple-500 text-white'
                         : isPro
@@ -1218,7 +1217,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <span>Instant mobile checkout supported via official gateways:</span>
               <span className="font-bold text-white">bKash (*247#) · Nagad (*167#) · Rocket (*322#)</span>
             </div>
-            <span className="font-mono text-[#1ed760] text-[11px] font-bold">
+            <span className="font-semibold text-[#1ed760] text-xs">
               Instant Quota Credit Allocation
             </span>
           </div>
@@ -1309,7 +1308,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <MapPin className="w-4 h-4 text-[#1ed760] mt-0.5 shrink-0" />
                     <div>
                       <div className="text-xs text-[#878787]">Cloud Infrastructure</div>
-                      <div className="text-xs font-bold text-white mt-0.5">Google Cloud SQL (asia-southeast1)</div>
+                      <div className="text-xs font-bold text-white mt-0.5">Global Cloud Hosting (Asia-Pacific)</div>
                     </div>
                   </div>
 
@@ -1323,12 +1322,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#282828] text-xs text-[#878787]">
+              <div className="pt-4 border-t border-[#282828] text-xs text-[#b3b3b3]">
                 <div className="font-bold text-white mb-1 flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-[#1ed760]" />
                   <span>Media Agency Partnerships</span>
                 </div>
-                <p className="text-[11px] leading-relaxed">
+                <p className="text-xs leading-relaxed">
                   For TV channels, podcast networks, and YouTube creators producing more than 100 hours per month, contact us for custom bulk pricing.
                 </p>
               </div>
@@ -1368,7 +1367,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         className="text-xs bg-[#121212] border-[#2e2e2e]"
                       />
                       {contactErrors.name && (
-                        <p className="text-[11px] text-rose-400 mt-1">{contactErrors.name}</p>
+                        <p className="text-xs text-rose-400 mt-1">{contactErrors.name}</p>
                       )}
                     </div>
 
@@ -1382,10 +1381,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                           if (contactErrors.email) setContactErrors({ ...contactErrors, email: '' });
                         }}
                         placeholder="tanvir@studio.com"
-                        className="text-xs bg-[#121212] border-[#2e2e2e]"
+                        className="text-sm bg-[#121212] border-[#2e2e2e]"
                       />
                       {contactErrors.email && (
-                        <p className="text-[11px] text-rose-400 mt-1">{contactErrors.email}</p>
+                        <p className="text-xs text-rose-400 mt-1">{contactErrors.email}</p>
                       )}
                     </div>
                   </div>
@@ -1397,7 +1396,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       value={contactSubject}
                       onChange={(e) => setContactSubject(e.target.value)}
                       placeholder="e.g. Agency tier high-volume quota inquiry"
-                      className="text-xs bg-[#121212] border-[#2e2e2e]"
+                      className="text-sm bg-[#121212] border-[#2e2e2e]"
                     />
                   </div>
 
@@ -1411,10 +1410,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         if (contactErrors.message) setContactErrors({ ...contactErrors, message: '' });
                       }}
                       placeholder="Describe your audio production workflow, volume requirements, or questions..."
-                      className="w-full px-4 py-2.5 bg-[#121212] border border-[#2e2e2e] rounded-2xl text-xs text-white placeholder-[#7c7c7c] focus:outline-none focus:border-[#1ed760] transition-colors"
+                      className="w-full px-4 py-2.5 bg-[#121212] border border-[#2e2e2e] rounded-2xl text-sm text-white placeholder-[#878787] focus:outline-none focus:border-[#1ed760] transition-colors"
                     />
                     {contactErrors.message && (
-                      <p className="text-[11px] text-rose-400 mt-1">{contactErrors.message}</p>
+                      <p className="text-xs text-rose-400 mt-1">{contactErrors.message}</p>
                     )}
                   </div>
 
@@ -1448,23 +1447,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <span className="text-lg font-black tracking-tight text-white font-display">
                     Scriby
                   </span>
-                  <span className="block text-[10px] text-[#7c7c7c] tracking-widest uppercase">
-                    AI Speech Intelligence & Creator Studio
+                  <span className="block text-xs text-[#b3b3b3] tracking-wider uppercase">
+                    Audio Speech & Creator Studio
                   </span>
                 </div>
               </div>
 
-              <p className="text-xs text-[#a7a7a7] leading-relaxed max-w-sm">
-                Next-generation multilingual AI speech intelligence platform built for content creators, YouTube producers, podcasters, and media agencies. Transcribe audio across all languages, synthesize studio AI voiceovers & voice clones, generate viral YouTube SEO, and design 16:9 thumbnails effortlessly.
+              <p className="text-sm text-[#b3b3b3] leading-relaxed max-w-sm">
+                Next-generation multilingual speech intelligence platform built for content creators, YouTube producers, podcasters, and media agencies. Transcribe audio across all languages, synthesize studio voiceovers & voice clones, generate high-CTR YouTube SEO, and design 16:9 thumbnails effortlessly.
               </p>
 
-              <div className="flex items-center gap-3 pt-2 text-xs text-[#7c7c7c]">
-                <div className="flex items-center gap-1.5 text-[#1ed760]">
-                  <span className="w-2 h-2 rounded-full bg-[#1ed760] animate-pulse" />
-                  <span className="font-medium text-[11px]">PostgreSQL Cloud SQL Secured</span>
-                </div>
+              <div className="flex items-center gap-3 pt-2 text-xs text-[#b3b3b3]">
+                <span className="font-semibold text-[#1ed760]">Enterprise Cloud Security</span>
                 <span>•</span>
-                <span className="text-[11px]">Universal Multilingual Recognition</span>
+                <span>Universal Multilingual Recognition</span>
               </div>
             </div>
 
@@ -1473,7 +1469,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <h4 className="text-xs font-bold text-white uppercase tracking-wider font-display">
                 Creator Suite
               </h4>
-              <ul className="space-y-2 text-xs text-[#a7a7a7]">
+              <ul className="space-y-2 text-xs text-[#b3b3b3]">
                 <li>
                   <button onClick={onGetStarted} className="hover:text-white transition-colors cursor-pointer text-left">
                     Multilingual Speech-to-Text
@@ -1513,30 +1509,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => handleOpenPolicy('terms')}
-                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                    className="text-[#b3b3b3] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
-                    <span className="font-medium text-slate-300 group-hover:text-white">Terms and Conditions</span>
+                    <BookOpen className="w-3.5 h-3.5 text-[#878787] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-[#d4d4d4] group-hover:text-white">Terms and Conditions</span>
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
                     onClick={() => handleOpenPolicy('privacy')}
-                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                    className="text-[#b3b3b3] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
                   >
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
-                    <span className="font-medium text-slate-300 group-hover:text-white">Privacy Policy</span>
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#878787] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-[#d4d4d4] group-hover:text-white">Privacy Policy</span>
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
                     onClick={() => handleOpenPolicy('refund')}
-                    className="text-[#a7a7a7] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
+                    className="text-[#b3b3b3] hover:text-[#1ed760] transition-colors flex items-center gap-2 group cursor-pointer text-left"
                   >
-                    <Scale className="w-3.5 h-3.5 text-[#7c7c7c] group-hover:text-[#1ed760] transition-colors" />
-                    <span className="font-medium text-slate-300 group-hover:text-white">Refund Policy</span>
+                    <Scale className="w-3.5 h-3.5 text-[#878787] group-hover:text-[#1ed760] transition-colors" />
+                    <span className="font-medium text-[#d4d4d4] group-hover:text-white">Refund Policy</span>
                   </button>
                 </li>
               </ul>
@@ -1548,31 +1544,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <CreditCard className="w-3.5 h-3.5 text-[#1ed760]" />
                 <span>Instant Mobile Payment</span>
               </h4>
-              <p className="text-[11px] text-[#7c7c7c] leading-relaxed">
+              <p className="text-xs text-[#b3b3b3] leading-relaxed">
                 Automated credit activation supported across Bangladesh:
               </p>
 
               <div className="flex flex-wrap gap-2 pt-1">
                 {/* bKash */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-[#e2136e]/15 text-[#ff4b8e] border border-[#e2136e]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b8e]" />
-                  <span>bKash</span>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-[#e2136e]/15 text-[#ff4b8e] border border-[#e2136e]/30">
+                  bKash
                 </div>
 
                 {/* Nagad */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-[#f7941d]/15 text-[#ffa726] border border-[#f7941d]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ffa726]" />
-                  <span>Nagad</span>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-[#f7941d]/15 text-[#ffa726] border border-[#f7941d]/30">
+                  Nagad
                 </div>
 
                 {/* Rocket */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-[#8c3494]/15 text-[#c084fc] border border-[#8c3494]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#c084fc]" />
-                  <span>Rocket</span>
+                <div className="px-3 py-1 rounded-full text-xs font-bold bg-[#8c3494]/15 text-[#c084fc] border border-[#8c3494]/30">
+                  Rocket
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center gap-2 text-[11px] text-[#7c7c7c]">
+              <div className="pt-2 flex items-center gap-2 text-xs text-[#b3b3b3]">
                 <Lock className="w-3.5 h-3.5 text-[#1ed760]" />
                 <span>256-Bit SSL Encrypted & OTP Protected</span>
               </div>
@@ -1580,14 +1573,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Bottom Copyright Bar */}
-          <div className="mt-12 pt-8 border-t border-[#1f1f1f] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#7c7c7c]">
+          <div className="mt-12 pt-8 border-t border-[#1f1f1f] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#878787]">
             <div className="flex items-center gap-2">
               <span>© {new Date().getFullYear()} Scriby. All rights reserved.</span>
               <span>•</span>
-              <span className="text-[#a7a7a7]">Made with ❤️ for Global Creators</span>
+              <span className="text-[#b3b3b3]">Built for Global Creators</span>
             </div>
 
-            <div className="flex items-center gap-4 text-[11px]">
+            <div className="flex items-center gap-4 text-xs">
               <button
                 type="button"
                 onClick={() => handleOpenPolicy('terms')}

@@ -1,12 +1,19 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-bengali: 'Noto Sans Bengali', 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+}
+
 @layer base {
   :root {
-    --font-sans: 'SpotifyMixUI', -apple-system, BlinkMacSystemFont, 'CircularSp', system-ui, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
     --font-bengali: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
-    --font-display: 'SpotifyMixUITitle', -apple-system, BlinkMacSystemFont, 'CircularSp', system-ui, 'Plus Jakarta Sans', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
 
     /* Spotify Design System Tokens */
     --spotify-black: #121212;
@@ -27,15 +34,32 @@
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.011em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    text-wrap: balance;
   }
 }
 
-.font-bengali {
-  font-family: var(--font-bengali);
+.font-sans {
+  font-family: var(--font-sans);
 }
 
 .font-display {
   font-family: var(--font-display);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.font-bengali {
+  font-family: var(--font-bengali);
 }
 
 /* Spotify-inspired custom scrollbar */

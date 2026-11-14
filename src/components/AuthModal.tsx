@@ -304,24 +304,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </form>
 
         {/* Informational Credential Hint (Subtle plain text, NO clickable switcher buttons) */}
-        <div className="px-6 py-3.5 bg-slate-950/70 border-t border-slate-800/80 text-[11px] text-slate-400">
-          <div className="flex items-center gap-1.5 font-medium text-slate-300 mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="px-6 py-3.5 bg-[#121212] border-t border-[#282828] text-xs text-[#b3b3b3]">
+          <div className="flex items-center gap-1.5 font-medium text-white mb-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#1ed760]" />
             <span>Automatic Role-Based Redirection:</span>
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed">
+          <p className="text-xs text-[#b3b3b3] leading-relaxed">
             SuperAdmin credentials redirect to the SuperAdmin Portal. Creator accounts redirect to the Creator Studio.
           </p>
-          <div className="mt-2 pt-2 border-t border-slate-800/60 font-mono text-[10px] space-y-0.5 text-slate-400">
+          <div className="mt-2 pt-2 border-t border-[#282828] font-mono text-xs space-y-0.5 text-[#b3b3b3]">
             <div>
               <span className="text-purple-400 font-semibold">SuperAdmin:</span>{' '}
-              <span className="text-slate-300">admin@scriby.com</span> /{' '}
-              <span className="text-slate-300">admin1234</span>
+              <span className="text-white">admin@scriby.com</span> /{' '}
+              <span className="text-white">admin1234</span>
             </div>
             <div>
-              <span className="text-emerald-400 font-semibold">Creator:</span>{' '}
-              <span className="text-slate-300">creator@scriby.com</span> /{' '}
-              <span className="text-slate-300">creator1234</span>
+              <span className="text-[#1ed760] font-semibold">Creator:</span>{' '}
+              <span className="text-white">creator@scriby.com</span> /{' '}
+              <span className="text-white">creator1234</span>
             </div>
           </div>
         </div>

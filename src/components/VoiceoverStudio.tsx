@@ -659,7 +659,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             <h1 className="text-xl font-extrabold text-white tracking-tight font-display">
               AI Voiceover Studio
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#1ed760]/20 text-[#1ed760] border border-[#1ed760]/30 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1ed760]/15 text-[#1ed760] border border-[#1ed760]/30 tracking-wide">
               Voice Clone & Studio TTS
             </span>
           </div>
@@ -829,7 +829,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     onChange={(e) => setSpeed(parseFloat(e.target.value))}
                     className="w-full accent-[#1ed760] cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-[#535353] font-mono">
+                  <div className="flex justify-between text-xs text-[#878787] font-mono tabular-nums">
                     <span>0.75x</span>
                     <span>1.0x</span>
                     <span>1.5x</span>
@@ -898,12 +898,12 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               <Card className="p-5 bg-gradient-to-br from-[#181818] to-[#121212] border border-[#1ed760]/40 rounded-xl space-y-4 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#1ed760] animate-pulse" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#1ed760]" />
                     <div>
                       <h4 className="text-sm font-bold text-white font-display">
                         Ready: {currentVoiceover.voiceName}
                       </h4>
-                      <p className="text-[11px] text-[#b3b3b3] font-mono">
+                      <p className="text-xs text-[#b3b3b3] font-mono tabular-nums">
                         Format: {currentVoiceover.format.toUpperCase()} · Duration: ~
                         {formatPlayerTime(audioDuration || currentVoiceover.durationSeconds)}
                       </p>
@@ -1113,11 +1113,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm text-white">{voice.name}</span>
                             {voice.isCustom ? (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30">
                                 Cloned Voice
                               </span>
                             ) : (
-                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#1ed760]/10 text-[#1ed760]">
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#1ed760]/10 text-[#1ed760]">
                                 Default
                               </span>
                             )}
@@ -1134,7 +1134,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           onClick={(e) => togglePlaySample(voice, e)}
                           className={`p-2 rounded-full transition-colors cursor-pointer ${
                             isSamplePlaying
-                              ? 'bg-[#1ed760] text-black animate-pulse'
+                              ? 'bg-[#1ed760] text-black'
                               : 'bg-[#282828] text-[#b3b3b3] hover:text-white hover:bg-[#333333]'
                           }`}
                           title="Preview voice sample"
@@ -1371,7 +1371,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   {isCloning ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-black" />
-                      <span>Cloning Voice Profile into PostgreSQL Cloud SQL...</span>
+                      <span>Saving Voice Profile...</span>
                     </>
                   ) : (
                     <>
@@ -1765,17 +1765,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 >
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-bold text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#1ed760] animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-[#1ed760]" />
                       Current Subtitle Editor Transcript
                     </span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/30">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/30">
                       Active Session
                     </span>
                   </div>
                   <p className="text-xs text-[#b3b3b3] line-clamp-2 italic">
                     "{currentSubtitleText}"
                   </p>
-                  <div className="text-[11px] text-[#878787] mt-2 flex items-center gap-2">
+                  <div className="text-xs text-[#878787] mt-2 flex items-center gap-2">
                     <span>{currentSubtitleText.split(/\s+/).filter(Boolean).length} words</span>
                     <span>·</span>
                     <span className="text-[#1ed760] group-hover:underline">Click to load into script</span>
@@ -1825,11 +1825,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         <span className="text-xs font-bold text-white group-hover:text-[#1ed760] transition-colors truncate max-w-[300px]">
                           {t.title}
                         </span>
-                        <span className="text-[10px] text-[#878787] font-mono">
+                        <span className="text-xs text-[#878787] font-mono tabular-nums">
                           ~{Math.round(t.duration || 30)}s
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#878787] line-clamp-2">
+                      <p className="text-xs text-[#b3b3b3] line-clamp-2">
                         {t.fullTranscript || 'Transcript audio session'}
                       </p>
                     </div>

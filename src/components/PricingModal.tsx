@@ -311,7 +311,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               <p className="text-xs text-[#b3b3b3]">
                 {stage === 'plans' && 'Top up audio minutes and unlock advanced creator capabilities'}
                 {stage === 'checkout' && 'Idempotent, secure mobile payment processing for creators'}
-                {stage === 'receipt' && 'Your quota has been synchronized to your Cloud SQL profile'}
+                {stage === 'receipt' && 'Your quota has been synchronized to your Scriby account'}
               </p>
             </div>
           </div>
@@ -371,11 +371,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         {isPro ? (
-                          <Badge variant="default" className="text-[10px] font-bold">
+                          <Badge variant="default" className="text-xs font-bold">
                             Recommended
                           </Badge>
                         ) : isDowngradeBlocked ? (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full border border-amber-400/20">
+                          <span className="flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
                             <Lock className="w-3 h-3" />
                             <span>No Downgrade</span>
                           </span>
@@ -466,7 +466,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       b
                     </div>
                     <span className="text-xs font-bold">bKash</span>
-                    <span className="text-[10px] text-[#7c7c7c]">Merchant Dial *247#</span>
+                    <span className="text-xs text-[#b3b3b3]">Merchant Dial *247#</span>
                   </button>
 
                   <button
@@ -485,7 +485,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       N
                     </div>
                     <span className="text-xs font-bold">Nagad</span>
-                    <span className="text-[10px] text-[#7c7c7c]">Dial *167#</span>
+                    <span className="text-xs text-[#b3b3b3]">Dial *167#</span>
                   </button>
 
                   <button
@@ -504,7 +504,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       R
                     </div>
                     <span className="text-xs font-bold">Rocket</span>
-                    <span className="text-[10px] text-[#7c7c7c]">DBBL Dial *322#</span>
+                    <span className="text-xs text-[#b3b3b3]">DBBL Dial *322#</span>
                   </button>
                 </div>
               </div>
@@ -513,14 +513,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] space-y-2.5">
                 <div className="text-xs font-bold text-white flex items-center justify-between">
                   <span>How to Pay with {activeGateway.name}:</span>
-                  <span className="font-mono text-[#1ed760] text-[11px] font-bold">
+                  <span className="font-mono tabular-nums text-[#1ed760] text-xs font-bold">
                     Total: ৳{Math.round(selectedPlan.priceBdt * (1 - appliedDiscount))} BDT
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828]">
                   <div>
-                    <div className="text-[11px] text-[#b3b3b3]">Scriby Official {activeGateway.name} Account:</div>
+                    <div className="text-xs text-[#b3b3b3]">Scriby Official {activeGateway.name} Account:</div>
                     <div className="text-sm font-mono font-bold text-white tracking-wide mt-0.5">
                       {activeGateway.accountNumber} ({activeGateway.type})
                     </div>
@@ -535,7 +535,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                   </button>
                 </div>
 
-                <p className="text-[11px] text-[#b3b3b3] leading-relaxed">
+                <p className="text-xs text-[#b3b3b3] leading-relaxed">
                   {activeGateway.instructions}
                 </p>
               </div>
@@ -559,7 +559,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       />
                     </div>
                     {formErrors.walletPhone && (
-                      <p className="text-[11px] text-rose-400 mt-1">{formErrors.walletPhone}</p>
+                      <p className="text-xs text-rose-400 mt-1">{formErrors.walletPhone}</p>
                     )}
                   </div>
 
@@ -574,9 +574,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       className="text-xs font-mono uppercase"
                     />
                     {formErrors.trxId && (
-                      <p className="text-[11px] text-rose-400 mt-1">{formErrors.trxId}</p>
+                      <p className="text-xs text-rose-400 mt-1">{formErrors.trxId}</p>
                     )}
-                    <span className="text-[10px] text-[#7c7c7c] mt-1 block">
+                    <span className="text-xs text-[#b3b3b3] mt-1 block">
                       Found in the confirmation SMS received from {activeGateway.name}.
                     </span>
                   </div>
@@ -601,7 +601,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     </button>
                   </div>
                   {promoMessage && (
-                    <span className="text-[11px] font-semibold text-[#1ed760]">
+                    <span className="text-xs font-semibold text-[#1ed760]">
                       {promoMessage}
                     </span>
                   )}
@@ -637,9 +637,6 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                       ৳{Math.round(selectedPlan.priceBdt * (1 - appliedDiscount))} BDT
                     </span>
                   </div>
-                  <div className="pt-1 text-[10px] font-mono text-[#7c7c7c]">
-                    Idempotency Session: {idempotencyKey.slice(0, 22)}...
-                  </div>
                 </div>
 
                 {/* Submit with Double-Submission Guard */}
@@ -652,7 +649,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                   <ShieldCheck className="w-4 h-4" />
                   <span>
                     {isSubscribing
-                      ? 'Verifying Transaction with Cloud SQL...'
+                      ? 'Verifying Transaction...'
                       : `Confirm & Activate Subscription (৳${Math.round(selectedPlan.priceBdt * (1 - appliedDiscount))})`}
                   </span>
                 </Button>
@@ -674,7 +671,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                   Subscription Verified & Activated!
                 </h3>
                 <p className="text-xs text-[#b3b3b3] mt-1">
-                  Your audio minutes quota has been deposited to your Cloud SQL profile.
+                  Your audio minutes quota has been deposited to your account.
                 </p>
               </div>
 

@@ -161,7 +161,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <FileSpreadsheet className="w-4 h-4 text-blue-400" />
             <span>Word Document (.docx)</span>
             {!hasAdvancedExport && (
-              <Badge variant="amber" className="text-[9px] px-1 py-0 h-4">
+              <Badge variant="amber" className="text-[11px] px-1.5 py-0 h-4">
                 <Lock className="w-2.5 h-2.5 mr-0.5" />
                 Pro
               </Badge>
@@ -180,7 +180,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             <FileCode className="w-4 h-4 text-purple-400" />
             <span>Data JSON (.json)</span>
             {!hasAdvancedExport && (
-              <Badge variant="amber" className="text-[9px] px-1 py-0 h-4">
+              <Badge variant="amber" className="text-[11px] px-1.5 py-0 h-4">
                 <Lock className="w-2.5 h-2.5 mr-0.5" />
                 Pro
               </Badge>

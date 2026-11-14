@@ -213,14 +213,14 @@ ${displayedMetadata.tags.join(', ')}
 
         {/* Loading Progress Bar with Non-Blocking State */}
         {isLoading && (
-          <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between text-xs text-[#1ed760] animate-pulse">
+          <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between text-xs text-[#1ed760]">
             <div className="flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-[#1ed760]" />
               <span className="font-semibold">
                 Synthesizing titles and chapters... Your previously generated SEO pack remains accessible below.
               </span>
             </div>
-            <span className="font-mono text-[11px] text-[#b3b3b3]">Gemini 3.8 Intelligence</span>
+            <span className="text-xs text-[#b3b3b3] font-medium">Processing Audio</span>
           </div>
         )}
       </div>
@@ -231,7 +231,7 @@ ${displayedMetadata.tags.join(', ')}
           <div className="flex items-center gap-2 text-xs">
             <History className="w-4 h-4 text-[#1ed760]" />
             <span className="font-bold text-white">Generated Versions:</span>
-            <span className="text-[11px] text-[#7c7c7c] font-mono">({recentPacks.length})</span>
+            <span className="text-xs text-[#b3b3b3] font-mono tabular-nums">({recentPacks.length})</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -255,7 +255,7 @@ ${displayedMetadata.tags.join(', ')}
                   >
                     <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#1ed760]' : 'bg-[#7c7c7c]'}`} />
                     <span>Version {versionNumber}</span>
-                    <span className="text-[10px] text-[#7c7c7c]">({pack.timestamp})</span>
+                    <span className="text-xs text-[#878787]">({pack.timestamp})</span>
                   </button>
                   <button
                     type="button"
@@ -342,7 +342,7 @@ ${displayedMetadata.tags.join(', ')}
                     High-CTR Video Titles
                   </h3>
                 </div>
-                <span className="text-[11px] text-[#7c7c7c] font-mono">
+                <span className="text-xs text-[#b3b3b3] font-mono tabular-nums">
                   {displayedMetadata.titles.length} Variations
                 </span>
               </div>
@@ -353,23 +353,23 @@ ${displayedMetadata.tags.join(', ')}
                     key={idx}
                     className="p-3.5 rounded-xl bg-[#141414] border border-[#282828] hover:border-[#383838] transition-all flex flex-col justify-between group"
                   >
-                    <div className="flex items-center justify-between text-[11px] mb-1.5 text-[#b3b3b3]">
+                    <div className="flex items-center justify-between text-xs mb-1.5 text-[#b3b3b3]">
                       <span className="text-[#1ed760] font-bold">{item.category}</span>
                       {item.ctrScore && (
-                        <span className="font-mono text-[#7c7c7c]">
+                        <span className="font-mono tabular-nums text-[#878787]">
                           CTR: <strong className="text-white">{item.ctrScore}%</strong>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs font-semibold text-white leading-relaxed mb-3">
+                    <p className="text-sm font-semibold text-white leading-relaxed mb-3">
                       {item.title}
                     </p>
 
                     <div className="flex items-center justify-between pt-2 border-t border-[#282828]">
                       <button
                         onClick={() => copyToClipboard(item.title, `title-${idx}`)}
-                        className="flex items-center gap-1 text-[11px] text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-xs text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
                       >
                         {copiedKey === `title-${idx}` ? (
                           <>
@@ -386,7 +386,7 @@ ${displayedMetadata.tags.join(', ')}
 
                       <button
                         onClick={() => onSelectTitleForThumbnail(item.title)}
-                        className="flex items-center gap-1 text-[11px] text-[#1ed760] hover:text-[#1fdf64] font-bold transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-xs text-[#1ed760] hover:text-[#1fdf64] font-bold transition-colors cursor-pointer"
                       >
                         <span>Use on Thumbnail</span>
                         <ArrowRight className="w-3 h-3" />
@@ -551,7 +551,7 @@ ${displayedMetadata.tags.join(', ')}
                       `social-${activeSocialTab}`
                     )
                   }
-                  className="absolute bottom-3 right-3 px-3 py-1 bg-[#282828] hover:bg-[#383838] text-white rounded-full text-[11px] font-bold border border-[#383838] flex items-center gap-1 cursor-pointer transition-colors"
+                  className="absolute bottom-3 right-3 px-3 py-1 bg-[#282828] hover:bg-[#383838] text-white rounded-full text-xs font-bold border border-[#383838] flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   {copiedKey === `social-${activeSocialTab}` ? (
                     <>

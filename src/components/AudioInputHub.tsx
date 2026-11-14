@@ -88,7 +88,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           const base64Data = reader.result as string;
           const cleanBase64 = base64Data.split(',')[1] || base64Data;
 
-          setLoadingStep('Analyzing acoustic patterns with Gemini Speech Engine...');
+          setLoadingStep('Analyzing speech and aligning subtitle timestamps...');
 
           const headers: Record<string, string> = { 'Content-Type': 'application/json' };
           if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -509,25 +509,24 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       {/* Loading Overlay State */}
       {isLoading ? (
         <div className="py-14 text-center flex flex-col items-center justify-center">
-          <div className="relative mb-5">
-            <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
-            <Sparkles className="w-5 h-5 text-teal-300 absolute -top-1 -right-1 animate-pulse" />
+          <div className="mb-5">
+            <Loader2 className="w-11 h-11 text-[#1ed760] animate-spin" />
           </div>
-          <h3 className="text-base font-semibold text-white mb-2 font-display">
-            Transcribing Spoken Audio with AI...
+          <h3 className="text-lg font-bold text-white mb-2 font-display">
+            Transcribing Spoken Audio...
           </h3>
-          <p className="text-xs text-emerald-400 font-mono">{loadingStep}</p>
-          <div className="mt-6 flex items-center gap-3 text-[11px] text-slate-500">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Audio Received
+          <p className="text-sm text-[#1ed760] font-medium">{loadingStep}</p>
+          <div className="mt-6 flex items-center gap-3 text-xs text-[#b3b3b3]">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Audio Received
             </span>
-            <span>·</span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Grammar & Punctuation
+            <span aria-hidden="true">·</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Grammar & Punctuation
             </span>
-            <span>·</span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Timestamp Sync
+            <span aria-hidden="true">·</span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Timestamp Sync
             </span>
           </div>
         </div>

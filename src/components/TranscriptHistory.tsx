@@ -126,8 +126,8 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
           <h2 className="text-lg font-bold text-white tracking-tight font-display">
             Transcription Archive
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Archived audio transcription sessions saved in PostgreSQL Cloud SQL
+          <p className="text-sm text-[#b3b3b3] mt-0.5">
+            Your saved audio transcription sessions and subtitle exports
           </p>
         </div>
 
@@ -232,14 +232,14 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                         className="flex items-center gap-1.5 bg-red-950/80 border border-red-500/40 px-2 py-1 rounded-md text-xs shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <span className="text-red-300 font-medium text-[11px]">Delete?</span>
+                        <span className="text-rose-300 font-medium text-xs">Delete?</span>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             setConfirmDeleteId(null);
                           }}
-                          className="text-slate-400 hover:text-white px-1.5 py-0.5 rounded text-[11px] cursor-pointer"
+                          className="text-[#b3b3b3] hover:text-white px-2 py-0.5 rounded text-xs cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -247,7 +247,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                           type="button"
                           onClick={(e) => executeDelete(item, e)}
                           disabled={deletingId === item.id}
-                          className="bg-red-600 hover:bg-red-500 text-white font-semibold px-2 py-0.5 rounded text-[11px] flex items-center gap-1 cursor-pointer"
+                          className="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-2.5 py-0.5 rounded text-xs flex items-center gap-1 cursor-pointer"
                         >
                           {deletingId === item.id ? (
                             <RefreshCw className="w-3 h-3 animate-spin" />
