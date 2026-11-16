@@ -166,18 +166,18 @@ ${displayedMetadata.tags.join(', ')}
   return (
     <div className="space-y-6">
       {/* Top Controls Banner */}
-      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-lg relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center">
                 <Youtube className="w-4 h-4" />
               </div>
-              <h2 className="text-base font-bold text-white tracking-tight">
+              <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight">
                 YouTube SEO & Creator Repurposing Studio
               </h2>
             </div>
-            <p className="text-xs text-[#b3b3b3]">
+            <p className="text-xs text-[#9ca3af]">
               Generate high-CTR video titles, descriptions, auto-timestamps, and keyword tags from your transcript.
             </p>
           </div>
@@ -194,7 +194,7 @@ ${displayedMetadata.tags.join(', ')}
               onClick={handleGenerate}
               disabled={isLoading || !transcript}
               size="sm"
-              className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold whitespace-nowrap shadow-[0_2px_8px_rgba(30,215,96,0.25)]"
+              className="bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold whitespace-nowrap"
             >
               {isLoading ? (
                 <>
@@ -213,14 +213,14 @@ ${displayedMetadata.tags.join(', ')}
 
         {/* Loading Progress Bar with Non-Blocking State */}
         {isLoading && (
-          <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between text-xs text-[#1ed760]">
+          <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between text-xs text-[#3fb970]">
             <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin text-[#1ed760]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[#3fb970]" />
               <span className="font-semibold">
                 Synthesizing titles and chapters... Your previously generated SEO pack remains accessible below.
               </span>
             </div>
-            <span className="text-xs text-[#b3b3b3] font-medium">Processing Audio</span>
+            <span className="text-xs text-[#9ca3af] font-medium">Processing Audio</span>
           </div>
         )}
       </div>
@@ -229,9 +229,9 @@ ${displayedMetadata.tags.join(', ')}
       {recentPacks.length > 0 && (
         <div className="p-3.5 rounded-2xl bg-[#141414] border border-[#282828] flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
-            <History className="w-4 h-4 text-[#1ed760]" />
-            <span className="font-bold text-white">Generated Versions:</span>
-            <span className="text-xs text-[#b3b3b3] font-mono tabular-nums">({recentPacks.length})</span>
+            <History className="w-4 h-4 text-[#34a866]" />
+            <span className="font-semibold text-[#e4e7ec]">Generated Versions:</span>
+            <span className="text-xs text-[#9ca3af] font-mono tabular-nums">({recentPacks.length})</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">
@@ -243,8 +243,8 @@ ${displayedMetadata.tags.join(', ')}
                   key={pack.id}
                   className={`group relative flex items-center pl-3 pr-1 py-1 text-xs rounded-full font-medium transition-all ${
                     isSelected
-                      ? 'bg-[#282828] text-white border border-[#1ed760]/60 shadow-sm font-bold ring-1 ring-[#1ed760]/30'
-                      : 'bg-[#181818] text-[#b3b3b3] hover:text-white border border-[#282828]'
+                      ? 'bg-[#22262b] text-[#e4e7ec] border border-[#1db954]/45 font-semibold'
+                      : 'bg-[#181818] text-[#9ca3af] hover:text-[#e4e7ec] border border-[#282828]'
                   }`}
                 >
                   <button
@@ -253,14 +253,14 @@ ${displayedMetadata.tags.join(', ')}
                     className="flex items-center gap-1.5 cursor-pointer text-left"
                     title={`Switch to Version ${versionNumber} (${pack.timestamp})`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#1ed760]' : 'bg-[#7c7c7c]'}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#1db954]' : 'bg-[#6f7682]'}`} />
                     <span>Version {versionNumber}</span>
-                    <span className="text-xs text-[#878787]">({pack.timestamp})</span>
+                    <span className="text-xs text-[#6f7682]">({pack.timestamp})</span>
                   </button>
                   <button
                     type="button"
                     onClick={(e) => handleRemoveVersion(pack.id, e)}
-                    className="ml-1 p-0.5 text-[#7c7c7c] hover:text-red-400 hover:bg-[#383838] rounded-full transition-colors cursor-pointer"
+                    className="ml-1 p-0.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#34373f] rounded-full transition-colors cursor-pointer"
                     title={`Delete Version ${versionNumber}`}
                     aria-label={`Delete Version ${versionNumber}`}
                   >
@@ -274,7 +274,7 @@ ${displayedMetadata.tags.join(', ')}
               <button
                 type="button"
                 onClick={handleClearAllVersions}
-                className="text-xs text-[#7c7c7c] hover:text-red-400 px-2.5 py-1 rounded-full border border-dashed border-[#383838] hover:border-red-500/50 transition-all cursor-pointer flex items-center gap-1 ml-1"
+                className="text-xs text-[#6f7682] hover:text-rose-400 px-2.5 py-1 rounded-full border border-dashed border-[#34373f] hover:border-rose-500/40 transition-all cursor-pointer flex items-center gap-1 ml-1"
                 title="Remove all saved versions"
               >
                 <Trash2 className="w-3 h-3" />
@@ -291,8 +291,8 @@ ${displayedMetadata.tags.join(', ')}
               >
                 {copiedKey === 'copy-all' ? (
                   <>
-                    <Check className="w-3 h-3 text-[#1ed760]" />
-                    <span className="text-[#1ed760]">Copied Complete Pack!</span>
+                    <Check className="w-3 h-3 text-[#3fb970]" />
+                    <span className="text-[#3fb970]">Copied Complete Pack!</span>
                   </>
                 ) : (
                   <>
@@ -309,13 +309,13 @@ ${displayedMetadata.tags.join(', ')}
       {/* Empty State when no metadata has been generated yet */}
       {!displayedMetadata && !isLoading && (
         <div className="p-16 text-center rounded-2xl bg-[#181818] border border-[#282828]">
-          <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 mx-auto mb-3 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 mx-auto mb-3 flex items-center justify-center">
             <Youtube className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-bold text-white mb-1">
+          <h3 className="text-sm font-semibold text-[#e4e7ec] mb-1">
             No YouTube Metadata Generated Yet
           </h3>
-          <p className="text-xs text-[#b3b3b3] max-w-md mx-auto mb-5 leading-relaxed">
+          <p className="text-xs text-[#9ca3af] max-w-md mx-auto mb-5 leading-relaxed">
             Generate high-CTR video titles, descriptions with automatic chapter markers, and SEO tags from your transcript in 1 click.
           </p>
           <Button
@@ -337,12 +337,12 @@ ${displayedMetadata.tags.join(', ')}
             <Card className="p-5 bg-[#181818] border-[#282828]">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#282828]">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">
+                  <TrendingUp className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">
                     High-CTR Video Titles
                   </h3>
                 </div>
-                <span className="text-xs text-[#b3b3b3] font-mono tabular-nums">
+                <span className="text-xs text-[#9ca3af] font-mono tabular-nums">
                   {displayedMetadata.titles.length} Variations
                 </span>
               </div>
@@ -351,30 +351,30 @@ ${displayedMetadata.tags.join(', ')}
                 {displayedMetadata.titles.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-xl bg-[#141414] border border-[#282828] hover:border-[#383838] transition-all flex flex-col justify-between group"
+                    className="p-3.5 rounded-xl bg-[#141414] border border-[#282828] hover:border-[#34373f] transition-all flex flex-col justify-between group"
                   >
-                    <div className="flex items-center justify-between text-xs mb-1.5 text-[#b3b3b3]">
-                      <span className="text-[#1ed760] font-bold">{item.category}</span>
+                    <div className="flex items-center justify-between text-xs mb-1.5 text-[#9ca3af]">
+                      <span className="text-[#3fb970] font-semibold">{item.category}</span>
                       {item.ctrScore && (
-                        <span className="font-mono tabular-nums text-[#878787]">
-                          CTR: <strong className="text-white">{item.ctrScore}%</strong>
+                        <span className="font-mono tabular-nums text-[#6f7682]">
+                          CTR: <strong className="text-[#d0d5dd]">{item.ctrScore}%</strong>
                         </span>
                       )}
                     </div>
 
-                    <p className="text-sm font-semibold text-white leading-relaxed mb-3">
+                    <p className="text-sm font-medium text-[#d0d5dd] leading-relaxed mb-3">
                       {item.title}
                     </p>
 
                     <div className="flex items-center justify-between pt-2 border-t border-[#282828]">
                       <button
                         onClick={() => copyToClipboard(item.title, `title-${idx}`)}
-                        className="flex items-center gap-1 text-xs text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-xs text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
                       >
                         {copiedKey === `title-${idx}` ? (
                           <>
-                            <Check className="w-3 h-3 text-[#1ed760]" />
-                            <span className="text-[#1ed760] font-bold">Copied</span>
+                            <Check className="w-3 h-3 text-[#3fb970]" />
+                            <span className="text-[#3fb970] font-semibold">Copied</span>
                           </>
                         ) : (
                           <>
@@ -386,7 +386,7 @@ ${displayedMetadata.tags.join(', ')}
 
                       <button
                         onClick={() => onSelectTitleForThumbnail(item.title)}
-                        className="flex items-center gap-1 text-xs text-[#1ed760] hover:text-[#1fdf64] font-bold transition-colors cursor-pointer"
+                        className="flex items-center gap-1 text-xs text-[#3fb970] hover:text-[#4cc37c] font-semibold transition-colors cursor-pointer"
                       >
                         <span>Use on Thumbnail</span>
                         <ArrowRight className="w-3 h-3" />
@@ -400,7 +400,7 @@ ${displayedMetadata.tags.join(', ')}
             {/* Thumbnail Quick Headlines */}
             {displayedMetadata.thumbnailHeadlineIdeas && displayedMetadata.thumbnailHeadlineIdeas.length > 0 && (
               <Card className="p-5 bg-[#181818] border-[#282828]">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-2.5">
+                <h4 className="text-xs font-semibold text-[#e4e7ec] uppercase tracking-wider mb-2.5">
                   Punchy Thumbnail Overlays:
                 </h4>
                 <div className="flex flex-wrap gap-2">
@@ -408,7 +408,7 @@ ${displayedMetadata.tags.join(', ')}
                     <button
                       key={i}
                       onClick={() => onSelectTitleForThumbnail(headline)}
-                      className="px-3 py-1.5 rounded-full bg-[#1f1f1f] hover:bg-[#282828] text-white text-xs font-semibold border border-[#282828] hover:border-[#1ed760] transition-all cursor-pointer"
+                      className="px-3 py-1.5 rounded-full bg-[#1f1f1f] hover:bg-[#282828] text-[#d0d5dd] text-xs font-semibold border border-[#282828] hover:border-[#1db954]/50 transition-all cursor-pointer"
                       title="Send headline to 16:9 thumbnail canvas"
                     >
                       {headline}
@@ -425,19 +425,19 @@ ${displayedMetadata.tags.join(', ')}
             <Card className="p-6 bg-[#181818] border-[#282828]">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#282828]">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">
+                  <FileText className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">
                     Video Description & Chapters
                   </h3>
                 </div>
                 <button
                   onClick={() => copyToClipboard(displayedMetadata.description, 'desc')}
-                  className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#b3b3b3] hover:text-white bg-[#282828] hover:bg-[#383838] rounded-full border border-[#383838] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#9ca3af] hover:text-[#e4e7ec] bg-[#24272c] hover:bg-[#2e3238] rounded-full border border-[#34373f] transition-colors cursor-pointer"
                 >
                   {copiedKey === 'desc' ? (
                     <>
-                      <Check className="w-3 h-3 text-[#1ed760]" />
-                      <span className="text-[#1ed760] font-bold">Copied</span>
+                      <Check className="w-3 h-3 text-[#3fb970]" />
+                      <span className="text-[#3fb970] font-semibold">Copied</span>
                     </>
                   ) : (
                     <>
@@ -449,15 +449,15 @@ ${displayedMetadata.tags.join(', ')}
               </div>
 
               {/* Formatted Description Display */}
-              <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] text-xs text-white whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto font-sans">
+              <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] text-xs text-[#d0d5dd] whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto font-sans">
                 {displayedMetadata.description}
               </div>
 
               {/* Auto Chapters list */}
               {displayedMetadata.chapters && displayedMetadata.chapters.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-[#282828]">
-                  <div className="text-xs font-bold text-white mb-2 flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-[#1ed760]" />
+                  <div className="text-xs font-semibold text-[#e4e7ec] mb-2 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#34a866]" />
                     <span>Auto-Generated YouTube Chapters:</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
@@ -466,8 +466,8 @@ ${displayedMetadata.tags.join(', ')}
                         key={idx}
                         className="flex items-center gap-2 p-2.5 rounded-xl bg-[#141414] border border-[#282828] font-mono"
                       >
-                        <span className="text-[#1ed760] font-bold">{ch.timestamp}</span>
-                        <span className="text-white truncate font-sans text-xs">{ch.title}</span>
+                        <span className="text-[#3fb970] font-semibold">{ch.timestamp}</span>
+                        <span className="text-[#d0d5dd] truncate font-sans text-xs">{ch.title}</span>
                       </div>
                     ))}
                   </div>
@@ -479,19 +479,19 @@ ${displayedMetadata.tags.join(', ')}
             <Card className="p-6 bg-[#181818] border-[#282828]">
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#282828]">
                 <div className="flex items-center gap-2">
-                  <Hash className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">
+                  <Hash className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">
                     YouTube Studio Keyword Tags
                   </h3>
                 </div>
                 <button
                   onClick={() => copyToClipboard(displayedMetadata.tags.join(', '), 'tags')}
-                  className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#b3b3b3] hover:text-white bg-[#282828] hover:bg-[#383838] rounded-full border border-[#383838] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs text-[#9ca3af] hover:text-[#e4e7ec] bg-[#24272c] hover:bg-[#2e3238] rounded-full border border-[#34373f] transition-colors cursor-pointer"
                 >
                   {copiedKey === 'tags' ? (
                     <>
-                      <Check className="w-3 h-3 text-[#1ed760]" />
-                      <span className="text-[#1ed760] font-bold">Copied</span>
+                      <Check className="w-3 h-3 text-[#3fb970]" />
+                      <span className="text-[#3fb970] font-semibold">Copied</span>
                     </>
                   ) : (
                     <>
@@ -506,7 +506,7 @@ ${displayedMetadata.tags.join(', ')}
                 {displayedMetadata.tags.map((tag, i) => (
                   <span
                     key={i}
-                    className="px-3 py-1 rounded-full bg-[#141414] border border-[#282828] text-xs text-white"
+                    className="px-3 py-1 rounded-full bg-[#141414] border border-[#282828] text-xs text-[#c2c8d1]"
                   >
                     #{tag}
                   </span>
@@ -518,8 +518,8 @@ ${displayedMetadata.tags.join(', ')}
             <Card className="p-6 bg-[#181818] border-[#282828]">
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#282828]">
                 <div className="flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">
+                  <Share2 className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">
                     Multi-Platform Social Copy
                   </h3>
                 </div>
@@ -528,10 +528,10 @@ ${displayedMetadata.tags.join(', ')}
                     <button
                       key={net}
                       onClick={() => setActiveSocialTab(net)}
-                      className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all cursor-pointer ${
+                      className={`px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer ${
                         activeSocialTab === net
-                          ? 'bg-[#282828] text-white shadow-sm'
-                          : 'text-[#b3b3b3] hover:text-white'
+                          ? 'bg-[#262930] text-[#e4e7ec] shadow-sm'
+                          : 'text-[#9ca3af] hover:text-[#e4e7ec]'
                       }`}
                     >
                       {net}
@@ -541,7 +541,7 @@ ${displayedMetadata.tags.join(', ')}
               </div>
 
               <div className="relative">
-                <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] text-xs text-white whitespace-pre-wrap leading-relaxed min-h-[90px]">
+                <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] text-xs text-[#d0d5dd] whitespace-pre-wrap leading-relaxed min-h-[90px]">
                   {displayedMetadata.socialPosts?.[activeSocialTab] || 'No social post generated for this platform.'}
                 </div>
                 <button
@@ -551,12 +551,12 @@ ${displayedMetadata.tags.join(', ')}
                       `social-${activeSocialTab}`
                     )
                   }
-                  className="absolute bottom-3 right-3 px-3 py-1 bg-[#282828] hover:bg-[#383838] text-white rounded-full text-xs font-bold border border-[#383838] flex items-center gap-1 cursor-pointer transition-colors"
+                  className="absolute bottom-3 right-3 px-3 py-1 bg-[#24272c] hover:bg-[#2e3238] text-[#d0d5dd] rounded-full text-xs font-semibold border border-[#34373f] flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   {copiedKey === `social-${activeSocialTab}` ? (
                     <>
-                      <Check className="w-3 h-3 text-[#1ed760]" />
-                      <span className="text-[#1ed760]">Copied</span>
+                      <Check className="w-3 h-3 text-[#3fb970]" />
+                      <span className="text-[#3fb970]">Copied</span>
                     </>
                   ) : (
                     <>

@@ -633,7 +633,7 @@ function ScribyApp() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-[#121212] text-[#d0d5dd] flex flex-col font-sans">
       {/* Hidden Audio Element */}
       {audioSource?.url && (
         <audio
@@ -733,23 +733,23 @@ function ScribyApp() {
             {activeTab === 'studio' && (
               <div className="space-y-6">
                 {/* Workspace Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-base font-bold text-white tracking-tight font-display">
+                      <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display">
                         {audioSource?.name || 'Spoken Audio Track'}
                       </h2>
                       {audioSource?.isSample && (
-                        <span className="text-[11px] text-slate-500 font-mono">
+                        <span className="text-[11px] text-[#6f7682] font-mono">
                           (Sample Audio)
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5">
+                    <div className="text-xs text-[#9ca3af] mt-0.5">
                       <span>{segments.length} Subtitle Segments</span>
-                      <span className="mx-2 text-slate-600">·</span>
+                      <span className="mx-2 text-[#4a4e57]">·</span>
                       <span>Waveform Alignment</span>
-                      <span className="mx-2 text-slate-600">·</span>
+                      <span className="mx-2 text-[#4a4e57]">·</span>
                       <span>SRT, DOCX, TXT, JSON</span>
                     </div>
                   </div>
@@ -760,7 +760,7 @@ function ScribyApp() {
                         variant="ghost"
                         size="sm"
                         onClick={handleClearStudioState}
-                        className="text-xs text-slate-400 hover:text-red-400 hover:bg-[#282828] h-8"
+                        className="text-xs text-[#9ca3af] hover:text-rose-400 hover:bg-[#282828] h-8"
                         title="Clear studio workspace"
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
@@ -831,7 +831,7 @@ function ScribyApp() {
                   <div className="lg:col-span-1 space-y-4">
                     {/* Creator Tools & Repurposing */}
                     <Card className="p-4 space-y-2.5">
-                      <div className="text-xs font-semibold text-[#b3b3b3] uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider mb-2">
                         Creator Extensions
                       </div>
 
@@ -840,10 +840,10 @@ function ScribyApp() {
                           setActiveTab('youtube');
                           if (!youtubeMetadata) handleGenerateMetadata();
                         }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <Youtube className="w-4 h-4 text-red-400" />
+                          <Youtube className="w-4 h-4 text-rose-400" />
                           <span>YouTube SEO & Titles</span>
                         </span>
                         {!user.planModules?.includes('youtube_seo') && (
@@ -853,10 +853,10 @@ function ScribyApp() {
 
                       <button
                         onClick={() => setActiveTab('thumbnail')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-amber-400" />
+                          <ImageIcon className="w-4 h-4 text-amber-400/90" />
                           <span>16:9 Thumbnail Canvas</span>
                         </span>
                         {!user.planModules?.includes('thumbnail_canvas') && (
@@ -866,40 +866,40 @@ function ScribyApp() {
 
                       <button
                         onClick={() => setActiveTab('voiceover')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <Mic className="w-4 h-4 text-[#1ed760]" />
+                          <Mic className="w-4 h-4 text-[#34a866]" />
                           <span>AI Voiceover & Cloning</span>
                         </span>
                         {!user.planModules?.includes('voiceover_studio') && (
-                          <Badge variant="outline" className="text-xs text-purple-400 border-purple-500/30">Agency</Badge>
+                          <Badge variant="outline" className="text-xs text-purple-300/90 border-purple-400/25">Agency</Badge>
                         )}
                       </button>
 
                       <button
                         onClick={() => setActiveTab('history')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-white border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
                       >
                         <span className="flex items-center gap-2">
-                          <History className="w-4 h-4 text-[#1ed760]" />
+                          <History className="w-4 h-4 text-[#34a866]" />
                           <span>Saved History</span>
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-[#878787]" />
+                        <ChevronRight className="w-3.5 h-3.5 text-[#6f7682]" />
                       </button>
                     </Card>
 
                     {/* Credit balance widget */}
                     <Card className="p-4">
-                      <div className="text-xs font-medium text-[#b3b3b3] mb-1 flex items-center justify-between">
+                      <div className="text-xs font-medium text-[#9ca3af] mb-1 flex items-center justify-between">
                         <span>Audio Minutes</span>
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
+                        <Zap className="w-3.5 h-3.5 text-amber-400/90" />
                       </div>
-                      <div className="text-xl font-bold font-mono text-[#1ed760] tabular-nums">
-                        {user.creditsRemaining} <span className="text-xs text-[#b3b3b3] font-sans font-normal">minutes</span>
+                      <div className="text-xl font-semibold font-mono text-[#3fb970] tabular-nums">
+                        {user.creditsRemaining} <span className="text-xs text-[#9ca3af] font-sans font-normal">minutes</span>
                       </div>
-                      <div className="text-xs text-[#b3b3b3] mt-1 mb-3">
-                        Plan: <strong className="text-white font-medium">{user.planName}</strong>
+                      <div className="text-xs text-[#9ca3af] mt-1 mb-3">
+                        Plan: <strong className="text-[#e4e7ec] font-medium">{user.planName}</strong>
                       </div>
                       <Button
                         variant="outline"
@@ -921,11 +921,11 @@ function ScribyApp() {
                 <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#3fb970] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · Saved History Archive</span>
+                  <span className="text-xs text-[#9ca3af]">Creator Workspace · Saved History Archive</span>
                 </div>
                 <TranscriptHistory
                   onLoadTranscript={handleLoadTranscript}
@@ -956,11 +956,11 @@ function ScribyApp() {
                 <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#3fb970] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · AI Voiceover & Cloning</span>
+                  <span className="text-xs text-[#9ca3af]">Creator Workspace · AI Voiceover & Cloning</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('voiceover_studio')) ? (
                   <LockedModuleNotice
@@ -994,11 +994,11 @@ function ScribyApp() {
                 <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#3fb970] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · YouTube SEO</span>
+                  <span className="text-xs text-[#9ca3af]">Creator Workspace · YouTube SEO</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('youtube_seo')) ? (
                   <LockedModuleNotice
@@ -1029,11 +1029,11 @@ function ScribyApp() {
                 <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
                   <button
                     onClick={() => setActiveTab('studio')}
-                    className="text-xs text-[#1ed760] hover:underline flex items-center gap-1 cursor-pointer"
+                    className="text-xs text-[#3fb970] hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     ← Back to Subtitle Editor
                   </button>
-                  <span className="text-xs text-[#b3b3b3]">Creator Workspace · 16:9 Thumbnail Canvas</span>
+                  <span className="text-xs text-[#9ca3af]">Creator Workspace · 16:9 Thumbnail Canvas</span>
                 </div>
                 {(!user.planModules || !user.planModules.includes('thumbnail_canvas')) ? (
                   <LockedModuleNotice
@@ -1054,12 +1054,12 @@ function ScribyApp() {
 
       {/* Input Modal */}
       {showInputModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
           <div className="w-full max-w-2xl">
             <div className="flex justify-end mb-2">
               <button
                 onClick={() => setShowInputModal(false)}
-                className="px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-white text-xs font-semibold rounded-full border border-[#3e3e3e] cursor-pointer"
+                className="px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-[#d0d5dd] text-xs font-semibold rounded-full border border-[#34373f] cursor-pointer"
               >
                 Close
               </button>

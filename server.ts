@@ -52,6 +52,7 @@ import {
   resolveVoiceoverStyleDirective,
   getDefaultAccentForLanguage,
   selectGenderLockedPrebuiltVoice,
+  shouldPreferVoiceDesignModel,
   VoiceCloneAcousticProfile,
 } from './src/utils/voiceLanguages.ts';
 
@@ -3296,19 +3297,26 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
     });
     const isFemale = effectiveGender === 'female';
 
+    const numericSpeed = parseFloat(String(speed)) || 1.0;
+    const numericPitch = parseFloat(String(pitch)) || 0;
+
     const {
       resolvedLanguage,
       resolvedLanguageLabel,
       resolvedAccent,
       resolvedGender,
+      speechLanguageCode,
+      isCustomAccent,
       styleDirective,
     } = resolveVoiceoverStyleDirective({
       language,
       accent,
       tone,
-      speed: parseFloat(String(speed)) || 1.0,
+      speed: numericSpeed,
+      pitch: numericPitch,
       voiceName,
       gender: effectiveGender,
+      scriptText: cleanScript,
       customVoiceProfile,
       vocalFingerprint,
     });
@@ -3316,45 +3324,76 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
     let audioBuffer: Buffer | null = null;
     let usedEngine = 'fallback';
 
-    // Use gemini-3.8-flash-tts (Voice Design flagship) first for custom cloned profiles,
-    // and gemini-3.8-flash-lite-tts first for standard studio personas.
-    const candidateTtsModels = customVoiceProfile
+    // Route custom voice clones, custom accent descriptions, and distinct regional dialects to Voice Design flagship first,
+    // while standard global accents use high-throughput localization TTS first (with automatic 429 fallback across both).
+    const needsVoiceDesignAccent = shouldPreferVoiceDesignModel({
+      isCustomClone: Boolean(customVoiceProfile),
+      resolvedLanguage,
+      resolvedAccent,
+      isCustomAccent,
+    });
+
+    const candidateTtsModels = needsVoiceDesignAccent
       ? ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']
       : ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
 
+    const callGeminiTts = async (ttsModel: string, langCode?: string) => {
+      const speechConfig: Record<string, any> = {
+        voiceConfig: {
+          prebuiltVoiceConfig: {
+            voiceName: ttsVoiceName,
+          },
+        },
+      };
+      if (langCode) {
+        speechConfig.languageCode = langCode;
+      }
+      return withTimeout(
+        ai.models.generateContent({
+          model: ttsModel,
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: cleanScript,
+                  speechMetadata: {
+                    style: styleDirective,
+                  },
+                },
+              ],
+            },
+          ],
+          config: {
+            responseModalities: ['AUDIO'],
+            speechConfig,
+          },
+        }),
+        35000,
+        `TTS synthesis timed out on ${ttsModel}`
+      );
+    };
+
+    let sawQuotaError = false;
     if (apiKey) {
       for (const ttsModel of candidateTtsModels) {
         try {
-          const ttsResponse = await withTimeout(
-            ai.models.generateContent({
-              model: ttsModel,
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    {
-                      text: cleanScript,
-                      speechMetadata: {
-                        style: styleDirective,
-                      },
-                    },
-                  ],
-                },
-              ],
-              config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                  voiceConfig: {
-                    prebuiltVoiceConfig: {
-                      voiceName: ttsVoiceName,
-                    },
-                  },
-                },
-              },
-            }),
-            35000,
-            `TTS synthesis timed out on ${ttsModel}`
-          );
+          let ttsResponse;
+          try {
+            ttsResponse = await callGeminiTts(ttsModel, speechLanguageCode);
+          } catch (langErr: any) {
+            const errMsg = String(langErr?.message || langErr || '').toLowerCase();
+            const isLanguageArgError =
+              Boolean(speechLanguageCode) &&
+              !isGeminiQuotaError(langErr) &&
+              (errMsg.includes('language') || errMsg.includes('invalid_argument') || errMsg.includes('400'));
+            if (isLanguageArgError) {
+              console.warn(`[TTS] ${ttsModel} rejected languageCode="${speechLanguageCode}", retrying without languageCode:`, langErr?.message || langErr);
+              ttsResponse = await callGeminiTts(ttsModel, undefined);
+            } else {
+              throw langErr;
+            }
+          }
 
           const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
           if (base64Audio) {
@@ -3365,21 +3404,29 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
               rawBuf.subarray(8, 12).toString('ascii') === 'WAVE';
             audioBuffer = hasWavHeader ? rawBuf : wrapPcmWithWavHeader(rawBuf, 24000);
             usedEngine = ttsModel;
+            console.log(
+              `[TTS] Synthesized with ${ttsModel} (voice=${ttsVoiceName}, gender=${resolvedGender}, lang=${resolvedLanguage}/${speechLanguageCode || 'auto'}, accent="${resolvedAccent}")`
+            );
             break;
           }
         } catch (geminiErr: any) {
           if (isGeminiQuotaError(geminiErr)) {
-            console.warn('[TTS] Gemini voice synthesis quota exceeded, returning 429 quota notice:', geminiErr?.message || geminiErr);
-            return res.status(429).json({
-              error: PROFESSIONAL_QUOTA_MESSAGE,
-              isQuotaExceeded: true,
-              code: 'AI_QUOTA_EXCEEDED',
-              retryAfterSeconds: 25,
-            });
+            sawQuotaError = true;
+            console.warn(`[TTS] Quota/RPM limit on ${ttsModel}, trying fallback model if available:`, geminiErr?.message || geminiErr);
+            continue;
           }
           console.warn(`[TTS] Model ${ttsModel} failed (${ttsVoiceName}, gender=${resolvedGender}):`, geminiErr?.message || geminiErr);
         }
       }
+    }
+
+    if (!audioBuffer && sawQuotaError) {
+      return res.status(429).json({
+        error: PROFESSIONAL_QUOTA_MESSAGE,
+        isQuotaExceeded: true,
+        code: 'AI_QUOTA_EXCEEDED',
+        retryAfterSeconds: 25,
+      });
     }
 
     // High-fidelity speech cadence failover generator if API is unavailable

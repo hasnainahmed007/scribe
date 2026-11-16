@@ -299,16 +299,16 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#1ed760]/10 text-[#1ed760] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center">
               <Zap className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="pricing-title" className="text-base font-bold text-white tracking-tight">
+              <h2 id="pricing-title" className="text-base font-bold text-[#e4e7ec] tracking-tight">
                 {stage === 'plans' && 'Subscription Plans & Quota Activation'}
                 {stage === 'checkout' && `bKash, Nagad & Rocket Checkout — ${selectedPlan?.name}`}
                 {stage === 'receipt' && 'Subscription Confirmed & Activated'}
               </h2>
-              <p className="text-xs text-[#b3b3b3]">
+              <p className="text-xs text-[#9ca3af]">
                 {stage === 'plans' && 'Top up audio minutes and unlock advanced creator capabilities'}
                 {stage === 'checkout' && 'Idempotent, secure mobile payment processing for creators'}
                 {stage === 'receipt' && 'Your quota has been synchronized to your Scriby account'}
@@ -318,7 +318,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
           <button
             onClick={onClose}
-            className="p-1.5 text-[#b3b3b3] hover:text-white rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+            className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
@@ -334,7 +334,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-rose-400 hover:text-white text-xs underline cursor-pointer"
+              className="text-rose-400 hover:text-[#e4e7ec] text-xs underline cursor-pointer"
             >
               Dismiss
             </button>
@@ -362,7 +362,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     key={p.id}
                     className={`p-6 flex flex-col justify-between transition-all bg-[#181818] ${
                       isPro
-                        ? 'border-[#1ed760] shadow-[0_4px_24px_rgba(30,215,96,0.15)]'
+                        ? 'border-[#1db954]/55'
                         : isDowngradeBlocked
                         ? 'border-[#282828] opacity-65'
                         : 'border-[#282828] hover:border-[#383838]'
@@ -384,27 +384,27 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                         )}
                       </div>
 
-                      <h3 className="text-base font-bold text-white mb-1">{p.name}</h3>
-                      <p className="text-xs text-[#b3b3b3] mb-4 min-h-[32px]">{p.description}</p>
+                      <h3 className="text-base font-bold text-[#e4e7ec] mb-1">{p.name}</h3>
+                      <p className="text-xs text-[#9ca3af] mb-4 min-h-[32px]">{p.description}</p>
 
                       <div className="pb-4 border-b border-[#282828] mb-4">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-extrabold font-mono text-white">
+                          <span className="text-3xl font-bold font-mono text-[#e4e7ec]">
                             {formattedPrice}
                           </span>
                           {p.priceBdt > 0 && (
-                            <span className="text-xs text-[#b3b3b3]">/ month</span>
+                            <span className="text-xs text-[#9ca3af]">/ month</span>
                           )}
                         </div>
-                        <div className="text-xs text-[#1ed760] font-semibold mt-1">
+                        <div className="text-xs text-[#3fb970] font-semibold mt-1">
                           {p.creditsGranted} Audio Minutes Included
                         </div>
                       </div>
 
-                      <ul className="space-y-2 text-xs text-[#b3b3b3] mb-6">
+                      <ul className="space-y-2 text-xs text-[#9ca3af] mb-6">
                         {p.features.map((feat, idx) => (
                           <li key={idx} className="flex items-start gap-2">
-                            <Check className="w-3.5 h-3.5 text-[#1ed760] shrink-0 mt-0.5" />
+                            <Check className="w-3.5 h-3.5 text-[#3fb970] shrink-0 mt-0.5" />
                             <span>{feat}</span>
                           </li>
                         ))}
@@ -440,7 +440,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               <button
                 type="button"
                 onClick={() => setStage('plans')}
-                className="text-xs text-[#b3b3b3] hover:text-white flex items-center gap-1 cursor-pointer"
+                className="text-xs text-[#9ca3af] hover:text-[#e4e7ec] flex items-center gap-1 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Plans</span>
@@ -448,7 +448,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
               {/* Payment Gateway Tabs */}
               <div className="p-4 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-3">
-                <div className="text-xs font-semibold text-white">Select Mobile Payment Gateway:</div>
+                <div className="text-xs font-semibold text-[#e4e7ec]">Select Mobile Payment Gateway:</div>
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     type="button"
@@ -458,15 +458,15 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     }}
                     className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                       paymentMethod === 'bkash'
-                        ? 'bg-[#181818] border-[#D12053] text-white shadow-[0_0_12px_rgba(209,32,83,0.2)]'
-                        : 'bg-[#141414] border-[#282828] text-[#b3b3b3] hover:border-[#383838]'
+                        ? 'bg-[#181818] border-[#D12053] text-[#e4e7ec]'
+                        : 'bg-[#141414] border-[#282828] text-[#9ca3af] hover:border-[#383838]'
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#D12053] text-white flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-full bg-[#D12053] text-[#f3f4f6] flex items-center justify-center font-bold text-xs">
                       b
                     </div>
                     <span className="text-xs font-bold">bKash</span>
-                    <span className="text-xs text-[#b3b3b3]">Merchant Dial *247#</span>
+                    <span className="text-xs text-[#9ca3af]">Merchant Dial *247#</span>
                   </button>
 
                   <button
@@ -477,15 +477,15 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     }}
                     className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                       paymentMethod === 'nagad'
-                        ? 'bg-[#181818] border-[#E04122] text-white shadow-[0_0_12px_rgba(224,65,34,0.2)]'
-                        : 'bg-[#141414] border-[#282828] text-[#b3b3b3] hover:border-[#383838]'
+                        ? 'bg-[#181818] border-[#E04122] text-[#e4e7ec]'
+                        : 'bg-[#141414] border-[#282828] text-[#9ca3af] hover:border-[#383838]'
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#E04122] text-white flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-full bg-[#E04122] text-[#f3f4f6] flex items-center justify-center font-bold text-xs">
                       N
                     </div>
                     <span className="text-xs font-bold">Nagad</span>
-                    <span className="text-xs text-[#b3b3b3]">Dial *167#</span>
+                    <span className="text-xs text-[#9ca3af]">Dial *167#</span>
                   </button>
 
                   <button
@@ -496,46 +496,46 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     }}
                     className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all cursor-pointer ${
                       paymentMethod === 'rocket'
-                        ? 'bg-[#181818] border-[#8C3295] text-white shadow-[0_0_12px_rgba(140,50,149,0.2)]'
-                        : 'bg-[#141414] border-[#282828] text-[#b3b3b3] hover:border-[#383838]'
+                        ? 'bg-[#181818] border-[#8C3295] text-[#e4e7ec]'
+                        : 'bg-[#141414] border-[#282828] text-[#9ca3af] hover:border-[#383838]'
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-full bg-[#8C3295] text-white flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-full bg-[#8C3295] text-[#f3f4f6] flex items-center justify-center font-bold text-xs">
                       R
                     </div>
                     <span className="text-xs font-bold">Rocket</span>
-                    <span className="text-xs text-[#b3b3b3]">DBBL Dial *322#</span>
+                    <span className="text-xs text-[#9ca3af]">DBBL Dial *322#</span>
                   </button>
                 </div>
               </div>
 
               {/* Step-by-Step Payment Instructions */}
               <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] space-y-2.5">
-                <div className="text-xs font-bold text-white flex items-center justify-between">
+                <div className="text-xs font-bold text-[#e4e7ec] flex items-center justify-between">
                   <span>How to Pay with {activeGateway.name}:</span>
-                  <span className="font-mono tabular-nums text-[#1ed760] text-xs font-bold">
+                  <span className="font-mono tabular-nums text-[#3fb970] text-xs font-bold">
                     Total: ৳{Math.round(selectedPlan.priceBdt * (1 - appliedDiscount))} BDT
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828]">
                   <div>
-                    <div className="text-xs text-[#b3b3b3]">Scriby Official {activeGateway.name} Account:</div>
-                    <div className="text-sm font-mono font-bold text-white tracking-wide mt-0.5">
+                    <div className="text-xs text-[#9ca3af]">Scriby Official {activeGateway.name} Account:</div>
+                    <div className="text-sm font-mono font-bold text-[#e4e7ec] tracking-wide mt-0.5">
                       {activeGateway.accountNumber} ({activeGateway.type})
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => copyAccountNumber(activeGateway.accountNumber)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#282828] hover:bg-[#383838] text-white text-xs font-bold rounded-full transition-colors cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-[#282828] hover:bg-[#383838] text-[#d0d5dd] text-xs font-bold rounded-full transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     <span>{copiedNumber ? 'Copied!' : 'Copy Number'}</span>
                   </button>
                 </div>
 
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-xs text-[#9ca3af] leading-relaxed">
                   {activeGateway.instructions}
                 </p>
               </div>
@@ -544,11 +544,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               <form onSubmit={handleCheckoutSubmit} className="space-y-4">
                 <div className="p-5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-4">
                   <div>
-                    <label className="text-xs font-semibold text-white block mb-1">
+                    <label className="text-xs font-semibold text-[#e4e7ec] block mb-1">
                       Sender {activeGateway.name} Mobile Number
                     </label>
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-2 bg-[#141414] border border-[#282828] rounded-full text-xs text-[#b3b3b3] font-mono">
+                      <span className="px-3 py-2 bg-[#141414] border border-[#282828] rounded-full text-xs text-[#9ca3af] font-mono">
                         +88
                       </span>
                       <Input
@@ -564,7 +564,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-white block mb-1">
+                    <label className="text-xs font-semibold text-[#e4e7ec] block mb-1">
                       {activeGateway.name} Transaction ID (TrxID)
                     </label>
                     <Input
@@ -576,7 +576,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     {formErrors.trxId && (
                       <p className="text-xs text-rose-400 mt-1">{formErrors.trxId}</p>
                     )}
-                    <span className="text-xs text-[#b3b3b3] mt-1 block">
+                    <span className="text-xs text-[#9ca3af] mt-1 block">
                       Found in the confirmation SMS received from {activeGateway.name}.
                     </span>
                   </div>
@@ -585,7 +585,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                 {/* Promo Code Drawer */}
                 <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 flex-1">
-                    <Tag className="w-4 h-4 text-[#1ed760] shrink-0" />
+                    <Tag className="w-4 h-4 text-[#3fb970] shrink-0" />
                     <Input
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
@@ -595,13 +595,13 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                     <button
                       type="button"
                       onClick={handleApplyPromo}
-                      className="px-3 py-1.5 bg-[#282828] hover:bg-[#383838] text-white text-xs font-bold rounded-full transition-colors cursor-pointer"
+                      className="px-3 py-1.5 bg-[#282828] hover:bg-[#383838] text-[#d0d5dd] text-xs font-bold rounded-full transition-colors cursor-pointer"
                     >
                       Apply
                     </button>
                   </div>
                   {promoMessage && (
-                    <span className="text-xs font-semibold text-[#1ed760]">
+                    <span className="text-xs font-semibold text-[#3fb970]">
                       {promoMessage}
                     </span>
                   )}
@@ -609,31 +609,31 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
 
                 {/* Order Summary & Idempotency Guarantee */}
                 <div className="p-4 rounded-xl bg-[#181818] border border-[#282828] space-y-2 text-xs">
-                  <div className="flex justify-between text-[#b3b3b3]">
+                  <div className="flex justify-between text-[#9ca3af]">
                     <span>Selected Plan:</span>
-                    <span className="font-semibold text-white">{selectedPlan.name}</span>
+                    <span className="font-semibold text-[#e4e7ec]">{selectedPlan.name}</span>
                   </div>
-                  <div className="flex justify-between text-[#b3b3b3]">
+                  <div className="flex justify-between text-[#9ca3af]">
                     <span>Audio Quota Credit:</span>
-                    <span className="font-mono text-[#1ed760]">
+                    <span className="font-mono text-[#3fb970]">
                       +{selectedPlan.creditsGranted} Minutes
                     </span>
                   </div>
-                  <div className="flex justify-between text-[#b3b3b3]">
+                  <div className="flex justify-between text-[#9ca3af]">
                     <span>Plan Price:</span>
                     <span className="font-mono">৳{selectedPlan.priceBdt} BDT</span>
                   </div>
                   {appliedDiscount > 0 && (
-                    <div className="flex justify-between text-[#1ed760]">
+                    <div className="flex justify-between text-[#3fb970]">
                       <span>Discount ({(appliedDiscount * 100).toFixed(0)}%):</span>
                       <span className="font-mono">
                         -৳{Math.round(selectedPlan.priceBdt * appliedDiscount)} BDT
                       </span>
                     </div>
                   )}
-                  <div className="pt-2 border-t border-[#282828] flex justify-between text-sm font-bold text-white">
+                  <div className="pt-2 border-t border-[#282828] flex justify-between text-sm font-bold text-[#e4e7ec]">
                     <span>Total Payable:</span>
-                    <span className="font-mono text-[#1ed760]">
+                    <span className="font-mono text-[#3fb970]">
                       ৳{Math.round(selectedPlan.priceBdt * (1 - appliedDiscount))} BDT
                     </span>
                   </div>
@@ -662,15 +662,15 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
           {/* ========================================================================= */}
           {stage === 'receipt' && completedOrder && (
             <div className="max-w-md mx-auto text-center space-y-6 py-6">
-              <div className="w-16 h-16 rounded-full bg-[#1ed760]/10 text-[#1ed760] mx-auto flex items-center justify-center shadow-[0_0_24px_rgba(30,215,96,0.3)]">
+              <div className="w-16 h-16 rounded-full bg-[#1db954]/10 text-[#3fb970] mx-auto flex items-center justify-center border border-[#1db954]/25">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-white tracking-tight">
+                <h3 className="text-xl font-bold text-[#e4e7ec] tracking-tight">
                   Subscription Verified & Activated!
                 </h3>
-                <p className="text-xs text-[#b3b3b3] mt-1">
+                <p className="text-xs text-[#9ca3af] mt-1">
                   Your audio minutes quota has been deposited to your account.
                 </p>
               </div>
@@ -678,26 +678,26 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               {/* Receipt Card */}
               <div className="p-5 rounded-2xl bg-[#1f1f1f] border border-[#282828] text-left space-y-3 text-xs">
                 <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
-                  <span className="text-[#b3b3b3]">Transaction ID:</span>
-                  <span className="font-mono font-bold text-white">{completedOrder.orderId}</span>
+                  <span className="text-[#9ca3af]">Transaction ID:</span>
+                  <span className="font-mono font-bold text-[#e4e7ec]">{completedOrder.orderId}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#b3b3b3]">Plan Activated:</span>
-                  <span className="font-bold text-white">{completedOrder.planName}</span>
+                  <span className="text-[#9ca3af]">Plan Activated:</span>
+                  <span className="font-bold text-[#e4e7ec]">{completedOrder.planName}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#b3b3b3]">Audio Minutes Credited:</span>
-                  <span className="font-mono font-bold text-[#1ed760]">
+                  <span className="text-[#9ca3af]">Audio Minutes Credited:</span>
+                  <span className="font-mono font-bold text-[#3fb970]">
                     +{completedOrder.creditsGranted} Minutes
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#b3b3b3]">Amount Paid:</span>
-                  <span className="font-mono font-bold text-white">{completedOrder.amountPaid}</span>
+                  <span className="text-[#9ca3af]">Amount Paid:</span>
+                  <span className="font-mono font-bold text-[#e4e7ec]">{completedOrder.amountPaid}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[#b3b3b3]">Gateway:</span>
-                  <span className="font-mono text-[#b3b3b3]">{completedOrder.method}</span>
+                  <span className="text-[#9ca3af]">Gateway:</span>
+                  <span className="font-mono text-[#9ca3af]">{completedOrder.method}</span>
                 </div>
               </div>
 
@@ -715,9 +715,9 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-[#121212] border-t border-[#282828] flex items-center justify-between text-xs text-[#b3b3b3]">
+        <div className="px-6 py-3.5 bg-[#121212] border-t border-[#282828] flex items-center justify-between text-xs text-[#9ca3af]">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#1ed760]" />
+            <ShieldCheck className="w-4 h-4 text-[#3fb970]" />
             <span>Secure mobile wallet verification with idempotency protection</span>
           </div>
           <div>Scriby SaaS</div>

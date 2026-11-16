@@ -239,20 +239,20 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   return (
     <div className="space-y-4">
       {/* Editor Statistics & Global Search Toolbar */}
-      <div className="bg-[#181818] border border-[#282828] rounded-xl p-4 shadow-[0_8px_24px_rgba(0,0,0,0.5)] space-y-3.5">
+      <div className="bg-[#181818] border border-[#282828] rounded-xl p-4 shadow-[0_6px_18px_rgba(0,0,0,0.35)] space-y-3.5">
         {/* Metadata Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#282828] text-xs text-[#b3b3b3]">
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#282828] text-xs text-[#9ca3af]">
           <div className="flex items-center gap-3">
-            <span className="text-white font-bold">
-              Segments: <span className="font-mono text-[#1ed760] font-bold tabular-nums">{segments.length}</span>
+            <span className="text-[#d0d5dd] font-semibold">
+              Segments: <span className="font-mono text-[#3fb970] font-semibold tabular-nums">{segments.length}</span>
             </span>
-            <span className="text-[#4d4d4d]">·</span>
+            <span className="text-[#4a4e57]">·</span>
             <span>
-              Words: <span className="font-mono text-white tabular-nums">{totalWords}</span>
+              Words: <span className="font-mono text-[#d0d5dd] tabular-nums">{totalWords}</span>
             </span>
-            <span className="text-[#4d4d4d]">·</span>
+            <span className="text-[#4a4e57]">·</span>
             <span>
-              Pacing: <span className="font-mono text-white tabular-nums">{estimatedWpm}</span> wpm
+              Pacing: <span className="font-mono text-[#d0d5dd] tabular-nums">{estimatedWpm}</span> wpm
             </span>
           </div>
 
@@ -267,7 +267,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   }
                 }}
                 disabled={segments.length <= 1}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] disabled:opacity-40 disabled:hover:scale-100 disabled:cursor-not-allowed text-white rounded-full text-xs font-bold border border-[#3e3e3e] transition-all cursor-pointer hover:scale-104 shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] disabled:opacity-40 disabled:cursor-not-allowed text-[#d0d5dd] rounded-full text-xs font-semibold border border-[#34373f] transition-all cursor-pointer shadow-sm"
                 title={
                   segments.length > 1
                     ? `Merge all ${segments.length} subtitle segments into 1 continuous block`
@@ -275,10 +275,10 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 }
                 aria-label="Merge all subtitle segments"
               >
-                <Combine className="w-3.5 h-3.5 text-[#1ed760]" />
+                <Combine className="w-3.5 h-3.5 text-[#34a866]" />
                 <span>Merge All</span>
                 {segments.length > 1 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-[#2a2a2a] text-xs text-[#b3b3b3] font-mono tabular-nums leading-none">
+                  <span className="px-1.5 py-0.5 rounded-full bg-[#2a2d33] text-xs text-[#9ca3af] font-mono tabular-nums leading-none">
                     {segments.length}
                   </span>
                 )}
@@ -286,63 +286,63 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
               {/* Styled Hover Tooltip */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-30 transition-all opacity-0 group-hover:opacity-100 duration-200">
-                <div className="bg-[#121212] text-white text-xs font-medium px-3 py-1.5 rounded-lg border border-[#383838] shadow-[0_8px_24px_rgba(0,0,0,0.85)] whitespace-nowrap flex items-center gap-1.5">
-                  <Combine className="w-3 h-3 text-[#1ed760] shrink-0" />
+                <div className="bg-[#121212] text-[#d0d5dd] text-xs font-medium px-3 py-1.5 rounded-lg border border-[#34373f] shadow-[0_8px_24px_rgba(0,0,0,0.85)] whitespace-nowrap flex items-center gap-1.5">
+                  <Combine className="w-3 h-3 text-[#34a866] shrink-0" />
                   <span>
                     {segments.length > 1
                       ? `Merge all ${segments.length} segments into 1 continuous subtitle block`
                       : 'Requires at least 2 segments to merge'}
                   </span>
                 </div>
-                <div className="w-2 h-2 bg-[#121212] border-r border-b border-[#383838] rotate-45 -mt-1" />
+                <div className="w-2 h-2 bg-[#121212] border-r border-b border-[#34373f] rotate-45 -mt-1" />
               </div>
             </div>
 
             {/* Add Subtitle Block Button */}
             <button
               onClick={() => onAddSegment()}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-white rounded-full text-xs font-bold border border-[#3e3e3e] transition-all cursor-pointer hover:scale-104"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-[#d0d5dd] rounded-full text-xs font-semibold border border-[#34373f] transition-all cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 text-[#1ed760]" />
+              <Plus className="w-3.5 h-3.5 text-[#34a866]" />
               <span>Add Subtitle Block</span>
             </button>
           </div>
         </div>
 
-        {/* Global Search and Replace (Spotify Pill Inputs) */}
+        {/* Global Search and Replace */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-[#7c7c7c] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-[#6f7682] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Find spoken words or phrases..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#1f1f1f] border border-[#2e2e2e] rounded-full text-xs text-white placeholder-[#7c7c7c] focus:outline-none focus:border-white transition-colors font-sans"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#1a1c20] border border-[#2e3138] rounded-full text-xs text-[#d0d5dd] placeholder-[#6f7682] focus:outline-none focus:border-[#1db954]/55 transition-colors font-sans"
             />
           </div>
 
           <div className="relative flex-1">
-            <Replace className="w-3.5 h-3.5 text-[#7c7c7c] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Replace className="w-3.5 h-3.5 text-[#6f7682] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Replace with..."
               value={replaceTerm}
               onChange={(e) => setReplaceTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#1f1f1f] border border-[#2e2e2e] rounded-full text-xs text-white placeholder-[#7c7c7c] focus:outline-none focus:border-white transition-colors font-sans"
+              className="w-full pl-9 pr-3 py-1.5 bg-[#1a1c20] border border-[#2e3138] rounded-full text-xs text-[#d0d5dd] placeholder-[#6f7682] focus:outline-none focus:border-[#1db954]/55 transition-colors font-sans"
             />
           </div>
 
           <button
             onClick={handleExecuteReplace}
             disabled={!searchTerm.trim()}
-            className="px-5 py-1.5 bg-[#1ed760] hover:bg-[#1fdf64] disabled:opacity-40 text-black text-xs font-bold rounded-full transition-all whitespace-nowrap cursor-pointer shrink-0 hover:scale-104"
+            className="px-5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] disabled:opacity-40 text-[#08100b] text-xs font-semibold rounded-full transition-all whitespace-nowrap cursor-pointer shrink-0"
           >
             Replace All
           </button>
 
           {replaceCount !== null && (
-            <span className="text-xs font-mono text-[#1ed760] self-center">
+            <span className="text-xs font-mono text-[#3fb970] self-center">
               {replaceCount} replaced
             </span>
           )}
@@ -351,17 +351,17 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
       {/* Merge All Confirmation Prompt */}
       {showMergeAllConfirm && (
-        <div className="p-3.5 bg-[#181818] border border-[#3e3e3e] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-white shadow-xl animate-in fade-in">
+        <div className="p-3.5 bg-[#181818] border border-[#34373f] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-[#d0d5dd] shadow-xl animate-in fade-in">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-[#1ed760]/20 flex items-center justify-center text-[#1ed760] shrink-0">
+            <div className="w-7 h-7 rounded-full bg-[#1db954]/15 flex items-center justify-center text-[#3fb970] shrink-0">
               <Combine className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-bold text-white">Merge all {segments.length} subtitle segments?</div>
-              <div className="text-xs text-[#b3b3b3]">
+              <div className="font-semibold text-[#e4e7ec]">Merge all {segments.length} subtitle segments?</div>
+              <div className="text-xs text-[#9ca3af]">
                 This combines all {segments.length} blocks into 1 continuous segment from{' '}
-                <span className="font-mono text-white">{formatPlayerTime(segments[0]?.start ?? 0)}</span> to{' '}
-                <span className="font-mono text-white">{formatPlayerTime(segments[segments.length - 1]?.end ?? 0)}</span>. You can undo this action anytime.
+                <span className="font-mono text-[#d0d5dd]">{formatPlayerTime(segments[0]?.start ?? 0)}</span> to{' '}
+                <span className="font-mono text-[#d0d5dd]">{formatPlayerTime(segments[segments.length - 1]?.end ?? 0)}</span>. You can undo this action anytime.
               </div>
             </div>
           </div>
@@ -369,14 +369,14 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             <button
               type="button"
               onClick={() => setShowMergeAllConfirm(false)}
-              className="px-3 py-1.5 text-xs text-[#b3b3b3] hover:text-white rounded-full hover:bg-[#282828] cursor-pointer transition-colors"
+              className="px-3 py-1.5 text-xs text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] cursor-pointer transition-colors"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleExecuteMergeAll}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold text-xs rounded-full cursor-pointer transition-transform hover:scale-104 shadow-md"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-xs rounded-full cursor-pointer transition-colors shadow-sm"
             >
               <Combine className="w-3.5 h-3.5" />
               <span>Yes, Merge All</span>
@@ -385,18 +385,18 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </div>
       )}
 
-      {/* Undo Merge Notification Banner (Auto-dismisses after 5 seconds or manually closeable) */}
+      {/* Undo Merge Notification Banner */}
       {showUndoBanner && canUndoMergeAll && onUndoMergeAll && !showMergeAllConfirm && (
-        <div className="p-3 bg-[#132517] border border-[#1ed760]/40 rounded-xl flex items-center justify-between gap-3 text-xs text-white shadow-lg animate-in fade-in slide-in-from-top-1">
+        <div className="p-3 bg-[#16201a] border border-[#1db954]/30 rounded-xl flex items-center justify-between gap-3 text-xs text-[#d0d5dd] shadow-lg animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-full bg-[#1ed760]/20 flex items-center justify-center text-[#1ed760] shrink-0">
+            <div className="w-6 h-6 rounded-full bg-[#1db954]/15 flex items-center justify-center text-[#3fb970] shrink-0">
               <Check className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0">
-              <span className="text-[#e2e8f0] font-medium">
+              <span className="text-[#d0d5dd] font-medium">
                 All subtitle segments have been merged into 1 continuous block.
               </span>
-              <span className="hidden sm:inline-block text-xs text-[#878787] ml-2 font-mono tabular-nums">
+              <span className="hidden sm:inline-block text-xs text-[#6f7682] ml-2 font-mono tabular-nums">
                 (auto-closes in 5s)
               </span>
             </div>
@@ -405,7 +405,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             <button
               type="button"
               onClick={handleUndo}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black text-xs font-bold rounded-full cursor-pointer transition-transform hover:scale-104 shrink-0 shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-full cursor-pointer transition-colors shrink-0 shadow-sm"
               title="Restore original separated subtitle segments"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -414,7 +414,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             <button
               type="button"
               onClick={handleDismissUndoAlert}
-              className="p-1.5 text-[#b3b3b3] hover:text-white rounded-full hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
               title="Close notification"
               aria-label="Close notification"
             >
@@ -426,19 +426,19 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
       {/* Summary Accordion Strip */}
       {summary && (
-        <div className="p-4 rounded-xl bg-[#181818] border border-[#282828] text-xs text-[#d4d4d4]">
+        <div className="p-4 rounded-xl bg-[#181818] border border-[#282828] text-xs text-[#c2c8d1]">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[#b3b3b3] font-semibold uppercase tracking-wider text-xs">
+            <span className="text-[#9ca3af] font-semibold uppercase tracking-wider text-xs">
               Audio Synopsis
             </span>
             <button
               onClick={() => setShowSummary(!showSummary)}
-              className="text-[#b3b3b3] hover:text-white text-xs cursor-pointer"
+              className="text-[#9ca3af] hover:text-[#e4e7ec] text-xs cursor-pointer"
             >
               {showSummary ? 'Collapse' : 'Expand'}
             </button>
           </div>
-          {showSummary && <p className="text-[#d4d4d4] leading-relaxed text-sm">{summary}</p>}
+          {showSummary && <p className="text-[#c2c8d1] leading-relaxed text-sm">{summary}</p>}
         </div>
       )}
 
@@ -446,12 +446,12 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       <div className="space-y-3">
         {segments.length === 0 ? (
           <div className="p-10 text-center bg-[#181818] border border-dashed border-[#282828] rounded-xl space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#242424] text-[#1ed760] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-full bg-[#242424] text-[#34a866] flex items-center justify-center mx-auto">
               <FileAudio className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white font-display">Studio Workspace is Clean</h4>
-              <p className="text-xs text-[#878787] mt-1 max-w-md mx-auto">
+              <h4 className="text-sm font-semibold text-[#e4e7ec] font-display">Studio Workspace is Clean</h4>
+              <p className="text-xs text-[#6f7682] mt-1 max-w-md mx-auto">
                 No active transcript loaded. Upload or record audio with the Transcribe button, open a session from History, or send audio from Voiceover Studio.
               </p>
             </div>
@@ -466,24 +466,24 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
               key={seg.id}
               className={`p-4 rounded-xl border transition-all ${
                 isActive
-                  ? 'bg-[#1f1f1f] border-[#1ed760] shadow-[0_8px_20px_rgba(30,215,96,0.15)] ring-1 ring-[#1ed760]/30'
-                  : 'bg-[#181818] border-[#282828] hover:border-[#383838]'
+                  ? 'bg-[#1d221f] border-[#1db954]/55'
+                  : 'bg-[#181818] border-[#282828] hover:border-[#34373f]'
               }`}
             >
               {/* Segment Metadata & Actions Header */}
               <div className="flex items-center justify-between gap-3 mb-2.5">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-xs font-mono tabular-nums text-[#7c7c7c]">
+                  <span className="text-xs font-mono tabular-nums text-[#6f7682]">
                     #{index + 1}
                   </span>
 
                   {/* Play Audio Block Timestamp Button */}
                   <button
                     onClick={() => handlePlayBlockAudio(seg)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#282828] rounded-full text-xs font-mono tabular-nums text-white border border-[#2e2e2e] transition-all cursor-pointer hover:scale-104"
+                    className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#262930] rounded-full text-xs font-mono tabular-nums text-[#d0d5dd] border border-[#2e3138] transition-all cursor-pointer"
                     title="Play audio from this timestamp"
                   >
-                    <Play className="w-3 h-3 fill-current text-[#1ed760]" />
+                    <Play className="w-3 h-3 fill-current text-[#34a866]" />
                     <span>
                       {formatPlayerTime(seg.start)} – {formatPlayerTime(seg.end)}
                     </span>
@@ -492,14 +492,14 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   {/* Dedicated Text-To-Speech (TTS) Voice Button */}
                   <button
                     onClick={() => handleSpeakText(seg.id, seg.text)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                       isSpeaking
-                        ? 'bg-[#282828] text-[#1ed760] border-[#1ed760]'
-                        : 'bg-[#121212] hover:bg-[#282828] text-[#b3b3b3] hover:text-white border-[#2e2e2e]'
+                        ? 'bg-[#262930] text-[#3fb970] border-[#1db954]/50'
+                        : 'bg-[#121212] hover:bg-[#262930] text-[#9ca3af] hover:text-[#e4e7ec] border-[#2e3138]'
                     }`}
                     title={isSpeaking ? 'Stop speaking' : 'Read text aloud (Text-to-Speech)'}
                   >
-                    <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-[#1ed760]' : 'text-[#b3b3b3]'}`} />
+                    <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-[#3fb970]' : 'text-[#9ca3af]'}`} />
                     <span className="text-xs font-semibold">
                       {isSpeaking ? 'Reading...' : 'TTS'}
                     </span>
@@ -512,7 +512,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                         type="text"
                         value={speakerInputValue}
                         onChange={(e) => setSpeakerInputValue(e.target.value)}
-                        className="px-2.5 py-0.5 bg-[#121212] border border-[#383838] rounded-full text-xs text-white w-28 focus:outline-none focus:border-[#1ed760]"
+                        className="px-2.5 py-0.5 bg-[#121212] border border-[#34373f] rounded-full text-xs text-[#d0d5dd] w-28 focus:outline-none focus:border-[#1db954]/55"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveSpeaker(seg.id);
@@ -520,7 +520,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                       />
                       <button
                         onClick={() => handleSaveSpeaker(seg.id)}
-                        className="p-1 text-[#1ed760] hover:bg-[#282828] rounded-full cursor-pointer"
+                        className="p-1 text-[#3fb970] hover:bg-[#282828] rounded-full cursor-pointer"
                       >
                         <Check className="w-3 h-3" />
                       </button>
@@ -531,21 +531,21 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                         setEditingSpeakerId(seg.id);
                         setSpeakerInputValue(seg.speaker);
                       }}
-                      className="flex items-center gap-1 px-2.5 py-0.5 bg-[#121212] hover:bg-[#282828] text-[#d4d4d4] rounded-full text-xs font-medium border border-[#2e2e2e] transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-0.5 bg-[#121212] hover:bg-[#262930] text-[#c2c8d1] rounded-full text-xs font-medium border border-[#2e3138] transition-colors cursor-pointer"
                       title="Click to rename speaker"
                     >
-                      <User className="w-3 h-3 text-[#878787]" />
+                      <User className="w-3 h-3 text-[#6f7682]" />
                       <span>{seg.speaker || 'Speaker'}</span>
                     </button>
                   )}
                 </div>
 
                 {/* Subtitle Action Tools */}
-                <div className="flex items-center gap-1 text-[#b3b3b3]">
+                <div className="flex items-center gap-1 text-[#9ca3af]">
                   {index < segments.length - 1 && (
                     <button
                       onClick={() => onMergeSegments(seg.id)}
-                      className="p-1.5 text-[#b3b3b3] hover:text-white hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                      className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
                       title="Merge with next block"
                     >
                       <Merge className="w-3.5 h-3.5" />
@@ -553,14 +553,14 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   )}
                   <button
                     onClick={() => onAddSegment(seg.id)}
-                    className="p-1.5 text-[#b3b3b3] hover:text-[#1ed760] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                    className="p-1.5 text-[#9ca3af] hover:text-[#3fb970] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
                     title="Insert block below"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => onDeleteSegment(seg.id)}
-                    className="p-1.5 text-[#878787] hover:text-red-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                    className="p-1.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
                     title="Delete block"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -573,7 +573,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 value={seg.text}
                 onChange={(e) => onUpdateSegment(seg.id, { text: e.target.value })}
                 rows={2}
-                className="w-full bg-transparent border-0 text-sm text-white leading-relaxed focus:outline-none focus:bg-[#121212]/80 p-2 rounded-lg resize-y transition-colors"
+                className="w-full bg-transparent border-0 text-sm text-[#d0d5dd] leading-relaxed focus:outline-none focus:bg-[#121212]/80 p-2 rounded-lg resize-y transition-colors"
                 placeholder="Type subtitle segment text..."
               />
             </div>

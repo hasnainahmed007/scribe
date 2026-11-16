@@ -92,12 +92,12 @@ export const AiQuotaNotice: React.FC<AiQuotaNoticeProps> = ({
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-sm font-bold text-white font-display">AI Engine at Peak Capacity</h4>
+              <h4 className="text-sm font-bold text-[#e4e7ec] font-display">AI Engine at Peak Capacity</h4>
               <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 Temporary Rate Limit
               </span>
             </div>
-            <p className="text-xs text-[#d4d4d4] leading-relaxed max-w-xl">
+            <p className="text-xs text-[#9ca3af] leading-relaxed max-w-xl">
               {displayMessage}
             </p>
           </div>
@@ -106,7 +106,7 @@ export const AiQuotaNotice: React.FC<AiQuotaNoticeProps> = ({
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="text-[#b3b3b3] hover:text-white p-1 rounded-lg hover:bg-[#282828] transition-colors cursor-pointer shrink-0"
+            className="text-[#9ca3af] hover:text-[#e4e7ec] p-1 rounded-lg hover:bg-[#282828] transition-colors cursor-pointer shrink-0"
             title="Dismiss notice"
           >
             <X className="w-4 h-4" />
@@ -115,12 +115,12 @@ export const AiQuotaNotice: React.FC<AiQuotaNoticeProps> = ({
       </div>
 
       <div className="flex items-center justify-between flex-wrap gap-3 pt-2 border-t border-[#282828] text-xs">
-        <div className="flex items-center gap-2 text-[#b3b3b3] font-mono tabular-nums text-xs">
+        <div className="flex items-center gap-2 text-[#9ca3af] font-mono tabular-nums text-xs">
           <Clock className="w-3.5 h-3.5 text-amber-400" />
           {countdown > 0 ? (
             <span>Auto-ready in <strong className="text-amber-300 font-bold">{countdown}s</strong></span>
           ) : (
-            <span className="text-[#1ed760] font-bold">Engine ready to process</span>
+            <span className="text-[#3fb970] font-semibold">Engine ready to process</span>
           )}
         </div>
 
@@ -139,7 +139,7 @@ export const AiQuotaNotice: React.FC<AiQuotaNoticeProps> = ({
               size="sm"
               onClick={handleManualRetry}
               disabled={isRetrying}
-              className="text-xs h-7 gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-extrabold shadow-sm shadow-amber-950/50 cursor-pointer"
+              className="text-xs h-7 gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold shadow-sm shadow-amber-950/50 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
               <span>{isRetrying ? 'Retrying...' : countdown > 0 ? 'Retry Anyway' : 'Retry Now'}</span>

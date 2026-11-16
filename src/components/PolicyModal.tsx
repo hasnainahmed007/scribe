@@ -155,22 +155,22 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
 
       if (trimmed.startsWith('# ')) {
         return (
-          <h1 key={index} className="text-xl sm:text-2xl font-bold text-white mt-4 mb-3 font-display border-b border-[#282828] pb-2">
+          <h1 key={index} className="text-xl sm:text-2xl font-bold text-[#e4e7ec] mt-4 mb-3 font-display border-b border-[#282828] pb-2">
             {trimmed.replace('# ', '')}
           </h1>
         );
       }
       if (trimmed.startsWith('### ')) {
         return (
-          <h3 key={index} className="text-sm sm:text-base font-bold text-emerald-400 mt-5 mb-2 font-display flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+          <h3 key={index} className="text-sm sm:text-base font-bold text-[#3fb970] mt-5 mb-2 font-display flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fb970] inline-block" />
             {trimmed.replace('### ', '')}
           </h3>
         );
       }
       if (trimmed.startsWith('## ')) {
         return (
-          <h2 key={index} className="text-base sm:text-lg font-bold text-white mt-5 mb-2 font-display">
+          <h2 key={index} className="text-base sm:text-lg font-bold text-[#e4e7ec] mt-5 mb-2 font-display">
             {trimmed.replace('## ', '')}
           </h2>
         );
@@ -178,14 +178,14 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
       if (trimmed.startsWith('- ')) {
         const itemText = trimmed.replace('- ', '');
         return (
-          <li key={index} className="text-xs sm:text-sm text-slate-300 ml-4 mb-1 list-disc leading-relaxed">
+          <li key={index} className="text-xs sm:text-sm text-[#d0d5dd] ml-4 mb-1 list-disc leading-relaxed">
             {renderInlineMarkdown(itemText)}
           </li>
         );
       }
       if (/^\d+\.\s/.test(trimmed)) {
         return (
-          <li key={index} className="text-xs sm:text-sm text-slate-300 ml-4 mb-1 list-decimal leading-relaxed">
+          <li key={index} className="text-xs sm:text-sm text-[#d0d5dd] ml-4 mb-1 list-decimal leading-relaxed">
             {renderInlineMarkdown(trimmed.replace(/^\d+\.\s/, ''))}
           </li>
         );
@@ -194,7 +194,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
         return <div key={index} className="h-2" />;
       }
       return (
-        <p key={index} className="text-xs sm:text-sm text-slate-300 mb-2 leading-relaxed">
+        <p key={index} className="text-xs sm:text-sm text-[#d0d5dd] mb-2 leading-relaxed">
           {renderInlineMarkdown(line)}
         </p>
       );
@@ -206,7 +206,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return (
-          <strong key={i} className="text-white font-semibold">
+          <strong key={i} className="text-[#e4e7ec] font-semibold">
             {part.slice(2, -2)}
           </strong>
         );
@@ -227,10 +227,10 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
           <div className="flex items-center gap-1.5 p-1 bg-[#121212] rounded-full border border-[#282828] overflow-x-auto">
             <button
               onClick={() => setActiveSlug('terms')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeSlug === 'terms'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-blue-400" />
@@ -239,22 +239,22 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
 
             <button
               onClick={() => setActiveSlug('privacy')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeSlug === 'privacy'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
+              <Shield className="w-3.5 h-3.5 text-[#3fb970]" />
               <span>Privacy Policy</span>
             </button>
 
             <button
               onClick={() => setActiveSlug('refund')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 activeSlug === 'refund'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
               <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
@@ -265,14 +265,14 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer hidden sm:block"
+              className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-lg transition-colors cursor-pointer hidden sm:block"
               title="Print Policy"
             >
               <Printer className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-lg transition-colors cursor-pointer"
               title="Close"
             >
               <X className="w-4 h-4" />
@@ -282,19 +282,19 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
 
         {/* Content Body with Cloud SQL Badge & Scroll */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-4">
-          <div className="flex items-center justify-between gap-2 pb-2 text-xs text-[#b3b3b3] border-b border-[#282828]">
+          <div className="flex items-center justify-between gap-2 pb-2 text-xs text-[#9ca3af] border-b border-[#282828]">
             <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" />
               <span>Official Scriby Terms & Policies</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-[#878787]">
+            <div className="flex items-center gap-1 text-xs text-[#6f7682]">
               <Clock className="w-3.5 h-3.5" />
               <span>Effective 2026</span>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="py-12 text-center text-sm text-[#b3b3b3]">
+            <div className="py-12 text-center text-sm text-[#9ca3af]">
               Loading policy document...
             </div>
           ) : (
@@ -305,7 +305,7 @@ export const PolicyModal: React.FC<PolicyModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-[#282828] bg-[#181818]/60 flex items-center justify-between text-xs text-slate-400">
+        <div className="p-4 border-t border-[#282828] bg-[#181818]/60 flex items-center justify-between text-xs text-[#9ca3af]">
           <span>Scriby · Official Creator Terms & Policies</span>
           <Button variant="outline" size="sm" onClick={onClose}>
             Close

@@ -4,26 +4,26 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 cursor-pointer select-none active:scale-[0.98]',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#1db954]/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 cursor-pointer select-none active:scale-[0.98]',
   {
     variants: {
       variant: {
         default:
-          'bg-[#1ed760] text-black font-bold hover:bg-[#1fdf64] hover:scale-[1.03] shadow-[0_4px_14px_rgba(30,215,96,0.25)]',
+          'bg-[#1db954] text-[#08100b] font-semibold hover:bg-[#1aa34a] shadow-sm',
         destructive:
-          'bg-[#f3727f]/15 text-[#f3727f] border border-[#f3727f]/30 hover:bg-[#f3727f]/25',
+          'bg-[#f3727f]/12 text-[#e88791] border border-[#f3727f]/25 hover:bg-[#f3727f]/20',
         outline:
-          'border border-[#7c7c7c] bg-transparent text-white hover:border-white hover:scale-[1.03]',
+          'border border-[#3a3e46] bg-transparent text-[#d0d5dd] hover:border-[#555a65] hover:text-[#e4e7ec] hover:bg-[#1f1f1f]',
         secondary:
-          'bg-[#1f1f1f] text-white hover:bg-[#282828] hover:scale-[1.02] border border-[#2e2e2e]',
+          'bg-[#1f1f1f] text-[#d0d5dd] hover:bg-[#282828] hover:text-[#e4e7ec] border border-[#2e3138]',
         ghost:
-          'text-[#b3b3b3] hover:text-white hover:bg-[#1f1f1f]',
+          'text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#1f1f1f]',
         link:
-          'text-[#1ed760] underline-offset-4 hover:underline p-0 h-auto font-semibold',
+          'text-[#34a866] underline-offset-4 hover:underline p-0 h-auto font-semibold',
         purple:
-          'bg-purple-600 text-white font-bold hover:bg-purple-500 shadow-sm hover:scale-[1.02]',
+          'bg-purple-600/85 text-[#e4e7ec] font-semibold hover:bg-purple-600 shadow-sm',
         play:
-          'rounded-full bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-[1.06] shadow-[0_8px_20px_rgba(30,215,96,0.3)]',
+          'rounded-full bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] shadow-sm',
       },
       size: {
         default: 'h-9 px-5 py-2 text-sm',

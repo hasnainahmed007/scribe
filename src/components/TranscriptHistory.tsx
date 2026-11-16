@@ -121,12 +121,12 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
         <div>
-          <h2 className="text-lg font-bold text-white tracking-tight font-display">
+          <h2 className="text-lg font-semibold text-[#e4e7ec] tracking-tight font-display">
             Transcription Archive
           </h2>
-          <p className="text-sm text-[#b3b3b3] mt-0.5">
+          <p className="text-sm text-[#9ca3af] mt-0.5">
             Your saved audio transcription sessions and subtitle exports
           </p>
         </div>
@@ -156,7 +156,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
       {/* Search Input Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <Input
             type="text"
             placeholder="Search transcripts by title or spoken text..."
@@ -166,31 +166,31 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
           />
         </div>
 
-        <div className="text-xs text-slate-400 font-mono">
+        <div className="text-xs text-[#9ca3af] font-mono">
           <span>{filteredTranscripts.length} of {transcripts.length} sessions</span>
         </div>
       </div>
 
       {/* Action Notification */}
       {actionMessage && (
-        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="p-3 bg-[#181818] border border-[#282828] rounded-xl text-xs text-[#4cc37c] flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-[#3fb970]" />
           <span>{actionMessage}</span>
         </div>
       )}
 
       {/* Transcripts List */}
       {isLoading ? (
-        <div className="py-20 text-center text-xs text-slate-500 space-y-2">
-          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-slate-400" />
+        <div className="py-20 text-center text-xs text-[#6f7682] space-y-2">
+          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-[#9ca3af]" />
           <p>Loading transcripts...</p>
         </div>
       ) : filteredTranscripts.length === 0 ? (
-        <div className="p-12 text-center rounded-xl bg-[#0f1726] border border-slate-800 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-200">
+        <div className="p-12 text-center rounded-xl bg-[#181818] border border-[#282828] space-y-3">
+          <h3 className="text-sm font-semibold text-[#e4e7ec]">
             {searchQuery ? 'No matching transcripts' : 'No recorded sessions'}
           </h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <p className="text-xs text-[#9ca3af] max-w-sm mx-auto">
             {searchQuery
               ? 'Try searching with a different title or keyword.'
               : 'Whenever you transcribe an audio file, it will automatically appear here for later editing and export.'}
@@ -198,7 +198,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
           {!searchQuery && (
             <button
               onClick={onNewRecording}
-              className="px-4 py-2 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+              className="px-4 py-2 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-xs rounded-full transition-colors cursor-pointer"
             >
               Start First Transcription
             </button>
@@ -219,17 +219,17 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
             return (
               <Card
                 key={item.id}
-                className="p-5 hover:border-slate-700 transition-colors flex flex-col justify-between space-y-4"
+                className="p-5 hover:border-[#34373f] transition-colors flex flex-col justify-between space-y-4"
               >
                 <div>
                   {/* Top Bar: Title & Delete */}
                   <div className="flex items-start justify-between gap-3 mb-1.5">
-                    <h3 className="text-sm font-semibold text-white truncate flex-1">
+                    <h3 className="text-sm font-semibold text-[#e4e7ec] truncate flex-1">
                       {item.title}
                     </h3>
                     {confirmDeleteId === item.id ? (
                       <div
-                        className="flex items-center gap-1.5 bg-red-950/80 border border-red-500/40 px-2 py-1 rounded-md text-xs shrink-0"
+                        className="flex items-center gap-1.5 bg-red-950/70 border border-red-500/35 px-2 py-1 rounded-md text-xs shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <span className="text-rose-300 font-medium text-xs">Delete?</span>
@@ -239,7 +239,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                             e.stopPropagation();
                             setConfirmDeleteId(null);
                           }}
-                          className="text-[#b3b3b3] hover:text-white px-2 py-0.5 rounded text-xs cursor-pointer"
+                          className="text-[#9ca3af] hover:text-[#e4e7ec] px-2 py-0.5 rounded text-xs cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -247,7 +247,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                           type="button"
                           onClick={(e) => executeDelete(item, e)}
                           disabled={deletingId === item.id}
-                          className="bg-rose-600 hover:bg-rose-500 text-white font-semibold px-2.5 py-0.5 rounded text-xs flex items-center gap-1 cursor-pointer"
+                          className="bg-rose-600/90 hover:bg-rose-600 text-[#e4e7ec] font-semibold px-2.5 py-0.5 rounded text-xs flex items-center gap-1 cursor-pointer"
                         >
                           {deletingId === item.id ? (
                             <RefreshCw className="w-3 h-3 animate-spin" />
@@ -265,7 +265,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                           setConfirmDeleteId(item.id);
                         }}
                         disabled={deletingId === item.id}
-                        className="text-slate-500 hover:text-red-400 shrink-0"
+                        className="text-[#6f7682] hover:text-rose-400 shrink-0"
                         title="Delete transcript"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -274,31 +274,31 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                   </div>
 
                   {/* Unboxed Metadata Line with typographic separators */}
-                  <div className="flex items-center gap-2 text-xs text-slate-400 font-mono mb-3.5">
+                  <div className="flex items-center gap-2 text-xs text-[#9ca3af] font-mono mb-3.5">
                     <span>{formattedDate}</span>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-[#4a4e57]">·</span>
                     <span className="tabular-nums">{formatPlayerTime(item.durationSeconds ?? item.duration ?? 0)}</span>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-[#4a4e57]">·</span>
                     <span>{segmentsCount} blocks</span>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-[#4a4e57]">·</span>
                     <span>{wordCount} words</span>
                   </div>
 
                   {/* Transcript Excerpt */}
-                  <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800/80">
+                  <p className="text-xs text-[#c2c8d1] line-clamp-3 leading-relaxed bg-[#141414] p-3 rounded-lg border border-[#24262c]">
                     {item.fullTranscript || 'No transcript text available...'}
                   </p>
                 </div>
 
                 {/* Card Actions */}
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-[#282828] flex items-center justify-between gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => onLoadTranscript(item)}
                     className="flex-1 flex items-center justify-center gap-1.5"
                   >
-                    <FolderOpen className="w-3.5 h-3.5 text-emerald-400" />
+                    <FolderOpen className="w-3.5 h-3.5 text-[#34a866]" />
                     <span>Open in Studio</span>
                   </Button>
 
@@ -318,7 +318,7 @@ export const TranscriptHistory: React.FC<TranscriptHistoryProps> = ({
                       onClick={() => onOpenInYouTube(item)}
                       title="Open in YouTube SEO & Generate Automatically"
                     >
-                      <Youtube className="w-3.5 h-3.5 text-[#b3b3b3] hover:text-red-400" />
+                      <Youtube className="w-3.5 h-3.5 text-[#9ca3af] hover:text-rose-400" />
                     </Button>
                   )}
                 </div>

@@ -877,14 +877,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#282828]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-extrabold text-white tracking-tight font-display">
+            <h1 className="text-xl font-bold text-[#e4e7ec] tracking-tight font-display">
               YouTube Thumbnail Studio
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1ed760]/20 text-[#1ed760] border border-[#1ed760]/30 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1db954]/12 text-[#3fb970] border border-[#1db954]/25 uppercase tracking-wider">
               AI Style & 16:9 Canvas
             </span>
           </div>
-          <p className="text-xs text-[#b3b3b3] mt-0.5">
+          <p className="text-xs text-[#9ca3af] mt-0.5">
             Real-time live visual editor with AI image generation and multi-format custom dimension downloads
           </p>
         </div>
@@ -894,7 +894,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           <Button
             onClick={() => setIsExportModalOpen(true)}
             size="sm"
-            className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-extrabold shadow-[0_4px_12px_rgba(30,215,96,0.25)] gap-1.5 cursor-pointer text-xs"
+            className="bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold gap-1.5 cursor-pointer text-xs"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export & Custom Sizes</span>
@@ -904,7 +904,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             variant="outline"
             size="sm"
             onClick={() => handleQuickDownload('png')}
-            className="border-[#3e3e3e] text-white hover:bg-[#282828] text-xs cursor-pointer"
+            className="border-[#333333] text-[#d0d5dd] hover:bg-[#242424] hover:text-[#e4e7ec] text-xs cursor-pointer"
             title="Download standard 1280x720 PNG"
           >
             Quick PNG
@@ -914,7 +914,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             variant="outline"
             size="sm"
             onClick={() => handleQuickDownload('jpeg')}
-            className="border-[#3e3e3e] text-white hover:bg-[#282828] text-xs cursor-pointer"
+            className="border-[#333333] text-[#d0d5dd] hover:bg-[#242424] hover:text-[#e4e7ec] text-xs cursor-pointer"
             title="Download standard 1280x720 JPG"
           >
             Quick JPG
@@ -924,7 +924,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleResetToDefault}
-            className="text-xs text-[#878787] hover:text-white p-2 cursor-pointer"
+            className="text-xs text-[#6f7682] hover:text-[#d0d5dd] p-2 cursor-pointer"
             title="Reset to default settings"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -942,19 +942,19 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         <div className="lg:col-span-7 xl:col-span-7 lg:sticky lg:top-20 z-20 space-y-4">
           <Card className="p-4 bg-[#181818] border-[#282828] shadow-2xl rounded-2xl space-y-3">
             {/* Canvas Stage Header */}
-            <div className="flex items-center justify-between text-xs text-[#b3b3b3] pb-1">
+            <div className="flex items-center justify-between text-xs text-[#9ca3af] pb-1">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#1ed760]" />
-                <span className="font-bold text-white text-xs tracking-wide uppercase">
+                <span className="w-2 h-2 rounded-full bg-[#3fb970]" />
+                <span className="font-semibold text-[#e4e7ec] text-xs tracking-wide uppercase">
                   Live Canvas Preview
                 </span>
-                <span className="text-[#878787]">·</span>
-                <span className="text-[#b3b3b3] text-xs">Updates instantly on edit</span>
+                <span className="text-[#6f7682]">·</span>
+                <span className="text-[#9ca3af] text-xs">Updates instantly on edit</span>
               </div>
 
               <div className="flex items-center gap-2">
                 {bgImageElement && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/12 text-blue-300 border border-blue-500/25">
                     <Sparkles className="w-3 h-3" />
                     AI Image Active
                   </span>
@@ -962,7 +962,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(true)}
-                  className="flex items-center gap-1 font-mono tabular-nums text-xs text-[#1ed760] bg-[#1ed760]/10 hover:bg-[#1ed760]/20 px-2.5 py-0.5 rounded-full border border-[#1ed760]/20 cursor-pointer transition-colors"
+                  className="flex items-center gap-1 font-mono tabular-nums text-xs text-[#3fb970] bg-[#1db954]/10 hover:bg-[#1db954]/18 px-2.5 py-0.5 rounded-full border border-[#1db954]/20 cursor-pointer transition-colors"
                   title="Click to customize dimensions and format"
                 >
                   <Maximize2 className="w-3 h-3" />
@@ -972,7 +972,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             </div>
 
             {/* Canvas Stage (16:9 Aspect Video) */}
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-[#333333] shadow-[0_12px_36px_rgba(0,0,0,0.85)] bg-black group select-none">
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-[#2e2e2e] shadow-[0_12px_36px_rgba(0,0,0,0.75)] bg-black group select-none">
               <canvas
                 ref={canvasRef}
                 className="w-full h-full object-contain block"
@@ -980,7 +980,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
               {/* Hover guide overlay */}
               <div className="absolute top-2 left-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="px-2.5 py-1 bg-black/75 backdrop-blur-md rounded-full text-xs text-[#d4d4d4] border border-white/10 font-mono tabular-nums">
+                <span className="px-2.5 py-1 bg-black/75 backdrop-blur-md rounded-full text-xs text-[#d0d5dd] border border-[#2e2e2e] font-mono tabular-nums">
                   16:9 Standard YouTube Canvas
                 </span>
               </div>
@@ -990,7 +990,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             {bgImageElement && (
               <div className="p-3 bg-[#121212] border border-[#282828] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-7 rounded border border-[#3e3e3e] overflow-hidden bg-black shrink-0">
+                  <div className="w-10 h-7 rounded border border-[#333333] overflow-hidden bg-black shrink-0">
                     <img
                       src={activeBgImageUrl || ''}
                       alt="AI Background thumbnail"
@@ -998,10 +998,10 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     />
                   </div>
                   <div>
-                    <span className="font-bold text-white text-xs block">
+                    <span className="font-semibold text-[#e4e7ec] text-xs block">
                       AI Background Image Layer
                     </span>
-                    <span className="text-xs text-[#b3b3b3]">
+                    <span className="text-xs text-[#9ca3af]">
                       Opacity: {Math.round(config.bgImageOpacity * 100)}% · Blur: {config.bgImageBlur}px
                     </span>
                   </div>
@@ -1011,10 +1011,10 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   <button
                     type="button"
                     onClick={() => handleExecuteDownload(1280, 720, 'png', 'background_only')}
-                    className="px-2.5 py-1 bg-[#242424] hover:bg-[#303030] border border-[#383838] rounded-lg text-[11px] font-semibold text-white flex items-center gap-1 cursor-pointer transition-colors"
+                    className="px-2.5 py-1 bg-[#222222] hover:bg-[#2c2c2c] border border-[#333333] rounded-lg text-[11px] font-medium text-[#d0d5dd] flex items-center gap-1 cursor-pointer transition-colors"
                     title="Download pure background image without text"
                   >
-                    <Download className="w-3 h-3 text-[#1ed760]" />
+                    <Download className="w-3 h-3 text-[#3fb970]" />
                     <span>Download Raw Image</span>
                   </button>
 
@@ -1035,7 +1035,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
             {/* Quick Color Palette Swatches (1-Click Application) */}
             <div className="pt-2 border-t border-[#242424] flex items-center justify-between gap-2 overflow-x-auto">
-              <span className="text-[11px] font-semibold text-[#878787] shrink-0">
+              <span className="text-[11px] font-semibold text-[#6f7682] shrink-0">
                 Quick Themes:
               </span>
               <div className="flex items-center gap-2 overflow-x-auto pb-1">
@@ -1044,14 +1044,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => applyPalette(pal)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#2e2e2e] bg-[#121212] hover:border-[#1ed760] transition-all cursor-pointer shrink-0"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[#282828] bg-[#121212] hover:border-[#1db954]/60 transition-all cursor-pointer shrink-0"
                     title={`Apply ${pal.name} theme`}
                   >
                     <span
                       className="w-3 h-3 rounded-full border border-black/40 shadow-sm shrink-0"
                       style={{ background: `linear-gradient(135deg, ${pal.bg1}, ${pal.bg2})` }}
                     />
-                    <span className="text-[11px] font-medium text-white">{pal.name}</span>
+                    <span className="text-[11px] font-medium text-[#d0d5dd]">{pal.name}</span>
                   </button>
                 ))}
               </div>
@@ -1061,11 +1061,11 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           {/* Quick Style Presets Bar (Directly Under Canvas) */}
           <Card className="p-4 bg-[#181818] border-[#282828] rounded-2xl space-y-2.5 shadow-lg">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                <Layers className="w-3.5 h-3.5 text-[#1ed760]" />
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#e4e7ec]">
+                <Layers className="w-3.5 h-3.5 text-[#3fb970]" />
                 <span>Instant Style Presets</span>
               </div>
-              <span className="text-xs text-[#b3b3b3]">Click any preset to apply live</span>
+              <span className="text-xs text-[#9ca3af]">Click any preset to apply live</span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1074,9 +1074,9 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   key={i}
                   type="button"
                   onClick={() => applyPreset(preset)}
-                  className="p-2.5 text-left rounded-xl bg-[#121212] border border-[#282828] hover:border-[#1ed760] hover:bg-[#1a1a1a] transition-all group cursor-pointer"
+                  className="p-2.5 text-left rounded-xl bg-[#121212] border border-[#282828] hover:border-[#1db954]/60 hover:bg-[#1a1a1a] transition-all group cursor-pointer"
                 >
-                  <div className="text-xs font-bold text-white group-hover:text-[#1ed760] truncate">
+                  <div className="text-xs font-semibold text-[#d0d5dd] group-hover:text-[#3fb970] truncate">
                     {preset.name}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
@@ -1084,7 +1084,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       className="w-2.5 h-2.5 rounded-full border border-black/30 shrink-0"
                       style={{ backgroundColor: preset.badgeColor }}
                     />
-                    <span className="text-xs text-[#b3b3b3] truncate">
+                    <span className="text-xs text-[#9ca3af] truncate">
                       {preset.badge}
                     </span>
                   </div>
@@ -1099,14 +1099,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
         {/* ======================================================================= */}
         <div className="lg:col-span-5 xl:col-span-5 space-y-4">
           {/* Segmented Control Bar for Editing Sections */}
-          <div className="flex items-center p-1 bg-[#181818] rounded-xl border border-[#282828] grid grid-cols-4 gap-1 text-xs font-bold">
+          <div className="flex items-center p-1 bg-[#181818] rounded-xl border border-[#282828] grid grid-cols-4 gap-1 text-xs font-semibold">
             <button
               type="button"
               onClick={() => setEditorTab('ai')}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
                 editorTab === 'ai'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-blue-400" />
@@ -1118,11 +1118,11 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               onClick={() => setEditorTab('text')}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
                 editorTab === 'text'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
-              <Type className="w-3.5 h-3.5 text-[#1ed760]" />
+              <Type className="w-3.5 h-3.5 text-[#3fb970]" />
               <span className="truncate">Text</span>
             </button>
 
@@ -1131,8 +1131,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               onClick={() => setEditorTab('style')}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
                 editorTab === 'style'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
               <Palette className="w-3.5 h-3.5 text-purple-400" />
@@ -1144,8 +1144,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               onClick={() => setEditorTab('badge')}
               className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg transition-all cursor-pointer ${
                 editorTab === 'badge'
-                  ? 'bg-[#282828] text-white shadow-sm'
-                  : 'text-[#b3b3b3] hover:text-white'
+                  ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
               }`}
             >
               <Sliders className="w-3.5 h-3.5 text-amber-400" />
@@ -1159,27 +1159,27 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           {editorTab === 'ai' && (
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#e4e7ec]">
                   <Sparkles className="w-4 h-4 text-blue-400" />
                   <span>AI Style Image Generator</span>
                 </div>
-                <span className="text-xs text-blue-400 font-bold uppercase tracking-wider px-2.5 py-0.5 bg-blue-500/10 rounded-full border border-blue-500/20">
+                <span className="text-xs text-blue-400 font-semibold uppercase tracking-wider px-2.5 py-0.5 bg-blue-500/10 rounded-full border border-blue-500/20">
                   Live Preview
                 </span>
               </div>
 
-              <p className="text-xs text-[#b3b3b3] leading-relaxed">
+              <p className="text-xs text-[#9ca3af] leading-relaxed">
                 Generate high-impact YouTube background artwork tailored to your title or topic. The image is instantly applied to the live preview canvas.
               </p>
 
               {/* Title / Topic Prompt Input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">Video Title or Visual Prompt</label>
+                  <label className="text-xs font-semibold text-[#d0d5dd]">Video Title or Visual Prompt</label>
                   <button
                     type="button"
                     onClick={() => setAiPrompt(config.headline)}
-                    className="text-xs text-[#1ed760] hover:underline cursor-pointer font-semibold"
+                    className="text-xs text-[#3fb970] hover:underline cursor-pointer font-medium"
                   >
                     Sync with Headline
                   </button>
@@ -1189,13 +1189,13 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   placeholder="e.g. Turn Any Audio into Subtitles in 1 Click..."
-                  className="w-full bg-[#121212] border border-[#282828] focus:border-blue-400 focus:ring-1 focus:ring-blue-400 rounded-xl p-3 text-xs text-white focus:outline-none transition-all leading-relaxed"
+                  className="w-full bg-[#121212] border border-[#282828] focus:border-blue-400/70 focus:ring-1 focus:ring-blue-400/50 rounded-xl p-3 text-xs text-[#d0d5dd] focus:outline-none transition-all leading-relaxed"
                 />
               </div>
 
               {/* AI Visual Aesthetic Styles Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white">Choose Visual Aesthetic</label>
+                <label className="text-xs font-semibold text-[#d0d5dd]">Choose Visual Aesthetic</label>
                 <div className="grid grid-cols-2 gap-2">
                   {AI_STYLES.map((st) => (
                     <button
@@ -1204,7 +1204,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onClick={() => setSelectedAiStyle(st.id)}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                         selectedAiStyle === st.id
-                          ? 'border-blue-400 bg-blue-500/10 shadow-sm'
+                          ? 'border-blue-400/70 bg-blue-500/10 shadow-sm'
                           : 'border-[#282828] bg-[#121212] hover:border-[#3e3e3e]'
                       }`}
                     >
@@ -1221,8 +1221,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                         </div>
                       </div>
                       <div className="mt-1.5">
-                        <div className="text-xs font-bold text-white truncate">{st.name}</div>
-                        <div className="text-xs text-[#b3b3b3] line-clamp-1">{st.desc}</div>
+                        <div className="text-xs font-semibold text-[#e4e7ec] truncate">{st.name}</div>
+                        <div className="text-xs text-[#9ca3af] line-clamp-1">{st.desc}</div>
                       </div>
                     </button>
                   ))}
@@ -1234,7 +1234,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                 <Button
                   onClick={() => handleGenerateAiImageOnly()}
                   disabled={isGeneratingAiImage || isGeneratingAiConcept || !aiPrompt.trim()}
-                  className="w-full h-11 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-11 bg-blue-600/90 hover:bg-blue-600 text-[#e4e7ec] font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isGeneratingAiImage ? (
                     <>
@@ -1253,16 +1253,16 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   onClick={handleGenerateAiConcept}
                   disabled={isGeneratingAiConcept || isGeneratingAiImage || !aiPrompt.trim()}
                   variant="outline"
-                  className="w-full h-9 border-[#3e3e3e] hover:bg-[#242424] text-white font-semibold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-9 border-[#333333] hover:bg-[#242424] text-[#d0d5dd] hover:text-[#e4e7ec] font-medium text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isGeneratingAiConcept ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1ed760]" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#3fb970]" />
                       <span>Designing Full Concept (Text + Colors + Image)...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-3.5 h-3.5 text-[#1ed760]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#3fb970]" />
                       <span>Generate Complete Thumbnail Concept</span>
                     </>
                   )}
@@ -1270,7 +1270,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               </div>
 
               {aiSuccessMessage && (
-                <div className="p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-xl text-xs text-blue-300 flex items-center gap-2">
+                <div className="p-2.5 bg-blue-500/10 border border-blue-500/25 rounded-xl text-xs text-blue-300 flex items-center gap-2">
                   <Check className="w-4 h-4 text-blue-400 shrink-0" />
                   <span>{aiSuccessMessage}</span>
                 </div>
@@ -1288,7 +1288,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     compact
                   />
                 ) : (
-                  <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-300">
+                  <div className="p-2.5 bg-red-500/10 border border-red-500/25 rounded-xl text-xs text-red-300">
                     {aiErrorMessage}
                   </div>
                 )
@@ -1298,7 +1298,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {bgImageElement && (
                 <div className="pt-3 border-t border-[#242424] space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">Live Layer Controls</span>
+                    <span className="text-xs font-semibold text-[#d0d5dd]">Live Layer Controls</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -1314,9 +1314,9 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-[#b3b3b3]">
+                      <div className="flex justify-between text-xs text-[#9ca3af]">
                         <span>Opacity</span>
-                        <span className="font-mono text-[#1ed760]">
+                        <span className="font-mono text-[#3fb970]">
                           {Math.round(config.bgImageOpacity * 100)}%
                         </span>
                       </div>
@@ -1327,14 +1327,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                         step="0.05"
                         value={config.bgImageOpacity}
                         onChange={(e) => setConfig({ ...config, bgImageOpacity: parseFloat(e.target.value) })}
-                        className="w-full accent-[#1ed760] cursor-pointer"
+                        className="w-full accent-[#1db954] cursor-pointer"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-[#b3b3b3]">
+                      <div className="flex justify-between text-xs text-[#9ca3af]">
                         <span>Blur</span>
-                        <span className="font-mono text-[#1ed760]">{config.bgImageBlur}px</span>
+                        <span className="font-mono text-[#3fb970]">{config.bgImageBlur}px</span>
                       </div>
                       <input
                         type="range"
@@ -1342,7 +1342,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                         max="15"
                         value={config.bgImageBlur}
                         onChange={(e) => setConfig({ ...config, bgImageBlur: parseInt(e.target.value, 10) })}
-                        className="w-full accent-[#1ed760] cursor-pointer"
+                        className="w-full accent-[#1db954] cursor-pointer"
                       />
                     </div>
                   </div>
@@ -1353,8 +1353,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {recentAiImages.length > 0 && (
                 <div className="pt-3 border-t border-[#242424] space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white">Recent AI Images</span>
-                    <span className="text-xs text-[#b3b3b3]">Click to apply live</span>
+                    <span className="text-xs font-semibold text-[#d0d5dd]">Recent AI Images</span>
+                    <span className="text-xs text-[#9ca3af]">Click to apply live</span>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {recentAiImages.map((item) => (
@@ -1364,7 +1364,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                         onClick={() => applyImageToCanvas(item.url, item.prompt, item.style)}
                         className={`relative aspect-video rounded-lg overflow-hidden border transition-all cursor-pointer group ${
                           activeBgImageUrl === item.url
-                            ? 'border-[#1ed760] ring-2 ring-[#1ed760]/30'
+                            ? 'border-[#1db954] ring-1 ring-[#1db954]/30'
                             : 'border-[#333333] hover:border-[#666666]'
                         }`}
                         title={`Apply image for: "${item.prompt}" (${item.style})`}
@@ -1375,7 +1375,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                           className="w-full h-full object-cover"
                         />
                         {activeBgImageUrl === item.url && (
-                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#1ed760] flex items-center justify-center text-black">
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#1db954] flex items-center justify-center text-[#08100b]">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                         )}
@@ -1393,20 +1393,20 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           {editorTab === 'text' && (
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
-                  <Type className="w-4 h-4 text-[#1ed760]" />
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#e4e7ec]">
+                  <Type className="w-4 h-4 text-[#3fb970]" />
                   <span>Headline & Text Elements</span>
                 </div>
-                <span className="text-[11px] text-[#1ed760]">Updates live</span>
+                <span className="text-[11px] text-[#3fb970]">Updates live</span>
               </div>
 
               {/* Main Headline */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">
+                  <label className="text-xs font-semibold text-[#d0d5dd]">
                     Primary Headline
                   </label>
-                  <span className="text-xs text-[#b3b3b3]">
+                  <span className="text-xs text-[#9ca3af]">
                     Supports all global languages & scripts
                   </span>
                 </div>
@@ -1414,21 +1414,21 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   rows={3}
                   value={config.headline}
                   onChange={(e) => setConfig({ ...config, headline: e.target.value })}
-                  className="w-full bg-[#121212] border border-[#282828] focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760] rounded-xl p-3 text-xs text-white focus:outline-none transition-all leading-relaxed"
+                  className="w-full bg-[#121212] border border-[#282828] focus:border-[#1db954]/60 focus:ring-1 focus:ring-[#1db954]/40 rounded-xl p-3 text-xs text-[#d0d5dd] focus:outline-none transition-all leading-relaxed"
                   placeholder="Enter high-CTR thumbnail headline..."
                 />
               </div>
 
               {/* Secondary Subheadline */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-white">
+                <label className="text-xs font-semibold text-[#d0d5dd]">
                   Secondary Hook / Subheadline
                 </label>
                 <Input
                   type="text"
                   value={config.subhead}
                   onChange={(e) => setConfig({ ...config, subhead: e.target.value })}
-                  className="bg-[#121212] border-[#282828] text-xs focus:border-[#1ed760]"
+                  className="bg-[#121212] border-[#282828] text-xs focus:border-[#1db954]/60"
                   placeholder="Supporting topic or teaser..."
                 />
               </div>
@@ -1437,8 +1437,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               <div className="grid grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#b3b3b3]">Headline Size</span>
-                    <span className="font-mono text-[#1ed760] font-bold">{config.headlineSize}px</span>
+                    <span className="font-semibold text-[#9ca3af]">Headline Size</span>
+                    <span className="font-mono text-[#3fb970] font-semibold">{config.headlineSize}px</span>
                   </div>
                   <input
                     type="range"
@@ -1446,9 +1446,9 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     max="110"
                     value={config.headlineSize}
                     onChange={(e) => setConfig({ ...config, headlineSize: parseInt(e.target.value, 10) })}
-                    className="w-full accent-[#1ed760] cursor-pointer"
+                    className="w-full accent-[#1db954] cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-[#878787] font-mono tabular-nums">
+                  <div className="flex justify-between text-xs text-[#6f7682] font-mono tabular-nums">
                     <span>40px</span>
                     <span>110px</span>
                   </div>
@@ -1456,8 +1456,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#b3b3b3]">Outline Stroke</span>
-                    <span className="font-mono text-[#1ed760] font-bold">{config.strokeWidth}px</span>
+                    <span className="font-semibold text-[#9ca3af]">Outline Stroke</span>
+                    <span className="font-mono text-[#3fb970] font-semibold">{config.strokeWidth}px</span>
                   </div>
                   <input
                     type="range"
@@ -1465,9 +1465,9 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     max="18"
                     value={config.strokeWidth}
                     onChange={(e) => setConfig({ ...config, strokeWidth: parseInt(e.target.value, 10) })}
-                    className="w-full accent-[#1ed760] cursor-pointer"
+                    className="w-full accent-[#1db954] cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-[#878787] font-mono tabular-nums">
+                  <div className="flex justify-between text-xs text-[#6f7682] font-mono tabular-nums">
                     <span>None</span>
                     <span>18px</span>
                   </div>
@@ -1476,11 +1476,11 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
               {/* Font Family Selection */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-xs font-semibold text-[#b3b3b3]">Typography Font Family</label>
+                <label className="text-xs font-semibold text-[#9ca3af]">Typography Font Family</label>
                 <select
                   value={config.fontFamily}
                   onChange={(e) => setConfig({ ...config, fontFamily: e.target.value })}
-                  className="w-full bg-[#121212] border border-[#282828] text-xs text-white rounded-xl p-2.5 outline-none focus:border-[#1ed760]"
+                  className="w-full bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-xl p-2.5 outline-none focus:border-[#1db954]/60"
                 >
                   <option value="Outfit, sans-serif">Outfit (High-CTR Bold Sans · Recommended)</option>
                   <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans (Modern Clean Geometric)</option>
@@ -1492,7 +1492,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {/* Text & Stroke Colors */}
               <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#242424]">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Text Fill Color</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Text Fill Color</label>
                   <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
                     <input
                       type="color"
@@ -1500,14 +1500,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onChange={(e) => setConfig({ ...config, headlineColor: e.target.value })}
                       className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
                     />
-                    <span className="text-xs font-mono text-white font-semibold">
+                    <span className="text-xs font-mono text-[#d0d5dd] font-semibold">
                       {config.headlineColor.toUpperCase()}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Outline Color</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Outline Color</label>
                   <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
                     <input
                       type="color"
@@ -1515,7 +1515,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onChange={(e) => setConfig({ ...config, strokeColor: e.target.value })}
                       className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
                     />
-                    <span className="text-xs font-mono text-white font-semibold">
+                    <span className="text-xs font-mono text-[#d0d5dd] font-semibold">
                       {config.strokeColor.toUpperCase()}
                     </span>
                   </div>
@@ -1530,17 +1530,17 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           {editorTab === 'style' && (
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#e4e7ec]">
                   <Palette className="w-4 h-4 text-purple-400" />
                   <span>Theme & Background Colors</span>
                 </div>
-                <span className="text-[11px] text-[#1ed760]">Live rendering</span>
+                <span className="text-[11px] text-[#3fb970]">Live rendering</span>
               </div>
 
               {/* Gradient Color Pickers */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Gradient Start</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Gradient Start</label>
                   <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
                     <input
                       type="color"
@@ -1548,14 +1548,14 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onChange={(e) => setConfig({ ...config, customBgColor1: e.target.value })}
                       className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
                     />
-                    <span className="text-xs font-mono text-white font-semibold">
+                    <span className="text-xs font-mono text-[#d0d5dd] font-semibold">
                       {config.customBgColor1.toUpperCase()}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Gradient End</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Gradient End</label>
                   <div className="flex items-center gap-2 bg-[#121212] border border-[#282828] p-2 rounded-xl">
                     <input
                       type="color"
@@ -1563,7 +1563,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onChange={(e) => setConfig({ ...config, customBgColor2: e.target.value })}
                       className="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent"
                     />
-                    <span className="text-xs font-mono text-white font-semibold">
+                    <span className="text-xs font-mono text-[#d0d5dd] font-semibold">
                       {config.customBgColor2.toUpperCase()}
                     </span>
                   </div>
@@ -1573,7 +1573,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {/* Custom Image Upload & Controls */}
               <div className="space-y-3 pt-2 border-t border-[#242424]">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">
+                  <label className="text-xs font-semibold text-[#d0d5dd]">
                     Upload Custom Photo / Background
                   </label>
                   {bgImageElement && (
@@ -1591,8 +1591,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   )}
                 </div>
 
-                <label className="flex items-center justify-center gap-2 p-3 bg-[#121212] hover:bg-[#1a1a1a] border border-dashed border-[#3e3e3e] hover:border-[#1ed760] rounded-xl text-xs text-white font-bold cursor-pointer transition-all">
-                  <Upload className="w-4 h-4 text-[#1ed760]" />
+                <label className="flex items-center justify-center gap-2 p-3 bg-[#121212] hover:bg-[#1a1a1a] border border-dashed border-[#333333] hover:border-[#1db954]/60 rounded-xl text-xs text-[#d0d5dd] font-semibold cursor-pointer transition-all">
+                  <Upload className="w-4 h-4 text-[#3fb970]" />
                   <span>{bgImageElement ? 'Change Photo Image' : 'Upload Local Image File'}</span>
                   <input
                     type="file"
@@ -1605,16 +1605,16 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
               {/* Contrast Vignette Scrim Toggle */}
               <div className="pt-2 border-t border-[#242424]">
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] cursor-pointer hover:border-[#3e3e3e] transition-colors">
                   <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-[#1ed760]" />
+                    <Eye className="w-4 h-4 text-[#3fb970]" />
                     <span>Contrast Dark Vignette Scrim</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={config.overlayVignette}
                     onChange={(e) => setConfig({ ...config, overlayVignette: e.target.checked })}
-                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded accent-[#1db954] cursor-pointer"
                   />
                 </label>
               </div>
@@ -1627,23 +1627,23 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
           {editorTab === 'badge' && (
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4 shadow-xl">
               <div className="flex items-center justify-between pb-2 border-b border-[#282828]">
-                <div className="flex items-center gap-2 text-sm font-bold text-white">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#e4e7ec]">
                   <Sliders className="w-4 h-4 text-amber-400" />
                   <span>Badges & Overlay Accents</span>
                 </div>
-                <span className="text-[11px] text-[#1ed760]">Live visual</span>
+                <span className="text-[11px] text-[#3fb970]">Live visual</span>
               </div>
 
               {/* Highlight Badge */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">Top Corner Badge</label>
-                  <label className="flex items-center gap-1.5 text-xs text-white cursor-pointer">
+                  <label className="text-xs font-semibold text-[#d0d5dd]">Top Corner Badge</label>
+                  <label className="flex items-center gap-1.5 text-xs text-[#d0d5dd] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={config.showBadge}
                       onChange={(e) => setConfig({ ...config, showBadge: e.target.checked })}
-                      className="w-4 h-4 rounded accent-[#1ed760]"
+                      className="w-4 h-4 rounded accent-[#1db954]"
                     />
                     <span>Show Badge</span>
                   </label>
@@ -1671,29 +1671,29 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
               {/* YouTube Play Watermark & Accent Bar */}
               <div className="space-y-2 pt-2 border-t border-[#242424]">
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] cursor-pointer hover:border-[#3e3e3e] transition-colors">
                   <div className="flex items-center gap-2">
-                    <Play className="w-4 h-4 text-red-500 fill-current" />
+                    <Play className="w-4 h-4 text-red-400 fill-current" />
                     <span>YouTube Play Button Emblem Overlay</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={showPlayOverlay}
                     onChange={(e) => setShowPlayOverlay(e.target.checked)}
-                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded accent-[#1db954] cursor-pointer"
                   />
                 </label>
 
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-white cursor-pointer hover:border-[#3e3e3e] transition-colors">
+                <label className="flex items-center justify-between p-2.5 rounded-xl bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] cursor-pointer hover:border-[#3e3e3e] transition-colors">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded bg-[#1ed760]" />
+                    <span className="w-3.5 h-3.5 rounded bg-[#1db954]" />
                     <span>Left Edge Contrast Accent Stripe</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={config.showAccentBar}
                     onChange={(e) => setConfig({ ...config, showAccentBar: e.target.checked })}
-                    className="w-4 h-4 rounded accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded accent-[#1db954] cursor-pointer"
                   />
                 </label>
               </div>
@@ -1707,18 +1707,18 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
       {/* ========================================================================= */}
       {isExportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#181818] border border-[#2e2e2e] rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-5 text-white max-h-[92vh] overflow-y-auto">
+          <div className="bg-[#181818] border border-[#2e2e2e] rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-5 text-[#d0d5dd] max-h-[92vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#1ed760]/10 border border-[#1ed760]/20 flex items-center justify-center text-[#1ed760]">
+                <div className="w-9 h-9 rounded-xl bg-[#1db954]/10 border border-[#1db954]/20 flex items-center justify-center text-[#3fb970]">
                   <Download className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">
+                  <h3 className="text-base font-bold text-[#e4e7ec]">
                     Export Studio: Formats & Custom Dimensions
                   </h3>
-                  <p className="text-xs text-[#878787]">
+                  <p className="text-xs text-[#9ca3af]">
                     Download in PNG, JPEG, or WEBP with custom width & height
                   </p>
                 </div>
@@ -1727,7 +1727,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               <button
                 type="button"
                 onClick={() => setIsExportModalOpen(false)}
-                className="p-1.5 rounded-lg text-[#878787] hover:text-white hover:bg-[#282828] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1735,7 +1735,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
             {/* Step 1: Export Target */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white uppercase tracking-wider text-[#b3b3b3]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
                 1. Select Export Content
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -1744,15 +1744,15 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   onClick={() => setExportTarget('full')}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     exportTarget === 'full'
-                      ? 'border-[#1ed760] bg-[#1ed760]/10 text-white'
-                      : 'border-[#282828] bg-[#121212] text-[#878787] hover:text-white'
+                      ? 'border-[#1db954]/70 bg-[#1db954]/10 text-[#e4e7ec]'
+                      : 'border-[#282828] bg-[#121212] text-[#9ca3af] hover:text-[#d0d5dd]'
                   }`}
                 >
-                  <div className="flex items-center gap-2 font-bold text-xs text-white">
-                    <FileImage className="w-4 h-4 text-[#1ed760]" />
+                  <div className="flex items-center gap-2 font-semibold text-xs text-[#e4e7ec]">
+                    <FileImage className="w-4 h-4 text-[#3fb970]" />
                     <span>Full Rendered Thumbnail</span>
                   </div>
-                  <p className="text-xs text-[#b3b3b3] mt-1">
+                  <p className="text-xs text-[#9ca3af] mt-1">
                     Complete artwork with bold title, badge, scrim & styling
                   </p>
                 </button>
@@ -1762,15 +1762,15 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   onClick={() => setExportTarget('background_only')}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     exportTarget === 'background_only'
-                      ? 'border-[#1ed760] bg-[#1ed760]/10 text-white'
-                      : 'border-[#282828] bg-[#121212] text-[#878787] hover:text-white'
+                      ? 'border-[#1db954]/70 bg-[#1db954]/10 text-[#e4e7ec]'
+                      : 'border-[#282828] bg-[#121212] text-[#9ca3af] hover:text-[#d0d5dd]'
                   }`}
                 >
-                  <div className="flex items-center gap-2 font-bold text-xs text-white">
+                  <div className="flex items-center gap-2 font-semibold text-xs text-[#e4e7ec]">
                     <Sparkles className="w-4 h-4 text-blue-400" />
                     <span>Pure AI Background Only</span>
                   </div>
-                  <p className="text-xs text-[#b3b3b3] mt-1">
+                  <p className="text-xs text-[#9ca3af] mt-1">
                     Raw AI generated background image without text overlays
                   </p>
                 </button>
@@ -1779,7 +1779,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
             {/* Step 2: File Format Selection */}
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white uppercase tracking-wider text-[#b3b3b3]">
+              <label className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
                 2. Select File Format
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -1794,12 +1794,12 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     onClick={() => setExportFormat(fmt.id as any)}
                     className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                       exportFormat === fmt.id
-                        ? 'border-[#1ed760] bg-[#1ed760]/10 text-white font-bold'
-                        : 'border-[#282828] bg-[#121212] text-[#878787] hover:border-[#3e3e3e]'
+                        ? 'border-[#1db954]/70 bg-[#1db954]/10 text-[#e4e7ec] font-semibold'
+                        : 'border-[#282828] bg-[#121212] text-[#9ca3af] hover:border-[#3e3e3e]'
                     }`}
                   >
-                    <div className="text-xs font-bold text-white">{fmt.name}</div>
-                    <div className="text-xs text-[#b3b3b3] mt-0.5">{fmt.desc}</div>
+                    <div className="text-xs font-semibold text-[#e4e7ec]">{fmt.name}</div>
+                    <div className="text-xs text-[#9ca3af] mt-0.5">{fmt.desc}</div>
                   </button>
                 ))}
               </div>
@@ -1808,10 +1808,10 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             {/* Step 3: Resolution Presets & Custom Dimensions */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider text-[#b3b3b3]">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">
                   3. Dimensions & Aspect Ratio
                 </label>
-                <span className="text-xs font-mono tabular-nums text-[#1ed760]">
+                <span className="text-xs font-mono tabular-nums text-[#3fb970]">
                   {exportWidth} × {exportHeight} px
                 </span>
               </div>
@@ -1828,16 +1828,16 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                       onClick={() => applyDimensionPreset(preset)}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
                         isSelected
-                          ? 'border-[#1ed760] bg-[#1ed760]/10'
+                          ? 'border-[#1db954]/70 bg-[#1db954]/10'
                           : 'border-[#282828] bg-[#121212] hover:border-[#3e3e3e]'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5 text-[#1ed760] shrink-0" />
+                      <Icon className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
                       <div className="overflow-hidden">
-                        <div className="text-xs font-bold text-white truncate font-mono tabular-nums">
+                        <div className="text-xs font-semibold text-[#e4e7ec] truncate font-mono tabular-nums">
                           {preset.width} × {preset.height}
                         </div>
-                        <div className="text-[11px] text-[#b3b3b3] truncate">
+                        <div className="text-[11px] text-[#9ca3af] truncate">
                           {preset.ratio} · {preset.name.split(' ')[0]}
                         </div>
                       </div>
@@ -1849,8 +1849,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {/* Custom Width & Height Inputs */}
               <div className="p-3 bg-[#121212] border border-[#282828] rounded-xl space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white flex items-center gap-1.5">
-                    <Settings2 className="w-3.5 h-3.5 text-[#1ed760]" />
+                  <span className="font-semibold text-[#e4e7ec] flex items-center gap-1.5">
+                    <Settings2 className="w-3.5 h-3.5 text-[#3fb970]" />
                     <span>Custom Pixel Dimensions</span>
                   </span>
 
@@ -1859,8 +1859,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                     onClick={() => setLockAspectRatio(!lockAspectRatio)}
                     className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded cursor-pointer transition-colors ${
                       lockAspectRatio
-                        ? 'bg-[#1ed760]/15 text-[#1ed760]'
-                        : 'bg-[#282828] text-[#878787]'
+                        ? 'bg-[#1db954]/15 text-[#3fb970]'
+                        : 'bg-[#282828] text-[#9ca3af]'
                     }`}
                   >
                     {lockAspectRatio ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
@@ -1870,26 +1870,26 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] text-[#878787]">Width (px)</label>
+                    <label className="text-[11px] text-[#6f7682]">Width (px)</label>
                     <Input
                       type="number"
                       min="100"
                       max="4096"
                       value={exportWidth}
                       onChange={(e) => handleWidthChange(parseInt(e.target.value, 10))}
-                      className="bg-[#181818] border-[#333333] text-xs font-mono text-white"
+                      className="bg-[#181818] border-[#333333] text-xs font-mono text-[#d0d5dd]"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[11px] text-[#878787]">Height (px)</label>
+                    <label className="text-[11px] text-[#6f7682]">Height (px)</label>
                     <Input
                       type="number"
                       min="100"
                       max="4096"
                       value={exportHeight}
                       onChange={(e) => handleHeightChange(parseInt(e.target.value, 10))}
-                      className="bg-[#181818] border-[#333333] text-xs font-mono text-white"
+                      className="bg-[#181818] border-[#333333] text-xs font-mono text-[#d0d5dd]"
                     />
                   </div>
                 </div>
@@ -1900,8 +1900,8 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
             {exportFormat !== 'png' && (
               <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#b3b3b3]">Compression Quality</span>
-                  <span className="font-mono text-[#1ed760] font-bold">
+                  <span className="text-[#9ca3af]">Compression Quality</span>
+                  <span className="font-mono text-[#3fb970] font-semibold">
                     {Math.round(exportQuality * 100)}%
                   </span>
                 </div>
@@ -1912,16 +1912,16 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   step="0.05"
                   value={exportQuality}
                   onChange={(e) => setExportQuality(parseFloat(e.target.value))}
-                  className="w-full accent-[#1ed760] cursor-pointer"
+                  className="w-full accent-[#1db954] cursor-pointer"
                 />
               </div>
             )}
 
             {/* Modal Actions */}
             <div className="flex items-center justify-between pt-3 border-t border-[#282828]">
-              <div className="text-[11px] text-[#878787]">
-                Will download <span className="text-white font-mono">{exportWidth}×{exportHeight}</span> as{' '}
-                <span className="text-[#1ed760] font-bold uppercase">{exportFormat}</span>
+              <div className="text-[11px] text-[#6f7682]">
+                Will download <span className="text-[#d0d5dd] font-mono">{exportWidth}×{exportHeight}</span> as{' '}
+                <span className="text-[#3fb970] font-semibold uppercase">{exportFormat}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1929,7 +1929,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="border-[#3e3e3e] text-white hover:bg-[#282828] text-xs cursor-pointer"
+                  className="border-[#333333] text-[#d0d5dd] hover:bg-[#242424] text-xs cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -1938,7 +1938,7 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
                   onClick={() => handleExecuteDownload()}
                   disabled={isExporting}
                   size="sm"
-                  className="bg-[#1ed760] hover:bg-[#1fdf64] text-black font-extrabold text-xs px-4 gap-1.5 cursor-pointer shadow-lg"
+                  className="bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-xs px-4 gap-1.5 cursor-pointer"
                 >
                   {isExporting ? (
                     <>

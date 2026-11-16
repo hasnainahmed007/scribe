@@ -85,21 +85,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#1ed760]/10 text-[#1ed760] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
-              <h2 id="settings-title" className="text-base font-bold text-white tracking-tight">
+              <h2 id="settings-title" className="text-base font-bold text-[#e4e7ec] tracking-tight">
                 Studio Settings & Preferences
               </h2>
-              <p className="text-xs text-[#b3b3b3]">
+              <p className="text-xs text-[#9ca3af]">
                 Customize your Bengali subtitle editor, shortcuts, and transcription engine
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#b3b3b3] hover:text-white rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+            className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
             aria-label="Close settings"
           >
             <X className="w-5 h-5" />
@@ -110,30 +110,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="px-6 pt-3 border-b border-[#282828] flex items-center gap-2 bg-[#141414]">
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
               activeTab === 'preferences'
-                ? 'bg-[#282828] text-white shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Editor Preferences
           </button>
           <button
             onClick={() => setActiveTab('shortcuts')}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
               activeTab === 'shortcuts'
-                ? 'bg-[#282828] text-white shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Keyboard Shortcuts
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+            className={`px-4 py-2 text-xs font-semibold rounded-full transition-all cursor-pointer ${
               activeTab === 'profile'
-                ? 'bg-[#282828] text-white shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#282828] text-[#e4e7ec] shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Account & Cloud Sync
@@ -146,7 +146,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-5">
               {/* Speaker Prefix */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-white block">
+                <label className="text-xs font-semibold text-[#e4e7ec] block">
                   Default Speaker Label
                 </label>
                 <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     placeholder="Speaker 1"
                     className="max-w-xs text-xs"
                   />
-                  <span className="text-xs text-[#b3b3b3]">
+                  <span className="text-xs text-[#9ca3af]">
                     Used when inserting new speech segments
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Timestamp Precision */}
               <div className="space-y-2 pt-2 border-t border-[#282828]">
-                <label className="text-xs font-semibold text-white block">
+                <label className="text-xs font-semibold text-[#e4e7ec] block">
                   Timecode Display Precision
                 </label>
                 <div className="flex items-center gap-3">
@@ -173,8 +173,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => setTimestampPrecision('milliseconds')}
                     className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                       timestampPrecision === 'milliseconds'
-                        ? 'bg-[#1ed760] text-black border-[#1ed760]'
-                        : 'bg-transparent text-[#b3b3b3] border-[#383838] hover:border-white'
+                        ? 'bg-[#1db954] text-[#08100b] border-[#1db954]'
+                        : 'bg-transparent text-[#9ca3af] border-[#383838] hover:border-[#4b5563] hover:text-[#d0d5dd]'
                     }`}
                   >
                     High Precision (00:01:23.450)
@@ -184,8 +184,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={() => setTimestampPrecision('seconds')}
                     className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                       timestampPrecision === 'seconds'
-                        ? 'bg-[#1ed760] text-black border-[#1ed760]'
-                        : 'bg-transparent text-[#b3b3b3] border-[#383838] hover:border-white'
+                        ? 'bg-[#1db954] text-[#08100b] border-[#1db954]'
+                        : 'bg-transparent text-[#9ca3af] border-[#383838] hover:border-[#4b5563] hover:text-[#d0d5dd]'
                     }`}
                   >
                     Standard Seconds (01:23)
@@ -197,10 +197,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="space-y-3 pt-3 border-t border-[#282828]">
                 <label className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828] cursor-pointer hover:border-[#383838]">
                   <div className="pr-4">
-                    <div className="text-xs font-semibold text-white">
+                    <div className="text-xs font-semibold text-[#e4e7ec]">
                       Autoplay on Segment Click
                     </div>
-                    <div className="text-xs text-[#b3b3b3]">
+                    <div className="text-xs text-[#9ca3af]">
                       Immediately play audio from segment start time when clicking in the transcript
                     </div>
                   </div>
@@ -208,16 +208,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="checkbox"
                     checked={autoplayOnSelect}
                     onChange={(e) => setAutoplayOnSelect(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#1ed760] accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded text-[#1db954] accent-[#1db954] cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828] cursor-pointer hover:border-[#383838]">
                   <div className="pr-4">
-                    <div className="text-xs font-semibold text-white">
+                    <div className="text-xs font-semibold text-[#e4e7ec]">
                       Auto-scroll with Audio Playback
                     </div>
-                    <div className="text-xs text-[#b3b3b3]">
+                    <div className="text-xs text-[#9ca3af]">
                       Keep active playing subtitle segment visible in viewport
                     </div>
                   </div>
@@ -225,16 +225,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="checkbox"
                     checked={autoScrollTranscript}
                     onChange={(e) => setAutoScrollTranscript(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#1ed760] accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded text-[#1db954] accent-[#1db954] cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between p-3 rounded-xl bg-[#1f1f1f] border border-[#282828] cursor-pointer hover:border-[#383838]">
                   <div className="pr-4">
-                    <div className="text-xs font-semibold text-white">
+                    <div className="text-xs font-semibold text-[#e4e7ec]">
                       Text & Punctuation Auto-Normalization
                     </div>
-                    <div className="text-xs text-[#b3b3b3]">
+                    <div className="text-xs text-[#9ca3af]">
                       Clean Unicode diacritics, whitespace, and punctuation for crisp rendering across all languages
                     </div>
                   </div>
@@ -242,14 +242,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="checkbox"
                     checked={textNormalization}
                     onChange={(e) => setTextNormalization(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#1ed760] accent-[#1ed760] cursor-pointer"
+                    className="w-4 h-4 rounded text-[#1db954] accent-[#1db954] cursor-pointer"
                   />
                 </label>
               </div>
 
               {/* Default Export Format */}
               <div className="space-y-2 pt-3 border-t border-[#282828]">
-                <label className="text-xs font-semibold text-white block">
+                <label className="text-xs font-semibold text-[#e4e7ec] block">
                   Default Subtitle Format for Quick Export
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -260,8 +260,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onClick={() => setDefaultExportFormat(fmt)}
                       className={`px-3 py-1 rounded-full text-xs font-mono uppercase font-bold border transition-all cursor-pointer ${
                         defaultExportFormat === fmt
-                          ? 'bg-[#1ed760] text-black border-[#1ed760]'
-                          : 'bg-[#1f1f1f] text-[#b3b3b3] border-[#282828] hover:border-white'
+                          ? 'bg-[#1db954] text-[#08100b] border-[#1db954]'
+                          : 'bg-[#1f1f1f] text-[#9ca3af] border-[#282828] hover:border-[#4b5563] hover:text-[#d0d5dd]'
                       }`}
                     >
                       {fmt}
@@ -274,7 +274,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {activeTab === 'shortcuts' && (
             <div className="space-y-4">
-              <p className="text-xs text-[#b3b3b3]">
+              <p className="text-xs text-[#9ca3af]">
                 Power through subtitle editing with these standard media hotkeys:
               </p>
 
@@ -292,8 +292,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     key={idx}
                     className="flex items-center justify-between p-2.5 rounded-xl bg-[#1f1f1f] border border-[#282828]"
                   >
-                    <span className="text-xs text-[#b3b3b3]">{item.desc}</span>
-                    <kbd className="px-2.5 py-1 text-xs font-mono font-bold text-white bg-[#121212] border border-[#383838] rounded-md shadow-inner">
+                    <span className="text-xs text-[#9ca3af]">{item.desc}</span>
+                    <kbd className="px-2.5 py-1 text-xs font-mono font-bold text-[#d0d5dd] bg-[#121212] border border-[#383838] rounded-md shadow-inner">
                       {item.key}
                     </kbd>
                   </div>
@@ -307,8 +307,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <Card className="p-4 space-y-3 bg-[#181818] border-[#282828]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-white">{user?.name || 'Creator User'}</h3>
-                    <p className="text-xs text-[#b3b3b3]">{user?.email || 'user@scriby.com'}</p>
+                    <h3 className="text-sm font-bold text-[#e4e7ec]">{user?.name || 'Creator User'}</h3>
+                    <p className="text-xs text-[#9ca3af]">{user?.email || 'user@scriby.com'}</p>
                   </div>
                   <Badge variant="default" className="text-xs font-bold">
                     {user?.planName || 'Free Starter'}
@@ -316,8 +316,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 <div className="pt-3 border-t border-[#282828] flex items-center justify-between text-xs">
-                  <span className="text-[#b3b3b3]">Remaining Audio Credits:</span>
-                  <span className="font-mono font-bold text-[#1ed760]">
+                  <span className="text-[#9ca3af]">Remaining Audio Credits:</span>
+                  <span className="font-mono font-bold text-[#3fb970]">
                     {user?.creditsRemaining ?? 30} Minutes
                   </span>
                 </div>
@@ -325,14 +325,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
               {/* Cloud Sync Connection Status */}
               <div className="p-4 rounded-xl bg-[#141414] border border-[#282828] space-y-2">
-                <div className="flex items-center gap-2 text-xs font-semibold text-white">
-                  <Database className="w-4 h-4 text-[#1ed760]" />
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#e4e7ec]">
+                  <Database className="w-4 h-4 text-[#3fb970]" />
                   <span>Workspace Cloud Synchronization</span>
                 </div>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-xs text-[#9ca3af] leading-relaxed">
                   Persistent cloud workspace storage connected. All transcript segments, metadata, and audio credits are safely synchronized in real time.
                 </p>
-                <div className="text-xs font-mono text-[#878787]">
+                <div className="text-xs font-mono text-[#6f7682]">
                   Status: Connected · Encryption: SSL/TLS
                 </div>
               </div>
@@ -348,7 +348,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClose();
                       }
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Reset Workspace to Sample Demo</span>
@@ -364,7 +364,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <button
             type="button"
             onClick={handleResetDefaults}
-            className="text-xs text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
+            className="text-xs text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
           >
             Reset Defaults
           </button>

@@ -425,47 +425,47 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
 
   return (
     <Card className="p-6 relative overflow-hidden shadow-2xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-800/80">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[#282828]">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight font-display flex items-center gap-2">
+          <h2 className="text-xl font-bold text-[#e4e7ec] tracking-tight font-display flex items-center gap-2">
             Audio Input & Speech Studio
             <Badge variant="emerald">
               Universal Speech-to-Text
             </Badge>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#9ca3af] mt-1">
             Upload any audio/video file in any language or speak directly into your microphone.
           </p>
         </div>
 
         {/* Mode Selector */}
-        <div className="flex items-center gap-1 p-1 bg-slate-900/90 rounded-lg border border-slate-800 self-start md:self-auto">
+        <div className="flex items-center gap-1 p-1 bg-[#141414] rounded-lg border border-[#282828] self-start md:self-auto">
           <button
             onClick={() => setActiveMode('samples')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               activeMode === 'samples'
-                ? 'bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Demo Clips
           </button>
           <button
             onClick={() => setActiveMode('upload')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               activeMode === 'upload'
-                ? 'bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Upload File
           </button>
           <button
             onClick={() => setActiveMode('record')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               activeMode === 'record'
-                ? 'bg-emerald-500/20 text-emerald-300 shadow-sm border border-emerald-500/30'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
             }`}
           >
             Live Mic
@@ -497,7 +497,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             {isCreditExceeded && onOpenPricing && (
               <button
                 onClick={onOpenPricing}
-                className="px-3 py-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold rounded text-xs shrink-0 whitespace-nowrap shadow-sm"
+                className="px-3 py-1 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-bold rounded text-xs shrink-0 whitespace-nowrap shadow-sm cursor-pointer"
               >
                 Upgrade Plan
               </button>
@@ -510,23 +510,23 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       {isLoading ? (
         <div className="py-14 text-center flex flex-col items-center justify-center">
           <div className="mb-5">
-            <Loader2 className="w-11 h-11 text-[#1ed760] animate-spin" />
+            <Loader2 className="w-11 h-11 text-[#3fb970] animate-spin" />
           </div>
-          <h3 className="text-lg font-bold text-white mb-2 font-display">
+          <h3 className="text-lg font-bold text-[#e4e7ec] mb-2 font-display">
             Transcribing Spoken Audio...
           </h3>
-          <p className="text-sm text-[#1ed760] font-medium">{loadingStep}</p>
-          <div className="mt-6 flex items-center gap-3 text-xs text-[#b3b3b3]">
+          <p className="text-sm text-[#3fb970] font-medium">{loadingStep}</p>
+          <div className="mt-6 flex items-center gap-3 text-xs text-[#9ca3af]">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Audio Received
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Audio Received
             </span>
             <span aria-hidden="true">·</span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Grammar & Punctuation
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Grammar & Punctuation
             </span>
             <span aria-hidden="true">·</span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#1ed760]" /> Timestamp Sync
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Timestamp Sync
             </span>
           </div>
         </div>
@@ -535,35 +535,35 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           {/* Mode 1: Pre-loaded Samples */}
           {activeMode === 'samples' && (
             <div>
-              <div className="text-xs text-slate-400 mb-3 flex items-center justify-between">
+              <div className="text-xs text-[#9ca3af] mb-3 flex items-center justify-between">
                 <span>Select a demo clip for instant one-click testing:</span>
-                <span className="text-emerald-400 font-medium">Free instant demo</span>
+                <span className="text-[#3fb970] font-medium">Free instant demo</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {SAMPLE_AUDIOS.map((sample) => (
                   <div
                     key={sample.id}
-                    className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all flex flex-col justify-between group cursor-pointer hover:bg-slate-900/90"
+                    className="p-4 rounded-xl bg-[#181818] border border-[#282828] hover:border-[#1db954]/45 transition-all flex flex-col justify-between group cursor-pointer hover:bg-[#1f1f1f]"
                     onClick={() => loadSample(sample)}
                   >
                     <div>
-                      <div className="flex items-center justify-between text-xs mb-1.5 text-slate-400">
-                        <span className="text-emerald-400 font-medium">{sample.category}</span>
+                      <div className="flex items-center justify-between text-xs mb-1.5 text-[#9ca3af]">
+                        <span className="text-[#3fb970] font-medium">{sample.category}</span>
                         <span className="font-mono tabular-nums">{sample.durationFormatted}</span>
                       </div>
-                      <h4 className="text-sm font-semibold text-slate-100 group-hover:text-emerald-300 transition-colors font-display line-clamp-1">
+                      <h4 className="text-sm font-semibold text-[#e4e7ec] group-hover:text-[#4cc37c] transition-colors font-display line-clamp-1">
                         {sample.title}
                       </h4>
-                      <p className="text-xs text-slate-400 mt-1.5 line-clamp-2">
+                      <p className="text-xs text-[#9ca3af] mt-1.5 line-clamp-2">
                         {sample.description}
                       </p>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">
+                    <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between">
+                      <span className="text-[11px] text-[#6f7682]">
                         {sample.segments.length} Timed Subtitle Blocks
                       </span>
-                      <button className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/30 transition-colors">
+                      <button className="flex items-center gap-1.5 px-3 py-1 bg-[#1db954]/10 hover:bg-[#1db954]/20 text-[#4cc37c] text-xs font-semibold rounded-lg border border-[#1db954]/25 transition-colors cursor-pointer">
                         <Play className="w-3 h-3 fill-current" />
                         <span>Load Sample</span>
                       </button>
@@ -586,8 +586,8 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
                   dragOver
-                    ? 'border-emerald-400 bg-emerald-500/10'
-                    : 'border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900/60'
+                    ? 'border-[#3fb970] bg-[#1db954]/10'
+                    : 'border-[#2c2c2c] hover:border-[#3c3c3c] bg-[#141414] hover:bg-[#1a1a1a]'
                 }`}
                 onClick={() => {
                   const input = document.createElement('input');
@@ -599,17 +599,17 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                   input.click();
                 }}
               >
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-3 border border-emerald-500/20">
+                <div className="w-12 h-12 rounded-full bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center mx-auto mb-3 border border-[#1db954]/20">
                   <UploadCloud className="w-6 h-6" />
                 </div>
-                <h4 className="text-sm font-semibold text-slate-200 mb-1 font-display">
+                <h4 className="text-sm font-semibold text-[#e4e7ec] mb-1 font-display">
                   Drag and drop audio file or browse from device
                 </h4>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                <p className="text-xs text-[#9ca3af] max-w-sm mx-auto">
                   Supports MP3, WAV, M4A, AAC, WebM, OGG (up to 50MB)
                 </p>
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-medium rounded-lg transition-colors border border-slate-700">
-                  <FileAudio className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#242424] hover:bg-[#2c2c2c] text-[#d0d5dd] text-xs font-medium rounded-lg transition-colors border border-[#323232]">
+                  <FileAudio className="w-3.5 h-3.5 text-[#3fb970]" />
                   <span>Browse Audio File</span>
                 </div>
               </div>
@@ -618,13 +618,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
 
           {/* Mode 3: Live Mic Recording */}
           {activeMode === 'record' && (
-            <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 text-center flex flex-col items-center">
+            <div className="p-6 rounded-xl bg-[#141414] border border-[#282828] text-center flex flex-col items-center">
               <div className="mb-4">
                 <div
                   className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto transition-all ${
                     isRecording
                       ? 'bg-red-500/20 text-red-400 border-2 border-red-500 animate-pulse'
-                      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20'
                   }`}
                 >
                   <Mic className="w-8 h-8" />
@@ -636,12 +636,12 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                   <div className="text-2xl font-mono tabular-nums font-bold text-red-400 mb-2">
                     {formatPlayerTime(recordingSeconds)}
                   </div>
-                  <p className="text-xs text-slate-400 mb-5">
+                  <p className="text-xs text-[#9ca3af] mb-5">
                     Recording voice... Speak clearly in any language into your mic.
                   </p>
                   <button
                     onClick={stopRecording}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg shadow-lg shadow-red-500/20 transition-all active:scale-95"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-[#f3f4f6] text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
                   >
                     <Square className="w-4 h-4 fill-current" />
                     <span>Stop Recording</span>
@@ -649,16 +649,16 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                 </div>
               ) : recordedBlob ? (
                 <div className="w-full max-w-md">
-                  <div className="text-sm font-semibold text-slate-200 mb-1">
+                  <div className="text-sm font-semibold text-[#e4e7ec] mb-1">
                     Recording Finished ({formatPlayerTime(recordingSeconds)})
                   </div>
-                  <p className="text-xs text-slate-400 mb-4">
+                  <p className="text-xs text-[#9ca3af] mb-4">
                     Click below to transcribe this recording into text and timed subtitles.
                   </p>
                   <div className="flex items-center justify-center gap-3">
                     <button
                       onClick={transcribeRecordedAudio}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-semibold rounded-lg shadow-md shadow-emerald-500/20 transition-all"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-all cursor-pointer"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>Transcribe Audio</span>
@@ -669,7 +669,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                         setRecordedUrl(null);
                         setRecordingSeconds(0);
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg border border-slate-700 transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2.5 bg-[#242424] hover:bg-[#2c2c2c] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#323232] transition-colors cursor-pointer"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
                       <span>Record Again</span>
@@ -678,15 +678,15 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
                 </div>
               ) : (
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-200 mb-1 font-display">
+                  <h4 className="text-sm font-semibold text-[#e4e7ec] mb-1 font-display">
                     Speak Directly Into Your Microphone
                   </h4>
-                  <p className="text-xs text-slate-400 mb-5 max-w-sm">
+                  <p className="text-xs text-[#9ca3af] mb-5 max-w-sm">
                     Record voice notes or speech in any language; our speech AI will segment sentences into timecodes.
                   </p>
                   <button
                     onClick={startRecording}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-semibold rounded-lg shadow-md shadow-emerald-500/20 transition-all active:scale-95"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-all active:scale-95 cursor-pointer"
                   >
                     <Mic className="w-4 h-4" />
                     <span>Start Recording</span>

@@ -36,6 +36,7 @@ import { formatPlayerTime } from '../utils/timeFormat';
 import { parseSubtitleToPlainText } from '../utils/subtitleUtils';
 import {
   CUSTOM_ACCENT_ID,
+  SAMPLE_SCRIPTS_BY_LANGUAGE,
   getSynthesisLanguages,
   getCloningLanguages,
   getAccentsForLanguage,
@@ -738,14 +739,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         <div
           className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl border text-sm flex items-center gap-2.5 transition-all animate-in fade-in slide-in-from-bottom-4 ${
             notification.type === 'success'
-              ? 'bg-[#181818] border-[#1ed760] text-white'
-              : 'bg-[#181818] border-red-500 text-white'
+              ? 'bg-[#181818] border-[#1db954]/50 text-[#e4e7ec]'
+              : 'bg-[#181818] border-rose-500/50 text-[#e4e7ec]'
           }`}
         >
           {notification.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-[#1ed760]" />
+            <CheckCircle2 className="w-4 h-4 text-[#3fb970]" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-red-400" />
+            <AlertCircle className="w-4 h-4 text-rose-400" />
           )}
           <span>{notification.message}</span>
         </div>
@@ -755,29 +756,29 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-xl font-extrabold text-white tracking-tight font-display">
+            <h1 className="text-xl font-semibold text-[#e4e7ec] tracking-tight font-display">
               AI Voiceover Studio
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1ed760]/15 text-[#1ed760] border border-[#1ed760]/30 tracking-wide">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1db954]/12 text-[#4cc37c] border border-[#1db954]/25 tracking-wide">
               Voice Clone & Studio TTS
             </span>
           </div>
-          <p className="text-xs text-[#b3b3b3] mt-1">
+          <p className="text-xs text-[#9ca3af] mt-1">
             Professional AI voice cloning, studio text-to-speech, and direct audio export in WAV, MP3, and OGG formats
           </p>
         </div>
 
-        {/* Sub-tab Navigation (Spotify Pill Bar) */}
-        <div className="flex items-center p-1 bg-[#181818] rounded-full border border-[#282828] text-xs font-bold">
+        {/* Sub-tab Navigation */}
+        <div className="flex items-center p-1 bg-[#181818] rounded-full border border-[#282828] text-xs font-semibold">
           <button
             onClick={() => setActiveSubTab('tts')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'tts'
-                ? 'bg-[#282828] text-white font-bold shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#e4e7ec]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#1ed760]" />
+            <Sparkles className="w-3.5 h-3.5 text-[#34a866]" />
             <span>Voiceover Studio</span>
           </button>
 
@@ -785,11 +786,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             onClick={() => setActiveSubTab('clone')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'clone'
-                ? 'bg-[#282828] text-white font-bold shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#e4e7ec]'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-blue-400" />
+            <Layers className="w-3.5 h-3.5 text-blue-400/90" />
             <span>Clone Voice</span>
           </button>
 
@@ -797,11 +798,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             onClick={() => setActiveSubTab('record')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'record'
-                ? 'bg-[#282828] text-white font-bold shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#e4e7ec]'
             }`}
           >
-            <Mic className="w-3.5 h-3.5 text-rose-400" />
+            <Mic className="w-3.5 h-3.5 text-rose-400/90" />
             <span>Live Recorder</span>
           </button>
 
@@ -809,11 +810,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             onClick={() => setActiveSubTab('history')}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
               activeSubTab === 'history'
-                ? 'bg-[#282828] text-white font-bold shadow-sm'
-                : 'text-[#b3b3b3] hover:text-white'
+                ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
+                : 'text-[#9ca3af] hover:text-[#e4e7ec]'
             }`}
           >
-            <FileAudio className="w-3.5 h-3.5 text-amber-400" />
+            <FileAudio className="w-3.5 h-3.5 text-amber-400/90" />
             <span>Recordings ({savedVoiceovers.length})</span>
           </button>
         </div>
@@ -827,32 +828,49 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           {/* Left Column: Script Editor & Tone Controls */}
           <div className="lg:col-span-7 space-y-5">
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">Voiceover Script Text</h3>
+                  <FileText className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">Voiceover Script Text</h3>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {ttsLanguage !== 'auto' && SAMPLE_SCRIPTS_BY_LANGUAGE[ttsLanguage] && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setScript(SAMPLE_SCRIPTS_BY_LANGUAGE[ttsLanguage]);
+                        showToast(`Loaded native ${getShortLanguageLabel(ttsLanguage)} sample script!`);
+                      }}
+                      className="text-xs h-7 gap-1.5 border-[#34373f] text-[#4cc37c] hover:bg-[#24272c] hover:border-[#1db954]/45 cursor-pointer"
+                      title={`Load native ${getShortLanguageLabel(ttsLanguage)} test script`}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Load {getShortLanguageLabel(ttsLanguage)} Sample</span>
+                    </Button>
+                  )}
+
                   {/* Option A: Use Platform Subtitles */}
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={handleOpenPlatformSubtitles}
-                    className="text-xs h-7 gap-1.5 border-[#3e3e3e] text-[#1ed760] hover:bg-[#282828] hover:border-[#1ed760]/50 cursor-pointer"
+                    className="text-xs h-7 gap-1.5 border-[#34373f] text-[#d0d5dd] hover:bg-[#24272c] hover:border-[#1db954]/45 cursor-pointer"
                     title="Import subtitles created in this platform"
                   >
-                    <Layers className="w-3.5 h-3.5" />
+                    <Layers className="w-3.5 h-3.5 text-[#34a866]" />
                     <span>Use Platform Subtitles</span>
                   </Button>
 
                   {/* Option B: Import External SRT / VTT */}
                   <label
-                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs h-7 rounded-md border border-[#3e3e3e] text-white hover:border-blue-400/60 hover:text-blue-300 bg-[#242424] hover:bg-[#2a2a2a] cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs h-7 rounded-md border border-[#34373f] text-[#d0d5dd] hover:border-blue-400/50 hover:text-blue-300 bg-[#222428] hover:bg-[#282b30] cursor-pointer transition-colors"
                     title="Upload external .SRT, .VTT, or text file"
                   >
-                    <Upload className="w-3.5 h-3.5 text-blue-400" />
+                    <Upload className="w-3.5 h-3.5 text-blue-400/90" />
                     <span>Import External .SRT</span>
                     <input
                       ref={srtFileInputRef}
@@ -872,18 +890,18 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Type or paste your voiceover script in any language (English, Bengali, Spanish, Hindi, Arabic, French, German, Japanese, etc.)..."
                   rows={7}
-                  className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-white placeholder-[#535353] focus:border-[#1ed760] focus:ring-1 focus:ring-[#1ed760] outline-none transition-all resize-y leading-relaxed"
+                  className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-[#d0d5dd] placeholder-[#6f7682] focus:border-[#1db954]/55 focus:ring-1 focus:ring-[#1db954]/25 outline-none transition-all resize-y leading-relaxed"
                 />
               </div>
 
               {/* Word & Duration Readout */}
-              <div className="flex items-center justify-between text-xs text-[#878787] pt-1 font-mono">
+              <div className="flex items-center justify-between text-xs text-[#9ca3af] pt-1 font-mono">
                 <div className="flex items-center gap-3">
                   <span>{wordCount} words</span>
                   <span>·</span>
                   <span>{charCount} characters</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#1ed760]">
+                <div className="flex items-center gap-1.5 text-[#3fb970]">
                   <Clock className="w-3.5 h-3.5" />
                   <span>Est. Duration: ~{estimatedSeconds}s</span>
                 </div>
@@ -894,8 +912,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             <Card className="p-5 bg-[#181818] border-[#282828] space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-[#1ed760]" />
-                  <h3 className="text-sm font-bold text-white">Language, Accent &amp; Audio Tuning</h3>
+                  <Sliders className="w-4 h-4 text-[#34a866]" />
+                  <h3 className="text-sm font-semibold text-[#e4e7ec]">Language, Accent &amp; Audio Tuning</h3>
                 </div>
                 {isOverridingCloneDefaults && selectedVoiceCloneDefaults && (
                   <button
@@ -905,7 +923,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       setTtsAccent(selectedVoiceCloneDefaults.accent);
                       setTtsCustomAccent(selectedVoiceCloneDefaults.customAccent);
                     }}
-                    className="text-xs font-semibold text-[#1ed760] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                    className="text-xs font-semibold text-[#3fb970] hover:underline cursor-pointer whitespace-nowrap shrink-0"
                   >
                     Reset to clone default
                   </button>
@@ -919,16 +937,16 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tts-primary-language"
-                      className="text-xs font-semibold text-[#b3b3b3] flex items-center gap-1.5"
+                      className="text-xs font-semibold text-[#9ca3af] flex items-center gap-1.5"
                     >
-                      <Globe className="w-3.5 h-3.5 text-[#1ed760]" />
+                      <Globe className="w-3.5 h-3.5 text-[#34a866]" />
                       <span>Primary Language</span>
                     </label>
                     <select
                       id="tts-primary-language"
                       value={ttsLanguage}
                       onChange={(e) => handleTtsLanguageChange(e.target.value)}
-                      className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                      className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                     >
                       {synthesisLanguages.map((lang) => (
                         <option key={lang.code} value={lang.code}>
@@ -942,7 +960,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tts-accent-select"
-                      className="text-xs font-semibold text-[#b3b3b3]"
+                      className="text-xs font-semibold text-[#9ca3af]"
                     >
                       Accent / Dialect
                     </label>
@@ -950,7 +968,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       id="tts-accent-select"
                       value={ttsAccent}
                       onChange={(e) => setTtsAccent(e.target.value)}
-                      className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                      className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                     >
                       {ttsAccentOptions.map((acc) => (
                         <option key={acc.id} value={acc.label}>
@@ -967,7 +985,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <div className="space-y-1.5">
                     <label
                       htmlFor="tts-custom-accent"
-                      className="text-xs font-semibold text-[#b3b3b3]"
+                      className="text-xs font-semibold text-[#9ca3af]"
                     >
                       Custom Accent / Dialect Description
                     </label>
@@ -979,14 +997,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       value={ttsCustomAccent}
                       onChange={(e) => setTtsCustomAccent(e.target.value)}
                       placeholder="e.g., Scottish Highlands, Rioplatense Buenos Aires, Warm Documentary"
-                      className="h-10 bg-[#121212] border-[#3e3e3e] text-xs text-white focus:border-[#1ed760]"
+                      className="h-10 bg-[#121212] border-[#34373f] text-xs text-[#d0d5dd] focus:border-[#1db954]/55"
                     />
                   </div>
                 )}
 
                 {selectedVoice?.isCustom && selectedVoice.accent && (
-                  <p className="text-xs text-[#878787]">
-                    Synced with cloned voice <span className="text-[#b3b3b3] font-medium">{selectedVoice.name}</span> ({getShortLanguageLabel(selectedVoice.language)} · {selectedVoice.accent}) — change above anytime to override.
+                  <p className="text-xs text-[#9ca3af]">
+                    Synced with cloned voice <span className="text-[#d0d5dd] font-medium">{selectedVoice.name}</span> ({getShortLanguageLabel(selectedVoice.language)} · {selectedVoice.accent}) — change above anytime to override.
                   </p>
                 )}
               </div>
@@ -994,11 +1012,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Speech Delivery Tone */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Delivery Tone</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Delivery Tone</label>
                   <select
                     value={tone}
                     onChange={(e) => setTone(e.target.value as VoiceTone)}
-                    className="w-full h-10 bg-[#242424] border border-[#3e3e3e] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                   >
                     <option value="natural">Natural Conversational</option>
                     <option value="broadcast">Professional Broadcast / News</option>
@@ -1009,9 +1027,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                 {/* Speech Speed */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-semibold text-[#b3b3b3]">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#9ca3af]">
                     <span>Speed</span>
-                    <span className="font-mono text-[#1ed760] tabular-nums">{speed}x</span>
+                    <span className="font-mono text-[#3fb970] tabular-nums">{speed}x</span>
                   </div>
                   <input
                     type="range"
@@ -1020,9 +1038,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     step="0.05"
                     value={speed}
                     onChange={(e) => setSpeed(parseFloat(e.target.value))}
-                    className="w-full accent-[#1ed760] cursor-pointer"
+                    className="w-full accent-[#1db954] cursor-pointer"
                   />
-                  <div className="flex justify-between text-xs text-[#878787] font-mono tabular-nums">
+                  <div className="flex justify-between text-xs text-[#6f7682] font-mono tabular-nums">
                     <span>0.75x</span>
                     <span>1.0x</span>
                     <span>1.5x</span>
@@ -1031,17 +1049,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                 {/* Export Audio Format */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Export Format</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Export Format</label>
                   <div className="grid grid-cols-3 gap-1 bg-[#121212] p-1 rounded-lg border border-[#282828] h-10 items-center">
                     {(['wav', 'mp3', 'ogg'] as AudioExportFormat[]).map((fmt) => (
                       <button
                         key={fmt}
                         type="button"
                         onClick={() => setExportFormat(fmt)}
-                        className={`h-full text-xs font-bold rounded uppercase transition-colors cursor-pointer ${
+                        className={`h-full text-xs font-semibold rounded uppercase transition-colors cursor-pointer ${
                           exportFormat === fmt
-                            ? 'bg-[#1ed760] text-black shadow'
-                            : 'text-[#b3b3b3] hover:text-white'
+                            ? 'bg-[#1db954] text-[#08100b] shadow-sm'
+                            : 'text-[#9ca3af] hover:text-[#e4e7ec]'
                         }`}
                       >
                         {fmt}
@@ -1069,16 +1087,16 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <Button
                   onClick={handleGenerateVoiceover}
                   disabled={isGenerating || !script.trim()}
-                  className="w-full h-11 bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-[1.01] text-black font-extrabold text-sm rounded-xl transition-all shadow-[0_4px_16px_rgba(30,215,96,0.3)] cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full h-11 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-sm rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                 >
                   {isGenerating ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#08100b]" />
                       <span>Synthesizing Voiceover Audio ({exportFormat.toUpperCase()})...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 fill-black" />
+                      <Sparkles className="w-4 h-4" />
                       <span>Generate Voiceover ({exportFormat.toUpperCase()})</span>
                     </>
                   )}
@@ -1088,15 +1106,15 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
             {/* Live Waveform Preview Player for Synthesized Voiceover */}
             {currentVoiceover && (
-              <Card className="p-5 bg-gradient-to-br from-[#181818] to-[#121212] border border-[#1ed760]/40 rounded-xl space-y-4 shadow-xl">
-                <div className="flex items-center justify-between">
+              <Card className="p-5 bg-gradient-to-br from-[#181818] to-[#141414] border border-[#1db954]/35 rounded-xl space-y-4 shadow-lg">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#1ed760]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#1db954]" />
                     <div>
-                      <h4 className="text-sm font-bold text-white font-display">
+                      <h4 className="text-sm font-semibold text-[#e4e7ec] font-display">
                         Ready: {currentVoiceover.voiceName}
                       </h4>
-                      <p className="text-xs text-[#b3b3b3] font-mono tabular-nums">
+                      <p className="text-xs text-[#9ca3af] font-mono tabular-nums">
                         {currentVoiceover.format.toUpperCase()} · {formatPlayerTime(audioDuration || currentVoiceover.durationSeconds)}
                         {currentVoiceover.languageLabel ? ` · ${currentVoiceover.languageLabel}` : ''}
                         {currentVoiceover.accent ? ` · ${currentVoiceover.accent}` : ''}
@@ -1109,7 +1127,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <a
                       href={`${currentVoiceover.audioUrl}&download=1`}
                       download={`scriby-voiceover-${currentVoiceover.voiceoverId}.${currentVoiceover.format}`}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#282828] hover:bg-[#333333] hover:text-[#1ed760] text-white text-xs font-bold rounded-lg border border-[#3e3e3e] transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#24272c] hover:bg-[#2e3238] hover:text-[#4cc37c] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#34373f] transition-all cursor-pointer"
                       title={`Download as ${currentVoiceover.format.toUpperCase()}`}
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -1128,7 +1146,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         );
                         showToast('Voiceover loaded into Subtitle Editor!');
                       }}
-                      className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
+                      className="text-xs h-8 gap-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Send to Subtitles</span>
@@ -1147,7 +1165,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           source: 'generate',
                         })
                       }
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#282828] hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 text-xs font-bold rounded-lg border border-rose-500/30 hover:border-rose-500/50 transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#24272c] hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 text-xs font-semibold rounded-lg border border-rose-500/25 hover:border-rose-500/45 transition-all cursor-pointer"
                       title="Delete this generated voiceover"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1167,18 +1185,18 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       audioPlayerRef.current.currentTime = percent * audioDuration;
                       setCurrentTime(percent * audioDuration);
                     }}
-                    className="h-2 bg-[#333333] rounded-full cursor-pointer relative overflow-hidden group hover:h-2.5 transition-all"
+                    className="h-2 bg-[#34373f] rounded-full cursor-pointer relative overflow-hidden group hover:h-2.5 transition-all"
                   >
                     <div
-                      className="h-full bg-[#1ed760] rounded-full transition-all"
+                      className="h-full bg-[#1db954] rounded-full transition-all"
                       style={{
                         width: `${audioDuration > 0 ? (currentTime / audioDuration) * 100 : 0}%`,
                       }}
                     />
                   </div>
 
-                  <div className="flex justify-between text-[11px] font-mono text-[#878787]">
-                    <span className="text-[#1ed760] font-semibold">{formatPlayerTime(currentTime)}</span>
+                  <div className="flex justify-between text-[11px] font-mono text-[#6f7682]">
+                    <span className="text-[#3fb970] font-semibold">{formatPlayerTime(currentTime)}</span>
                     <span>{formatPlayerTime(audioDuration || currentVoiceover.durationSeconds)}</span>
                   </div>
                 </div>
@@ -1190,7 +1208,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       onClick={() => {
                         if (audioPlayerRef.current) audioPlayerRef.current.currentTime = 0;
                       }}
-                      className="p-1.5 text-[#b3b3b3] hover:text-white transition-colors cursor-pointer"
+                      className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
                       title="Restart"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -1198,7 +1216,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                     <button
                       onClick={togglePlayGenerated}
-                      className="w-10 h-10 rounded-full bg-[#1ed760] hover:bg-[#1fdf64] text-black flex items-center justify-center font-bold shadow-md hover:scale-105 transition-all cursor-pointer"
+                      className="w-10 h-10 rounded-full bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] flex items-center justify-center font-semibold shadow-sm transition-all cursor-pointer"
                     >
                       {isPlaying ? (
                         <Pause className="w-4 h-4 fill-current" />
@@ -1217,7 +1235,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           setIsMuted(!isMuted);
                         }
                       }}
-                      className="text-[#b3b3b3] hover:text-white"
+                      className="text-[#9ca3af] hover:text-[#e4e7ec]"
                     >
                       {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                     </button>
@@ -1236,7 +1254,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           audioPlayerRef.current.muted = false;
                         }
                       }}
-                      className="w-20 accent-[#1ed760] cursor-pointer"
+                      className="w-20 accent-[#1db954] cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1248,8 +1266,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Select Voice Persona</h3>
-                <p className="text-xs text-[#878787]">
+                <h3 className="text-sm font-semibold text-[#e4e7ec]">Select Voice Persona</h3>
+                <p className="text-xs text-[#9ca3af]">
                   Default voices or your custom voice clones
                 </p>
               </div>
@@ -1258,7 +1276,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveSubTab('clone')}
-                className="h-7 text-xs border-[#1ed760]/40 text-[#1ed760] hover:bg-[#1ed760]/10 gap-1.5"
+                className="h-7 text-xs border-[#1db954]/35 text-[#4cc37c] hover:bg-[#1db954]/10 gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Clone Voice</span>
@@ -1268,8 +1286,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             {/* Voices Grid */}
             <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
               {isLoadingVoices && (
-                <div className="text-center py-8 text-xs text-[#b3b3b3]">
-                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#1ed760]" />
+                <div className="text-center py-8 text-xs text-[#9ca3af]">
+                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#34a866]" />
                   Loading voice profiles...
                 </div>
               )}
@@ -1284,20 +1302,20 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     onClick={() => handleSelectVoice(voice)}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
                       isSelected
-                        ? 'bg-[#242424] border-[#1ed760] shadow-[0_0_12px_rgba(30,215,96,0.15)]'
-                        : 'bg-[#181818] border-[#282828] hover:border-[#3e3e3e]'
+                        ? 'bg-[#202422] border-[#1db954]/55'
+                        : 'bg-[#181818] border-[#282828] hover:border-[#34373f]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-start gap-3">
                         {/* Voice Avatar Badge */}
                         <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                          className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${
                             voice.gender === 'female' || voice.vocalFingerprint?.detectedGender === 'female'
-                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              ? 'bg-rose-500/15 text-rose-300 border border-rose-500/25'
                               : voice.isCustom
-                              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-blue-500/15 text-blue-300 border border-blue-500/25'
+                              : 'bg-emerald-500/15 text-[#4cc37c] border border-emerald-500/25'
                           }`}
                         >
                           {voice.gender === 'female' || voice.vocalFingerprint?.detectedGender === 'female'
@@ -1309,16 +1327,16 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-white">{voice.name}</span>
+                            <span className="font-semibold text-sm text-[#e4e7ec]">{voice.name}</span>
                             <span
                               className={`text-xs font-semibold ${
-                                voice.isCustom ? 'text-blue-300' : 'text-[#1ed760]'
+                                voice.isCustom ? 'text-blue-300/90' : 'text-[#3fb970]'
                               }`}
                             >
                               {voice.isCustom ? '· Cloned' : '· Studio'}
                             </span>
                           </div>
-                          <p className="text-xs text-[#878787] mt-0.5 font-mono tabular-nums">
+                          <p className="text-xs text-[#9ca3af] mt-0.5 font-mono tabular-nums">
                             {voice.gender === 'female'
                               ? 'Female'
                               : voice.gender === 'male'
@@ -1333,7 +1351,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                             {voice.isCustom && voice.durationSeconds ? ` · ${voice.durationSeconds}s` : ''}
                           </p>
                           {(voice.description || voice.vocalFingerprint?.pitchRegister) && (
-                            <p className="text-xs text-[#b3b3b3] mt-1 line-clamp-2">
+                            <p className="text-xs text-[#9ca3af] mt-1 line-clamp-2">
                               {voice.description ||
                                 [voice.vocalFingerprint?.pitchRegister, voice.vocalFingerprint?.vocalTimbre]
                                   .filter(Boolean)
@@ -1349,8 +1367,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           onClick={(e) => togglePlaySample(voice, e)}
                           className={`p-2 rounded-full transition-colors cursor-pointer ${
                             isSamplePlaying
-                              ? 'bg-[#1ed760] text-black'
-                              : 'bg-[#282828] text-[#b3b3b3] hover:text-white hover:bg-[#333333]'
+                              ? 'bg-[#1db954] text-[#08100b]'
+                              : 'bg-[#24272c] text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#2e3238]'
                           }`}
                           title="Preview voice sample"
                         >
@@ -1364,7 +1382,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         {voice.isCustom && (
                           <button
                             onClick={(e) => handleDeleteVoice(voice.id, e)}
-                            className="p-1.5 text-[#535353] hover:text-red-400 rounded-lg hover:bg-[#282828] transition-colors"
+                            className="p-1.5 text-[#6f7682] hover:text-rose-400 rounded-lg hover:bg-[#282828] transition-colors"
                             title="Delete custom voice profile"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1387,17 +1405,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         <div className="max-w-3xl mx-auto space-y-6">
           <Card className="p-6 bg-[#181818] border-[#282828] space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight font-display">
+              <h2 className="text-lg font-semibold text-[#e4e7ec] tracking-tight font-display">
                 Clone Your Voice
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1">
+              <p className="text-xs text-[#9ca3af] mt-1">
                 Record your voice for 15-30 seconds or upload a clean voice sample to clone your personal voice for automatic AI voiceovers.
               </p>
             </div>
 
             {/* Step 1: Voice Sample Source (Record Mic or Upload File) */}
             <div className="space-y-3">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#d0d5dd] uppercase tracking-wider">
                 Step 1: Provide Voice Sample (15-30 Seconds)
               </label>
 
@@ -1406,23 +1424,23 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <div
                   className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-3 transition-all ${
                     isRecording
-                      ? 'bg-red-500/10 border-red-500/50'
+                      ? 'bg-rose-500/10 border-rose-500/45'
                       : 'bg-[#121212] border-[#282828]'
                   }`}
                 >
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      isRecording ? 'bg-red-500 text-white animate-pulse' : 'bg-[#282828] text-[#1ed760]'
+                      isRecording ? 'bg-rose-500 text-[#e4e7ec] animate-pulse' : 'bg-[#24272c] text-[#34a866]'
                     }`}
                   >
                     <Mic className="w-6 h-6" />
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-white">
+                    <h4 className="text-sm font-semibold text-[#e4e7ec]">
                       {isRecording ? `Recording... (${recordingSeconds}s)` : 'Record from Microphone'}
                     </h4>
-                    <p className="text-[11px] text-[#878787] mt-0.5">
+                    <p className="text-[11px] text-[#6f7682] mt-0.5">
                       Read aloud in natural speaking cadence
                     </p>
                   </div>
@@ -1442,7 +1460,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={startRecording}
-                      className="text-xs gap-1.5 border-[#3e3e3e] text-[#1ed760] hover:bg-[#282828]"
+                      className="text-xs gap-1.5 border-[#34373f] text-[#4cc37c] hover:bg-[#24272c]"
                     >
                       <Mic className="w-3.5 h-3.5" />
                       <span>Start Voice Recording</span>
@@ -1452,13 +1470,13 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                 {/* File Upload Box */}
                 <div className="p-4 rounded-xl border bg-[#121212] border-[#282828] flex flex-col items-center justify-center text-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-[#282828] text-blue-400 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-[#24272c] text-blue-400/90 flex items-center justify-center">
                     <Upload className="w-6 h-6" />
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-white">Upload Audio Sample</h4>
-                    <p className="text-[11px] text-[#878787] mt-0.5">
+                    <h4 className="text-sm font-semibold text-[#e4e7ec]">Upload Audio Sample</h4>
+                    <p className="text-[11px] text-[#6f7682] mt-0.5">
                       WAV, MP3, OGG, or M4A audio file
                     </p>
                   </div>
@@ -1470,7 +1488,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       onChange={handleVoiceFileUpload}
                       className="hidden"
                     />
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-[#3e3e3e] text-white hover:bg-[#282828] transition-colors">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#34373f] text-[#d0d5dd] hover:bg-[#24272c] transition-colors">
                       <FolderOpen className="w-3.5 h-3.5" />
                       <span>Choose Audio File</span>
                     </span>
@@ -1479,19 +1497,19 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               </div>
 
               {/* Sample Reading Prompt Helper */}
-              <div className="p-3 bg-[#121212] rounded-xl border border-[#242424] text-xs text-[#b3b3b3] space-y-1">
-                <span className="font-bold text-white">Recommended sample reading text (any language):</span>
-                <p className="italic text-[#878787]">
+              <div className="p-3 bg-[#121212] rounded-xl border border-[#24262c] text-xs text-[#9ca3af] space-y-1">
+                <span className="font-semibold text-[#d0d5dd]">Recommended sample reading text (any language):</span>
+                <p className="italic text-[#6f7682]">
                   &quot;I am recording this audio sample to clone my personal voice in Scriby AI. This recording will capture my natural cadence, tone, and pronunciation for automated voiceovers.&quot;
                 </p>
               </div>
 
               {/* Sample Audio Player Preview */}
               {cloneAudioUrl && (
-                <div className="p-3 bg-[#242424] rounded-xl border border-[#1ed760]/30 flex items-center justify-between">
+                <div className="p-3 bg-[#202422] rounded-xl border border-[#1db954]/30 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1ed760]" />
-                    <span className="text-xs font-bold text-white">
+                    <CheckCircle2 className="w-4 h-4 text-[#3fb970]" />
+                    <span className="text-xs font-semibold text-[#e4e7ec]">
                       Sample Captured (~{cloneDuration || 15}s)
                     </span>
                   </div>
@@ -1502,28 +1520,28 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
             {/* Step 2: Voice Profile Information */}
             <div className="space-y-4 pt-2 border-t border-[#282828]">
-              <label className="text-xs font-bold text-white uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#d0d5dd] uppercase tracking-wider">
                 Step 2: Voice Profile Details
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Voice Name</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Voice Name</label>
                   <Input
                     type="text"
                     value={cloneName}
                     onChange={(e) => setCloneName(e.target.value)}
                     placeholder="e.g., My Studio Narrator Voice"
-                    className="bg-[#121212] border-[#282828] text-white"
+                    className="bg-[#121212] border-[#282828] text-[#d0d5dd]"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-[#b3b3b3]">Gender / Timbre</label>
+                  <label className="text-xs font-semibold text-[#9ca3af]">Gender / Timbre</label>
                   <select
                     value={cloneGender}
                     onChange={(e) => setCloneGender(e.target.value as VoiceGender)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                   >
                     <option value="custom">Auto-Detect from Voice Sample</option>
                     <option value="male">Male (Deep Studio Voice)</option>
@@ -1532,14 +1550,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="clone-primary-language" className="text-xs font-semibold text-[#b3b3b3]">
+                  <label htmlFor="clone-primary-language" className="text-xs font-semibold text-[#9ca3af]">
                     Primary Language
                   </label>
                   <select
                     id="clone-primary-language"
                     value={cloneLanguage}
                     onChange={(e) => handleCloneLanguageChange(e.target.value)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                   >
                     {cloningLanguages.map((lang) => (
                       <option key={lang.code} value={lang.code}>
@@ -1550,14 +1568,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="clone-accent-select" className="text-xs font-semibold text-[#b3b3b3]">
+                  <label htmlFor="clone-accent-select" className="text-xs font-semibold text-[#9ca3af]">
                     Accent / Dialect
                   </label>
                   <select
                     id="clone-accent-select"
                     value={cloneAccent}
                     onChange={(e) => setCloneAccent(e.target.value)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-white rounded-lg px-3 outline-none focus:border-[#1ed760]"
+                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                   >
                     {cloneAccentOptions.map((acc) => (
                       <option key={acc.id} value={acc.label}>
@@ -1571,7 +1589,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
               {cloneAccent === CUSTOM_ACCENT_ID && (
                 <div className="space-y-1.5">
-                  <label htmlFor="clone-custom-accent" className="text-xs font-semibold text-[#b3b3b3]">
+                  <label htmlFor="clone-custom-accent" className="text-xs font-semibold text-[#9ca3af]">
                     Custom Accent / Dialect Style
                   </label>
                   <Input
@@ -1582,19 +1600,19 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     value={cloneCustomAccent}
                     onChange={(e) => setCloneCustomAccent(e.target.value)}
                     placeholder="e.g., Sylheti-inflected Warm, Scottish Highlands, Calm Documentary"
-                    className="h-10 bg-[#121212] border-[#282828] text-xs text-white focus:border-[#1ed760]"
+                    className="h-10 bg-[#121212] border-[#282828] text-xs text-[#d0d5dd] focus:border-[#1db954]/55"
                   />
                 </div>
               )}
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[#b3b3b3]">Description (Optional)</label>
+                <label className="text-xs font-semibold text-[#9ca3af]">Description (Optional)</label>
                 <Input
                   type="text"
                   value={cloneDescription}
                   onChange={(e) => setCloneDescription(e.target.value)}
                   placeholder="e.g., Warm documentary narrator voice for tech reviews"
-                  className="bg-[#121212] border-[#282828] text-white"
+                  className="bg-[#121212] border-[#282828] text-[#d0d5dd]"
                 />
               </div>
 
@@ -1603,11 +1621,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <Button
                   onClick={handleSaveVoiceClone}
                   disabled={isCloning || !cloneName.trim() || !cloneAudioBlob}
-                  className="w-full h-11 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-extrabold text-sm rounded-xl transition-all shadow-[0_4px_16px_rgba(30,215,96,0.3)] cursor-pointer flex items-center justify-center gap-2"
+                  className="w-full h-11 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-sm rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                 >
                   {isCloning ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                      <RefreshCw className="w-4 h-4 animate-spin text-[#08100b]" />
                       <span>Analyzing Voice &amp; Saving Profile...</span>
                     </>
                   ) : (
@@ -1630,10 +1648,10 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         <div className="max-w-2xl mx-auto space-y-6">
           <Card className="p-6 bg-[#181818] border-[#282828] text-center space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight font-display">
+              <h2 className="text-lg font-semibold text-[#e4e7ec] tracking-tight font-display">
                 Studio Audio Recorder & Exporter
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1">
+              <p className="text-xs text-[#9ca3af] mt-1">
                 Record your voice directly in the browser with studio quality and download in WAV, MP3, or OGG format.
               </p>
             </div>
@@ -1641,16 +1659,16 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             {/* Big Record Button & Timer */}
             <div className="py-6 flex flex-col items-center justify-center gap-4">
               <div
-                className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-2xl ${
+                className={`w-24 h-24 rounded-full flex items-center justify-center transition-all shadow-lg ${
                   isRecording
-                    ? 'bg-red-500 text-white animate-pulse shadow-red-500/30'
-                    : 'bg-[#1ed760] text-black shadow-[#1ed760]/30 hover:scale-105'
+                    ? 'bg-rose-500 text-[#e4e7ec] animate-pulse'
+                    : 'bg-[#1db954] text-[#08100b]'
                 }`}
               >
                 {isRecording ? <Mic className="w-10 h-10" /> : <Mic className="w-10 h-10" />}
               </div>
 
-              <div className="font-mono tabular-nums text-2xl font-bold text-white">
+              <div className="font-mono tabular-nums text-2xl font-semibold text-[#e4e7ec]">
                 {formatPlayerTime(recordingSeconds)}
               </div>
 
@@ -1659,7 +1677,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   variant="destructive"
                   size="lg"
                   onClick={stopRecording}
-                  className="rounded-full px-8 font-bold gap-2"
+                  className="rounded-full px-8 font-semibold gap-2"
                 >
                   <MicOff className="w-4 h-4" />
                   <span>Stop Recording</span>
@@ -1668,7 +1686,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 <Button
                   size="lg"
                   onClick={startRecording}
-                  className="rounded-full px-8 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-extrabold gap-2"
+                  className="rounded-full px-8 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold gap-2"
                 >
                   <Mic className="w-4 h-4" />
                   <span>Start Live Recording</span>
@@ -1681,20 +1699,20 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               <div className="p-4 bg-[#121212] rounded-xl border border-[#282828] space-y-4 text-left">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#1ed760]" />
-                    <span className="text-xs font-bold text-white">
+                    <CheckCircle2 className="w-4 h-4 text-[#3fb970]" />
+                    <span className="text-xs font-semibold text-[#e4e7ec]">
                       Recording Ready ({formatPlayerTime(recordingSeconds)})
                     </span>
                   </div>
                   <audio controls src={liveRecordedUrl} className="h-8 max-w-[220px]" />
                 </div>
 
-                <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-[#242424]">
+                <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-[#24262c]">
                   {/* Download Direct */}
                   <a
                     href={liveRecordedUrl}
                     download={`scriby-recording-${Date.now()}.wav`}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#282828] hover:bg-[#333333] hover:text-[#1ed760] text-white text-xs font-bold rounded-lg border border-[#3e3e3e] transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#24272c] hover:bg-[#2e3238] hover:text-[#4cc37c] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#34373f] transition-colors"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download Audio (WAV)</span>
@@ -1723,7 +1741,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           showToast('Live recording saved to Recordings archive!');
                         }
                       }}
-                      className="text-xs h-8 gap-1.5 border-[#3e3e3e] text-white hover:border-[#1ed760] hover:text-[#1ed760] cursor-pointer"
+                      className="text-xs h-8 gap-1.5 border-[#34373f] text-[#d0d5dd] hover:border-[#1db954]/50 hover:text-[#4cc37c] cursor-pointer"
                     >
                       <FolderOpen className="w-3.5 h-3.5" />
                       <span>Save to Recordings</span>
@@ -1741,7 +1759,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         );
                         showToast('Live recording loaded into Subtitle Editor with synced subtitles!');
                       }}
-                      className="text-xs h-8 gap-1.5 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
+                      className="text-xs h-8 gap-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Send to Subtitles</span>
@@ -1755,7 +1773,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         setRecordingSeconds(0);
                         showToast('Live recording discarded.');
                       }}
-                      className="p-1.5 text-[#535353] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      className="p-1.5 text-[#6f7682] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
                       title="Discard recording"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1775,10 +1793,10 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         <Card className="p-5 bg-[#181818] border-[#282828] space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
             <div>
-              <h3 className="text-sm font-bold text-white font-display">
+              <h3 className="text-sm font-semibold text-[#e4e7ec] font-display">
                 Generated Voiceover Archive
               </h3>
-              <p className="text-xs text-[#878787]">
+              <p className="text-xs text-[#9ca3af]">
                 Saved audio recordings and speech synthesis sessions
               </p>
             </div>
@@ -1788,7 +1806,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               size="sm"
               onClick={fetchSavedVoiceovers}
               disabled={isLoadingHistory}
-              className="text-xs h-7 gap-1 border-[#3e3e3e] text-[#b3b3b3]"
+              className="text-xs h-7 gap-1 border-[#34373f] text-[#9ca3af]"
             >
               <RefreshCw className={`w-3 h-3 ${isLoadingHistory ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
@@ -1797,12 +1815,12 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
           {savedVoiceovers.length === 0 ? (
             <div className="text-center py-12 space-y-2">
-              <Headphones className="w-8 h-8 text-[#535353] mx-auto" />
-              <p className="text-xs text-[#878787]">No generated voiceovers yet.</p>
+              <Headphones className="w-8 h-8 text-[#6f7682] mx-auto" />
+              <p className="text-xs text-[#9ca3af]">No generated voiceovers yet.</p>
               <Button
                 size="sm"
                 onClick={() => setActiveSubTab('tts')}
-                className="text-xs bg-[#1ed760] text-black font-bold"
+                className="text-xs bg-[#1db954] text-[#08100b] font-semibold"
               >
                 Synthesize First Voiceover
               </Button>
@@ -1812,17 +1830,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               {savedVoiceovers.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3.5 bg-[#121212] border border-[#282828] rounded-xl flex items-center justify-between gap-4 hover:border-[#3e3e3e] transition-colors"
+                  className="p-3.5 bg-[#121212] border border-[#282828] rounded-xl flex items-center justify-between gap-4 hover:border-[#34373f] transition-colors"
                 >
                   <div className="flex items-center gap-3 truncate">
-                    <div className="w-8 h-8 rounded-full bg-[#282828] text-[#1ed760] flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-[#24272c] text-[#34a866] flex items-center justify-center shrink-0">
                       <Radio className="w-4 h-4" />
                     </div>
 
                     <div className="truncate">
-                      <h4 className="text-xs font-bold text-white truncate">{item.title}</h4>
-                      <p className="text-xs text-[#878787] flex items-center gap-2 mt-0.5 flex-wrap font-mono tabular-nums">
-                        <span className="font-semibold text-[#1ed760] font-sans">{item.voiceName}</span>
+                      <h4 className="text-xs font-semibold text-[#e4e7ec] truncate">{item.title}</h4>
+                      <p className="text-xs text-[#9ca3af] flex items-center gap-2 mt-0.5 flex-wrap font-mono tabular-nums">
+                        <span className="font-semibold text-[#3fb970] font-sans">{item.voiceName}</span>
                         <span>·</span>
                         <span className="uppercase">{item.format}</span>
                         {item.languageLabel && (
@@ -1849,7 +1867,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <a
                       href={`${item.audioUrl}&download=1`}
                       download={`scriby-${item.id}.${item.format}`}
-                      className="p-1.5 bg-[#242424] hover:bg-[#333333] hover:text-[#1ed760] text-white rounded-lg border border-[#3e3e3e] transition-colors"
+                      className="p-1.5 bg-[#24272c] hover:bg-[#2e3238] hover:text-[#4cc37c] text-[#d0d5dd] rounded-lg border border-[#34373f] transition-colors"
                       title="Download audio"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -1861,7 +1879,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         onSendToSubtitleStudio(item.audioUrl, item.title, item.durationSeconds, item.script);
                         showToast('Loaded into Subtitle Editor with synced subtitles!');
                       }}
-                      className="text-[11px] h-7 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold cursor-pointer"
+                      className="text-[11px] h-7 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold cursor-pointer"
                     >
                       Use in Studio
                     </Button>
@@ -1877,7 +1895,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           source: 'recording',
                         })
                       }
-                      className="p-1.5 text-[#535353] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      className="p-1.5 text-[#6f7682] hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition-colors cursor-pointer"
                       title="Delete recording"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -1895,7 +1913,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       {/* ========================================================================= */}
       {itemToDelete && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => {
             if (!isDeletingVoiceover) setItemToDelete(null);
           }}
@@ -1904,28 +1922,28 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#181818] border border-rose-500/30 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 text-left"
+            className="bg-[#181818] border border-rose-500/25 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150 text-left"
           >
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/25 text-rose-400 flex items-center justify-center shrink-0">
                 <Trash2 className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-white font-display">
+                <h3 className="text-base font-semibold text-[#e4e7ec] font-display">
                   Delete Voice Recording?
                 </h3>
-                <p className="text-xs text-[#b3b3b3] leading-relaxed">
+                <p className="text-xs text-[#9ca3af] leading-relaxed">
                   Are you sure you want to delete this voiceover recording? This will permanently remove the audio file from your recordings archive and voice generation workspace.
                 </p>
               </div>
             </div>
 
             <div className="p-3.5 bg-[#121212] border border-[#282828] rounded-xl space-y-1.5 text-xs">
-              <div className="font-semibold text-white line-clamp-2">
+              <div className="font-semibold text-[#e4e7ec] line-clamp-2">
                 {itemToDelete.title || itemToDelete.voiceName || 'Voiceover Clip'}
               </div>
-              <div className="text-[11px] text-[#878787] flex items-center gap-2">
-                <span className="text-[#1ed760] font-semibold">{itemToDelete.voiceName || 'Studio Voice'}</span>
+              <div className="text-[11px] text-[#6f7682] flex items-center gap-2">
+                <span className="text-[#3fb970] font-semibold">{itemToDelete.voiceName || 'Studio Voice'}</span>
                 <span>·</span>
                 <span className="uppercase font-mono">{itemToDelete.format || 'WAV'}</span>
                 <span>·</span>
@@ -1940,7 +1958,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 size="sm"
                 onClick={() => setItemToDelete(null)}
                 disabled={isDeletingVoiceover}
-                className="border-[#3e3e3e] text-[#b3b3b3] hover:text-white hover:bg-[#282828] text-xs h-9 px-4 cursor-pointer"
+                className="border-[#34373f] text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] text-xs h-9 px-4 cursor-pointer"
               >
                 Cancel
               </Button>
@@ -1949,7 +1967,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 size="sm"
                 onClick={handleConfirmDelete}
                 disabled={isDeletingVoiceover}
-                className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs h-9 px-4 gap-1.5 shadow-md shadow-rose-950/40 cursor-pointer"
+                className="bg-rose-600/90 hover:bg-rose-600 text-[#e4e7ec] font-semibold text-xs h-9 px-4 gap-1.5 cursor-pointer"
               >
                 {isDeletingVoiceover ? (
                   <>
@@ -1973,7 +1991,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       {/* ========================================================================= */}
       {showPlatformSubtitlesModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150"
           onClick={() => setShowPlatformSubtitlesModal(false)}
         >
           <div
@@ -1984,20 +2002,20 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           >
             <div className="flex items-center justify-between pb-3 border-b border-[#282828]">
               <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-[#1ed760]" />
-                <h3 className="text-base font-bold text-white font-display">
+                <Layers className="w-5 h-5 text-[#34a866]" />
+                <h3 className="text-base font-semibold text-[#e4e7ec] font-display">
                   Import Platform Subtitles
                 </h3>
               </div>
               <button
                 onClick={() => setShowPlatformSubtitlesModal(false)}
-                className="p-1 text-[#878787] hover:text-white rounded-lg hover:bg-[#282828] transition-colors cursor-pointer"
+                className="p-1 text-[#9ca3af] hover:text-[#e4e7ec] rounded-lg hover:bg-[#282828] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-[#b3b3b3]">
+            <p className="text-xs text-[#9ca3af]">
               Choose from your active subtitle editor session or saved transcripts previously created on this platform.
             </p>
 
@@ -2010,47 +2028,47 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     showToast('Imported active subtitles into Voiceover Studio!');
                     setShowPlatformSubtitlesModal(false);
                   }}
-                  className="p-3.5 bg-[#121212] border border-[#1ed760]/40 hover:border-[#1ed760] rounded-xl cursor-pointer transition-all hover:bg-[#1a1a1a] group"
+                  className="p-3.5 bg-[#121212] border border-[#1db954]/35 hover:border-[#1db954]/60 rounded-xl cursor-pointer transition-all hover:bg-[#1a1c20] group"
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-white flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#1ed760]" />
+                    <span className="text-xs font-semibold text-[#e4e7ec] flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#1db954]" />
                       Current Subtitle Editor Transcript
                     </span>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#1ed760]/10 text-[#1ed760] border border-[#1ed760]/30">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#1db954]/10 text-[#4cc37c] border border-[#1db954]/25">
                       Active Session
                     </span>
                   </div>
-                  <p className="text-xs text-[#b3b3b3] line-clamp-2 italic">
+                  <p className="text-xs text-[#9ca3af] line-clamp-2 italic">
                     "{currentSubtitleText}"
                   </p>
-                  <div className="text-xs text-[#878787] mt-2 flex items-center gap-2">
+                  <div className="text-xs text-[#6f7682] mt-2 flex items-center gap-2">
                     <span>{currentSubtitleText.split(/\s+/).filter(Boolean).length} words</span>
                     <span>·</span>
-                    <span className="text-[#1ed760] group-hover:underline">Click to load into script</span>
+                    <span className="text-[#3fb970] group-hover:underline">Click to load into script</span>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 bg-[#121212] border border-[#282828] rounded-xl text-xs text-[#878787]">
+                <div className="p-3 bg-[#121212] border border-[#282828] rounded-xl text-xs text-[#6f7682]">
                   No active subtitle session open in editor. Choose from your saved transcripts below or type a script.
                 </div>
               )}
 
               {/* Option 2: Saved Platform Transcripts from Cloud SQL */}
               <div className="pt-2">
-                <div className="text-xs font-semibold text-[#878787] uppercase tracking-wider mb-2">
+                <div className="text-xs font-semibold text-[#6f7682] uppercase tracking-wider mb-2">
                   Saved Platform Transcripts ({platformTranscripts.length})
                 </div>
 
                 {isLoadingPlatformTranscripts && (
-                  <div className="py-6 text-center text-xs text-[#878787]">
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#1ed760] mx-auto mb-1.5" />
+                  <div className="py-6 text-center text-xs text-[#6f7682]">
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#34a866] mx-auto mb-1.5" />
                     Loading saved platform transcripts...
                   </div>
                 )}
 
                 {!isLoadingPlatformTranscripts && platformTranscripts.length === 0 && (
-                  <div className="p-3 text-center text-xs text-[#878787] bg-[#121212] rounded-xl border border-[#282828]">
+                  <div className="p-3 text-center text-xs text-[#6f7682] bg-[#121212] rounded-xl border border-[#282828]">
                     No saved transcripts found in history.
                   </div>
                 )}
@@ -2068,17 +2086,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                         showToast(`Imported subtitles from "${t.title}"!`);
                         setShowPlatformSubtitlesModal(false);
                       }}
-                      className="p-3 bg-[#121212] border border-[#282828] hover:border-[#1ed760]/60 rounded-xl cursor-pointer transition-all hover:bg-[#1a1a1a] mb-2 group"
+                      className="p-3 bg-[#121212] border border-[#282828] hover:border-[#1db954]/50 rounded-xl cursor-pointer transition-all hover:bg-[#1a1c20] mb-2 group"
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-white group-hover:text-[#1ed760] transition-colors truncate max-w-[300px]">
+                        <span className="text-xs font-semibold text-[#e4e7ec] group-hover:text-[#4cc37c] transition-colors truncate max-w-[300px]">
                           {t.title}
                         </span>
-                        <span className="text-xs text-[#878787] font-mono tabular-nums">
+                        <span className="text-xs text-[#6f7682] font-mono tabular-nums">
                           ~{Math.round(t.duration || 30)}s
                         </span>
                       </div>
-                      <p className="text-xs text-[#b3b3b3] line-clamp-2">
+                      <p className="text-xs text-[#9ca3af] line-clamp-2">
                         {t.fullTranscript || 'Transcript audio session'}
                       </p>
                     </div>
@@ -2092,7 +2110,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowPlatformSubtitlesModal(false)}
-                className="border-[#3e3e3e] text-[#b3b3b3] hover:text-white hover:bg-[#282828] text-xs h-8 px-4 cursor-pointer"
+                className="border-[#34373f] text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] text-xs h-8 px-4 cursor-pointer"
               >
                 Close
               </Button>

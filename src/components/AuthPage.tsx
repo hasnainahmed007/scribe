@@ -333,24 +333,24 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       <div className="w-full max-w-md mb-6 flex items-center justify-between">
         <button
           onClick={onBackToHome}
-          className="flex items-center gap-2 text-xs font-semibold text-[#b3b3b3] hover:text-white transition-colors cursor-pointer group"
+          className="flex items-center gap-2 text-xs font-semibold text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           <span>Back to Home</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-[#1ed760] text-black flex items-center justify-center font-extrabold text-xs">
+          <div className="w-6 h-6 rounded-full bg-[#1db954] text-[#08100b] flex items-center justify-center font-bold text-xs">
             S
           </div>
-          <span className="text-sm font-bold text-white tracking-tight">Scriby</span>
+          <span className="text-sm font-bold text-[#e4e7ec] tracking-tight">Scriby</span>
         </div>
       </div>
 
       {/* Main Auth Container */}
       <div className="w-full max-w-md bg-[#181818] border border-[#282828] rounded-2xl p-6 sm:p-8 shadow-2xl relative">
-        {/* Top Highlight Accent */}
-        <div className="absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-[#1ed760] to-transparent opacity-60" />
+        {/* Top Accent */}
+        <div className="absolute top-0 left-8 right-8 h-[1px] bg-gradient-to-r from-transparent via-[#1db954]/50 to-transparent" />
 
         {/* Dynamic Alerts */}
         {errorMessage && (
@@ -362,7 +362,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
         {successMessage && (
           <div className="mb-6 p-3.5 bg-emerald-950/60 border border-emerald-800/80 rounded-xl text-xs text-emerald-200 flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-[#1ed760] shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-[#3fb970] shrink-0 mt-0.5" />
             <div className="flex-1 font-medium">{successMessage}</div>
           </div>
         )}
@@ -371,59 +371,59 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {mode === 'login' && (
           <div>
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-2xl font-bold text-[#e4e7ec] tracking-tight font-display">
                 Sign in to Scriby
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1.5">
+              <p className="text-xs text-[#9ca3af] mt-1.5">
                 AI Speech Intelligence & Creator Studio
               </p>
             </div>
 
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1.5">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type="email"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     placeholder="creator@scriby.com"
                     required
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-300">
+                  <label className="text-xs font-semibold text-[#d0d5dd]">
                     Password
                   </label>
                   <button
                     type="button"
                     onClick={() => switchMode('forgot-password')}
-                    className="text-xs text-[#1ed760] hover:underline cursor-pointer"
+                    className="text-xs text-[#3fb970] hover:underline cursor-pointer"
                   >
                     Forgot password?
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type={showLoginPassword ? 'text' : 'password'}
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f7682] hover:text-[#d0d5dd] cursor-pointer"
                   >
                     {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -433,7 +433,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 font-bold bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-101 transition-all rounded-full py-2.5 shadow-[0_4px_12px_rgba(30,215,96,0.25)] cursor-pointer"
+                className="w-full mt-2 font-bold bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] transition-all rounded-full py-2.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -451,7 +451,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
             {/* Quick Demo Access Bar */}
             <div className="mt-6 pt-5 border-t border-[#282828]">
-              <div className="text-[11px] font-semibold text-slate-400 mb-2.5 text-center flex items-center justify-center gap-1.5">
+              <div className="text-[11px] font-semibold text-[#9ca3af] mb-2.5 text-center flex items-center justify-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Instant Demo Access</span>
               </div>
@@ -460,9 +460,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   type="button"
                   onClick={() => handleDemoClick('creator')}
                   disabled={isLoading}
-                  className="px-3 py-2 bg-[#121212] hover:bg-[#282828] border border-[#282828] rounded-xl text-xs font-semibold text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="px-3 py-2 bg-[#121212] hover:bg-[#282828] border border-[#282828] rounded-xl text-xs font-semibold text-[#d0d5dd] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Zap className="w-3.5 h-3.5 text-[#1ed760]" />
+                  <Zap className="w-3.5 h-3.5 text-[#3fb970]" />
                   <span>Creator Demo</span>
                 </button>
                 <button
@@ -478,12 +478,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             {/* Switch to Register */}
-            <div className="mt-6 text-center text-xs text-slate-400">
+            <div className="mt-6 text-center text-xs text-[#9ca3af]">
               Don't have an account?{' '}
               <button
                 type="button"
                 onClick={() => switchMode('register')}
-                className="font-bold text-[#1ed760] hover:underline cursor-pointer"
+                className="font-bold text-[#3fb970] hover:underline cursor-pointer"
               >
                 Sign up with email
               </button>
@@ -495,55 +495,55 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {mode === 'register' && (
           <div>
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-2xl font-bold text-[#e4e7ec] tracking-tight font-display">
                 Create your account
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1.5">
+              <p className="text-xs text-[#9ca3af] mt-1.5">
                 Get 30 free audio minutes upon verified registration
               </p>
             </div>
 
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <User className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type="text"
                     value={registerName}
                     onChange={(e) => setRegisterName(e.target.value)}
                     placeholder="Tanvir Ahmed"
                     required
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type="email"
                     value={registerEmail}
                     onChange={(e) => setRegisterEmail(e.target.value)}
                     placeholder="tanvir@example.com"
                     required
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type={showRegisterPassword ? 'text' : 'password'}
                     value={registerPassword}
@@ -551,12 +551,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="Minimum 6 characters"
                     required
                     minLength={6}
-                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f7682] hover:text-[#d0d5dd] cursor-pointer"
                   >
                     {showRegisterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -564,11 +564,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type={showRegisterPassword ? 'text' : 'password'}
                     value={registerConfirmPassword}
@@ -576,20 +576,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="Re-enter password"
                     required
                     minLength={6}
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
 
               <div className="p-3 bg-emerald-950/30 border border-emerald-900/60 rounded-xl text-[11px] text-emerald-300 flex items-center gap-2 mt-2">
-                <CheckCircle2 className="w-4 h-4 text-[#1ed760] shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-[#3fb970] shrink-0" />
                 <span>We'll dispatch a 6-digit verification code to your email.</span>
               </div>
 
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-3 font-bold bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-101 transition-all rounded-full py-2.5 shadow-[0_4px_12px_rgba(30,215,96,0.25)] cursor-pointer"
+                className="w-full mt-3 font-bold bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] transition-all rounded-full py-2.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -606,12 +606,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </form>
 
             {/* Switch to Login */}
-            <div className="mt-6 text-center text-xs text-slate-400">
+            <div className="mt-6 text-center text-xs text-[#9ca3af]">
               Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="font-bold text-[#1ed760] hover:underline cursor-pointer"
+                className="font-bold text-[#3fb970] hover:underline cursor-pointer"
               >
                 Sign In
               </button>
@@ -623,21 +623,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         {mode === 'verify-otp' && (
           <div>
             <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[#1ed760] flex items-center justify-center mx-auto mb-3">
+              <div className="w-12 h-12 rounded-full bg-[#1db954]/10 border border-[#1db954]/30 text-[#3fb970] flex items-center justify-center mx-auto mb-3">
                 <KeyRound className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-2xl font-bold text-[#e4e7ec] tracking-tight font-display">
                 Verify your email
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1.5">
+              <p className="text-xs text-[#9ca3af] mt-1.5">
                 We sent a 6-digit code to{' '}
-                <strong className="text-white font-mono">{pendingEmail}</strong>
+                <strong className="text-[#e4e7ec] font-mono">{pendingEmail}</strong>
               </p>
             </div>
 
             <form onSubmit={handleVerifyOtpSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2 text-center">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-2 text-center">
                   Enter 6-Digit Verification Code
                 </label>
                 <div className="relative">
@@ -649,10 +649,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="123456"
                     required
                     autoFocus
-                    className="text-center font-mono text-2xl tracking-[0.5em] py-3 bg-[#121212] border-[#282828] text-[#1ed760] font-bold focus:border-[#1ed760]"
+                    className="text-center font-mono text-2xl tracking-[0.5em] py-3 bg-[#121212] border-[#282828] text-[#3fb970] font-bold focus:border-[#1db954]/60"
                   />
                 </div>
-                <div className="text-[11px] text-slate-500 text-center mt-2">
+                <div className="text-[11px] text-[#6f7682] text-center mt-2">
                   Code expires in 10 minutes
                 </div>
               </div>
@@ -677,7 +677,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading || otpCode.trim().length !== 6}
-                className="w-full mt-2 font-bold bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-101 transition-all rounded-full py-2.5 shadow-[0_4px_12px_rgba(30,215,96,0.25)] cursor-pointer"
+                className="w-full mt-2 font-bold bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] transition-all rounded-full py-2.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -698,7 +698,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <button
                 type="button"
                 onClick={() => switchMode('register')}
-                className="text-[#b3b3b3] hover:text-white cursor-pointer"
+                className="text-[#9ca3af] hover:text-[#e4e7ec] cursor-pointer"
               >
                 ← Change Email
               </button>
@@ -709,8 +709,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 disabled={resendCooldown > 0 || isLoading}
                 className={`font-semibold cursor-pointer ${
                   resendCooldown > 0
-                    ? 'text-slate-500 cursor-not-allowed'
-                    : 'text-[#1ed760] hover:underline'
+                    ? 'text-[#6f7682] cursor-not-allowed'
+                    : 'text-[#3fb970] hover:underline'
                 }`}
               >
                 {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code'}
@@ -726,28 +726,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <div className="w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto mb-3">
                 <Lock className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-2xl font-bold text-[#e4e7ec] tracking-tight font-display">
                 Forgot password?
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1.5">
+              <p className="text-xs text-[#9ca3af] mt-1.5">
                 Enter your account email to receive a password reset verification code
               </p>
             </div>
 
             <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1.5">
                   Account Email
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Mail className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type="email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     placeholder="your-email@scriby.com"
                     required
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
@@ -755,7 +755,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 font-bold bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-101 transition-all rounded-full py-2.5 shadow-[0_4px_12px_rgba(30,215,96,0.25)] cursor-pointer"
+                className="w-full mt-2 font-bold bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] transition-all rounded-full py-2.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -771,12 +771,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-xs text-slate-400">
+            <div className="mt-6 text-center text-xs text-[#9ca3af]">
               Remember your credentials?{' '}
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="font-bold text-[#1ed760] hover:underline cursor-pointer"
+                className="font-bold text-[#3fb970] hover:underline cursor-pointer"
               >
                 Sign In
               </button>
@@ -791,17 +791,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <div className="w-12 h-12 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 flex items-center justify-center mx-auto mb-3">
                 <KeyRound className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight font-display">
+              <h2 className="text-2xl font-bold text-[#e4e7ec] tracking-tight font-display">
                 Set New Password
               </h2>
-              <p className="text-xs text-[#b3b3b3] mt-1.5">
-                Resetting password for <strong className="text-white font-mono">{pendingEmail}</strong>
+              <p className="text-xs text-[#9ca3af] mt-1.5">
+                Resetting password for <strong className="text-[#e4e7ec] font-mono">{pendingEmail}</strong>
               </p>
             </div>
 
             <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1 text-center">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1 text-center">
                   6-Digit Reset Code
                 </label>
                 <Input
@@ -812,7 +812,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   placeholder="123456"
                   required
                   autoFocus
-                  className="text-center font-mono text-xl tracking-[0.4em] py-2.5 bg-[#121212] border-[#282828] text-[#1ed760] font-bold focus:border-[#1ed760]"
+                  className="text-center font-mono text-xl tracking-[0.4em] py-2.5 bg-[#121212] border-[#282828] text-[#3fb970] font-bold focus:border-[#1db954]/60"
                 />
               </div>
 
@@ -829,11 +829,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   New Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type={showResetPassword ? 'text' : 'password'}
                     value={newPassword}
@@ -841,12 +841,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="Minimum 6 characters"
                     required
                     minLength={6}
-                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 pr-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowResetPassword(!showResetPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f7682] hover:text-[#d0d5dd] cursor-pointer"
                   >
                     {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -854,11 +854,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[#d0d5dd] mb-1">
                   Confirm New Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <Lock className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <Input
                     type={showResetPassword ? 'text' : 'password'}
                     value={confirmNewPassword}
@@ -866,7 +866,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     placeholder="Re-enter new password"
                     required
                     minLength={6}
-                    className="pl-9 bg-[#121212] border-[#282828] text-white focus:border-[#1ed760] text-sm"
+                    className="pl-9 bg-[#121212] border-[#282828] text-[#d0d5dd] focus:border-[#1db954]/60 text-sm"
                   />
                 </div>
               </div>
@@ -874,7 +874,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-3 font-bold bg-[#1ed760] text-black hover:bg-[#1fdf64] hover:scale-101 transition-all rounded-full py-2.5 shadow-[0_4px_12px_rgba(30,215,96,0.25)] cursor-pointer"
+                className="w-full mt-3 font-bold bg-[#1db954] text-[#08100b] hover:bg-[#1aa34a] transition-all rounded-full py-2.5 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -890,11 +890,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-xs text-slate-400">
+            <div className="mt-6 text-center text-xs text-[#9ca3af]">
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="font-bold text-[#1ed760] hover:underline cursor-pointer"
+                className="font-bold text-[#3fb970] hover:underline cursor-pointer"
               >
                 Back to Sign In
               </button>

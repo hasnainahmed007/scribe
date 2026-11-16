@@ -31,7 +31,7 @@ export const LockedModuleNotice: React.FC<LockedModuleNoticeProps> = ({
   return (
     <div className="max-w-xl mx-auto py-12 px-4 text-center">
       <Card className="p-8 sm:p-10 shadow-sm text-center">
-        <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center mx-auto mb-4">
+        <div className="w-12 h-12 rounded-xl bg-[#1f1f1f] border border-[#2c2c2c] text-[#d0d5dd] flex items-center justify-center mx-auto mb-4">
           <Lock className="w-5 h-5 text-amber-400" />
         </div>
 
@@ -41,22 +41,22 @@ export const LockedModuleNotice: React.FC<LockedModuleNoticeProps> = ({
           </Badge>
         </div>
 
-        <h2 className="text-xl font-bold text-white font-display mb-2">
+        <h2 className="text-xl font-bold text-[#e4e7ec] font-display mb-2">
           {title}
         </h2>
 
-        <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed mb-6">
+        <p className="text-xs text-[#9ca3af] max-w-sm mx-auto leading-relaxed mb-6">
           {description}
         </p>
 
         {/* Benefits list */}
-        <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-left max-w-sm mx-auto mb-7 space-y-2">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+        <div className="p-4 rounded-xl bg-[#1f1f1f]/70 border border-[#2c2c2c] text-left max-w-sm mx-auto mb-7 space-y-2">
+          <div className="text-[11px] font-semibold text-[#9ca3af] uppercase tracking-wider mb-2">
             Capabilities Included:
           </div>
           {benefits.map((b, i) => (
-            <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-              <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+            <div key={i} className="flex items-start gap-2 text-xs text-[#d0d5dd]">
+              <Check className="w-3.5 h-3.5 text-[#3fb970] shrink-0 mt-0.5" />
               <span>{b}</span>
             </div>
           ))}
