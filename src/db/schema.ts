@@ -96,6 +96,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   transcripts: many(transcripts),
   voiceProfiles: many(voiceProfiles),
   savedVoiceovers: many(savedVoiceovers),
+  inquiries: many(inquiries),
 }));
 
 export const transcriptsRelations = relations(transcripts, ({ one }) => ({
@@ -176,4 +177,28 @@ export const policies = pgTable('policies', {
   updatedAt: timestamp('updated_at').defaultNow(),
   updatedBy: text('updated_by').default('SuperAdmin'),
 });
+
+// User Inquiries & Contact Submissions for SuperAdmin Triage
+export const inquiries = pgTable('inquiries', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  userUid: text('user_uid'),
+  name: text('name').notNull(),
+  email: text('email').notNull(),
+  subject: text('subject').notNull().default(''),
+  message: text('message').notNull(),
+  status: text('status').notNull().default('unread'), // 'unread' | 'in_review' | 'resolved'
+  adminNotes: text('admin_notes').notNull().default(''),
+  source: text('source').notNull().default('landing_contact'), // 'landing_contact' | 'creator_studio'
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const inquiriesRelations = relations(inquiries, ({ one }) => ({
+  user: one(users, {
+    fields: [inquiries.userId],
+    references: [users.id],
+  }),
+}));
+
 

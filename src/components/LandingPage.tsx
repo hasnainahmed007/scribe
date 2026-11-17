@@ -186,7 +186,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   onOpenPricing,
 }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, token } = useAuth();
   const [plans, setPlans] = useState<SaaSPlan[]>(DEFAULT_PLANS);
 
   // Interactive Studio Showcase Tab: 'subtitles' | 'voiceover' | 'thumbnail' | 'youtube_seo'
@@ -222,6 +222,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const [contactErrors, setContactErrors] = useState<Record<string, string>>({});
   const [contactSubmitted, setContactSubmitted] = useState(false);
   const [isSendingContact, setIsSendingContact] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setContactName((prev) => prev || user.name || '');
+      setContactEmail((prev) => prev || user.email || '');
+    }
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     safeFetchJson<{ success: boolean; data: SaaSPlan[] }>('/api/plans').then((res) => {
@@ -269,7 +276,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     });
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setContactErrors({});
 
@@ -278,6 +285,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       email: contactEmail,
       subject: contactSubject,
       message: contactMessage,
+      source: isAuthenticated ? 'creator_studio' : 'landing_contact',
     });
 
     if (!parse.success) {
@@ -286,15 +294,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     }
 
     setIsSendingContact(true);
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
 
-    setTimeout(() => {
-      setIsSendingContact(false);
+      const res = await safeFetchJson<{
+        success: boolean;
+        message?: string;
+        error?: string;
+        errors?: Record<string, string>;
+      }>('/api/inquiries', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(parse.data),
+      });
+
+      if (!res.ok || !res.data?.success) {
+        if (res.data?.errors) {
+          setContactErrors(res.data.errors);
+        } else {
+          setContactErrors({
+            _global: res.data?.error || res.error || 'Could not send your inquiry right now. Please try again.',
+          });
+        }
+        return;
+      }
+
       setContactSubmitted(true);
-      setContactName('');
-      setContactEmail('');
+      setContactName(user?.name || '');
+      setContactEmail(user?.email || '');
       setContactSubject('');
       setContactMessage('');
-    }, 600);
+    } catch (err: any) {
+      setContactErrors({
+        _global: err?.message || 'Network error submitting inquiry. Please try again.',
+      });
+    } finally {
+      setIsSendingContact(false);
+    }
   };
 
   const handleSelectPlan = () => {
@@ -1353,6 +1394,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               ) : (
                 <form onSubmit={handleContactSubmit} className="space-y-4">
+                  {contactErrors._global && (
+                    <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-xs text-rose-300">
+                      {contactErrors._global}
+                    </div>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-[#9ca3af] block mb-1">Your Name</label>

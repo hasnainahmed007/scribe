@@ -247,3 +247,20 @@ export interface PlatformPolicy {
   updatedAt: string;
   updatedBy?: string;
 }
+
+export type InquiryStatus = 'unread' | 'in_review' | 'resolved';
+
+export interface UserInquiry {
+  id: number;
+  userId?: number | null;
+  userUid?: string | null;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: InquiryStatus;
+  adminNotes: string;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}

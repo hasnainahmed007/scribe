@@ -18,6 +18,7 @@ import {
   policies as policiesTable,
   voiceProfiles as voiceProfilesTable,
   savedVoiceovers as savedVoiceoversTable,
+  inquiries as inquiriesTable,
 } from './src/db/schema.ts';
 import { eq, desc, sql } from 'drizzle-orm';
 import {
@@ -40,6 +41,8 @@ import {
   adminPlanUpdateSchema,
   adminUserUpdateSchema,
   policyUpdateSchema,
+  contactFormSchema,
+  adminInquiryUpdateSchema,
   generateMetadataSchema,
   generateThumbnailSchema,
   generateAiImageSchema,
@@ -1604,6 +1607,143 @@ app.put('/api/admin/policies/:slug', authMiddleware, superAdminMiddleware, async
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || 'Failed to update policy.' });
+  }
+});
+
+// F. User Inquiries & Contact Submissions (Public Submit + SuperAdmin Triage)
+app.post('/api/inquiries', async (req: Request, res: Response) => {
+  try {
+    const parse = contactFormSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        success: false,
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const { name, email, subject, message, source } = parse.data;
+
+    let linkedUserId: number | null = null;
+    let linkedUserUid: string | null = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split('Bearer ')[1].trim();
+      let userUid = activeTokens.get(token);
+      if (!userUid && token.startsWith('san_tok_')) {
+        userUid = token.includes('admin') ? 'usr-admin' : 'usr-creator';
+      }
+      if (userUid) {
+        const authUser = await getUserByUid(userUid);
+        if (authUser) {
+          linkedUserId = authUser.id;
+          linkedUserUid = authUser.uid;
+        }
+      }
+    }
+
+    const inserted = await db
+      .insert(inquiriesTable)
+      .values({
+        userId: linkedUserId,
+        userUid: linkedUserUid,
+        name,
+        email,
+        subject: subject || '',
+        message,
+        status: 'unread',
+        adminNotes: '',
+        source: source || (linkedUserId ? 'creator_studio' : 'landing_contact'),
+      })
+      .returning();
+
+    return res.status(201).json({
+      success: true,
+      data: inserted[0],
+      message: 'Your inquiry has been submitted and forwarded to our administration team.',
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to submit inquiry.' });
+  }
+});
+
+app.get('/api/admin/inquiries', authMiddleware, superAdminMiddleware, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const rows = await db
+      .select()
+      .from(inquiriesTable)
+      .orderBy(desc(inquiriesTable.createdAt), desc(inquiriesTable.id));
+
+    const counts = {
+      total: rows.length,
+      unread: rows.filter((r) => r.status === 'unread').length,
+      inReview: rows.filter((r) => r.status === 'in_review').length,
+      resolved: rows.filter((r) => r.status === 'resolved').length,
+    };
+
+    return res.json({ success: true, data: rows, counts });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to load inquiries.' });
+  }
+});
+
+app.patch('/api/admin/inquiries/:id', authMiddleware, superAdminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid inquiry ID.' });
+    }
+
+    const parse = adminInquiryUpdateSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(422).json({
+        success: false,
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
+    const existing = await db.select().from(inquiriesTable).where(eq(inquiriesTable.id, id)).limit(1);
+    if (!existing[0]) {
+      return res.status(404).json({ success: false, error: 'Inquiry not found.' });
+    }
+
+    const updateData: any = { updatedAt: new Date() };
+    if (parse.data.status !== undefined) updateData.status = parse.data.status;
+    if (parse.data.adminNotes !== undefined) updateData.adminNotes = parse.data.adminNotes;
+
+    const updated = await db
+      .update(inquiriesTable)
+      .set(updateData)
+      .where(eq(inquiriesTable.id, id))
+      .returning();
+
+    return res.json({
+      success: true,
+      data: updated[0],
+      message: 'Inquiry updated successfully.',
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to update inquiry.' });
+  }
+});
+
+app.delete('/api/admin/inquiries/:id', authMiddleware, superAdminMiddleware, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isFinite(id) || id <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid inquiry ID.' });
+    }
+
+    const existing = await db.select().from(inquiriesTable).where(eq(inquiriesTable.id, id)).limit(1);
+    if (!existing[0]) {
+      return res.status(404).json({ success: false, error: 'Inquiry not found.' });
+    }
+
+    await db.delete(inquiriesTable).where(eq(inquiriesTable.id, id));
+    return res.json({ success: true, message: 'Inquiry deleted successfully.' });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Failed to delete inquiry.' });
   }
 });
 

@@ -11,6 +11,7 @@ import {
   Lock,
   Settings,
   HelpCircle,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -22,6 +23,7 @@ interface NavbarProps {
   onOpenPricing: () => void;
   onOpenSettings?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenInquiry?: () => void;
   hasSegments: boolean;
   onScrollToSection?: (sectionId: string) => void;
 }
@@ -34,6 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenPricing,
   onOpenSettings,
   onOpenOnboarding,
+  onOpenInquiry,
   hasSegments,
 }) => {
   const { user, isAuthenticated, isSuperAdmin, logout } = useAuth();
@@ -266,6 +269,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Mic className="w-3.5 h-3.5" />
               <span>Transcribe</span>
             </button>
+
+            {onOpenInquiry && (
+              <button
+                onClick={onOpenInquiry}
+                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                title="Send Inquiry / Support"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+            )}
 
             {onOpenOnboarding && (
               <button

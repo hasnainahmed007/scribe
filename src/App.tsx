@@ -16,6 +16,7 @@ import { AuthPage } from './components/AuthPage';
 import { PricingModal } from './components/PricingModal';
 import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
+import { InquiryModal } from './components/InquiryModal';
 import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from './data/sampleAudios';
 import { retrieveTranscriptAudio } from './utils/audioStorage';
 import { createSegmentsFromScript } from './utils/subtitleUtils';
@@ -98,6 +99,7 @@ function ScribyApp() {
   const [isPricingOpen, setIsPricingOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [isInquiryOpen, setIsInquiryOpen] = useState<boolean>(false);
   const [showInputModal, setShowInputModal] = useState<boolean>(false);
   const [isLoadingTranscription, setIsLoadingTranscription] = useState<boolean>(false);
 
@@ -663,6 +665,7 @@ function ScribyApp() {
         onOpenPricing={() => setIsPricingOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenInquiry={() => setIsInquiryOpen(true)}
         hasSegments={segments.length > 0}
       />
 
@@ -1132,6 +1135,12 @@ function ScribyApp() {
             setShowInputModal(true);
           }
         }}
+      />
+
+      {/* Support / Inquiry Modal */}
+      <InquiryModal
+        isOpen={isInquiryOpen}
+        onClose={() => setIsInquiryOpen(false)}
       />
     </div>
   );

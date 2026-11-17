@@ -279,6 +279,8 @@ export const policyUpdateSchema = z.object({
 
 export type PolicyUpdateInput = z.infer<typeof policyUpdateSchema>;
 
+export const INQUIRY_STATUSES = ['unread', 'in_review', 'resolved'] as const;
+
 export const contactFormSchema = z.object({
   name: z
     .string()
@@ -297,9 +299,17 @@ export const contactFormSchema = z.object({
     .trim()
     .min(10, 'Message must be at least 10 characters long.')
     .max(3000, 'Message cannot exceed 3000 characters.'),
+  source: z.enum(['landing_contact', 'creator_studio']).optional().default('landing_contact'),
 });
 
 export type ContactFormInput = z.infer<typeof contactFormSchema>;
+
+export const adminInquiryUpdateSchema = z.object({
+  status: z.enum(INQUIRY_STATUSES).optional(),
+  adminNotes: z.string().max(3000, 'Admin notes cannot exceed 3000 characters.').optional(),
+});
+
+export type AdminInquiryUpdateInput = z.infer<typeof adminInquiryUpdateSchema>;
 
 // ============================================================================
 // 4. Studio AI & Metadata Generation Schemas

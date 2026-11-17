@@ -18,6 +18,11 @@ import {
   FileText,
   BookOpen,
   Scale,
+  Inbox,
+  Mail,
+  Clock,
+  Save,
+  ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -28,6 +33,8 @@ import {
   PlanModule,
   PlatformPolicy,
   PolicySlug,
+  UserInquiry,
+  InquiryStatus,
 } from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
@@ -47,7 +54,7 @@ const AVAILABLE_MODULES: { id: PlanModule; label: string; desc: string }[] = [
 
 export const SuperAdminPanel: React.FC = () => {
   const { token } = useAuth();
-  const [activeAdminTab, setActiveAdminTab] = useState<'plans' | 'users' | 'subscriptions' | 'payments' | 'policies'>('plans');
+  const [activeAdminTab, setActiveAdminTab] = useState<'plans' | 'users' | 'subscriptions' | 'payments' | 'inquiries' | 'policies'>('plans');
 
   // Data States
   const [plans, setPlans] = useState<SaaSPlan[]>([]);
@@ -60,6 +67,21 @@ export const SuperAdminPanel: React.FC = () => {
     activeSubscribersCount: number;
     totalTransactions: number;
   }>({ totalRevenue: 0, mrr: 0, activeSubscribersCount: 0, totalTransactions: 0 });
+
+  // User Inquiries State
+  const [inquiriesList, setInquiriesList] = useState<UserInquiry[]>([]);
+  const [inquiryCounts, setInquiryCounts] = useState<{
+    total: number;
+    unread: number;
+    inReview: number;
+    resolved: number;
+  }>({ total: 0, unread: 0, inReview: 0, resolved: 0 });
+  const [inquirySearch, setInquirySearch] = useState('');
+  const [inquiryStatusFilter, setInquiryStatusFilter] = useState<'all' | InquiryStatus>('all');
+  const [selectedInquiryId, setSelectedInquiryId] = useState<number | null>(null);
+  const [inquiryNotesDraft, setInquiryNotesDraft] = useState('');
+  const [isUpdatingInquiry, setIsUpdatingInquiry] = useState(false);
+  const [confirmDeleteInquiryId, setConfirmDeleteInquiryId] = useState<number | null>(null);
 
   // Legal Policies State
   const [policiesList, setPoliciesList] = useState<PlatformPolicy[]>([]);
@@ -112,12 +134,17 @@ export const SuperAdminPanel: React.FC = () => {
     try {
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [resPlans, resUsers, resSubs, resPayments, resPolicies] = await Promise.all([
+      const [resPlans, resUsers, resSubs, resPayments, resPolicies, resInquiries] = await Promise.all([
         safeFetchJson<{ success: boolean; data: SaaSPlan[] }>('/api/admin/plans', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSUser[] }>('/api/admin/users', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSSubscription[] }>('/api/admin/subscriptions', { headers }),
         safeFetchJson<{ success: boolean; data: SaaSPayment[]; analytics?: any }>('/api/admin/payments', { headers }),
         safeFetchJson<{ success: boolean; data: PlatformPolicy[] }>('/api/policies'),
+        safeFetchJson<{
+          success: boolean;
+          data: UserInquiry[];
+          counts?: { total: number; unread: number; inReview: number; resolved: number };
+        }>('/api/admin/inquiries', { headers }),
       ]);
 
       if (resPlans.ok && resPlans.data?.success && resPlans.data.data) {
@@ -140,6 +167,22 @@ export const SuperAdminPanel: React.FC = () => {
           setPolicyTitleInput(current.title);
           setPolicyContentInput(current.content);
         }
+      }
+      if (resInquiries.ok && resInquiries.data?.success && resInquiries.data.data) {
+        const rows = resInquiries.data.data;
+        setInquiriesList(rows);
+        setInquiryCounts(
+          resInquiries.data.counts || {
+            total: rows.length,
+            unread: rows.filter((r) => r.status === 'unread').length,
+            inReview: rows.filter((r) => r.status === 'in_review').length,
+            resolved: rows.filter((r) => r.status === 'resolved').length,
+          }
+        );
+        const activeTarget =
+          rows.find((r) => r.id === selectedInquiryId) || rows[0] || null;
+        setSelectedInquiryId(activeTarget ? activeTarget.id : null);
+        setInquiryNotesDraft(activeTarget ? activeTarget.adminNotes || '' : '');
       }
     } catch (err) {
       console.warn('Admin data load warning:', err);
@@ -335,6 +378,103 @@ export const SuperAdminPanel: React.FC = () => {
     }
   };
 
+  // User Inquiry Handlers
+  const recomputeInquiryCounts = (rows: UserInquiry[]) => ({
+    total: rows.length,
+    unread: rows.filter((r) => r.status === 'unread').length,
+    inReview: rows.filter((r) => r.status === 'in_review').length,
+    resolved: rows.filter((r) => r.status === 'resolved').length,
+  });
+
+  const handleSelectInquiry = (inq: UserInquiry) => {
+    setSelectedInquiryId(inq.id);
+    setInquiryNotesDraft(inq.adminNotes || '');
+    setConfirmDeleteInquiryId(null);
+  };
+
+  const handleUpdateInquiry = async (
+    id: number,
+    patch: { status?: InquiryStatus; adminNotes?: string },
+    successText?: string
+  ) => {
+    if (!token) return;
+    setIsUpdatingInquiry(true);
+    try {
+      const res = await safeFetchJson<{ success: boolean; data: UserInquiry; message?: string }>(
+        `/api/admin/inquiries/${id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(patch),
+        }
+      );
+
+      if (res.ok && res.data?.success && res.data.data) {
+        const updatedRow = res.data.data;
+        const nextList = inquiriesList.map((item) => (item.id === id ? updatedRow : item));
+        setInquiriesList(nextList);
+        setInquiryCounts(recomputeInquiryCounts(nextList));
+        if (patch.adminNotes !== undefined) {
+          setInquiryNotesDraft(updatedRow.adminNotes || '');
+        }
+        showNotification(successText || 'Inquiry updated.');
+      }
+    } catch (err) {
+      console.warn('Inquiry update warning:', err);
+    } finally {
+      setIsUpdatingInquiry(false);
+    }
+  };
+
+  const handleDeleteInquiry = async (id: number) => {
+    if (!token) return;
+    setIsUpdatingInquiry(true);
+    try {
+      const res = await safeFetchJson<{ success: boolean; message?: string }>(
+        `/api/admin/inquiries/${id}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.ok && res.data?.success) {
+        const nextList = inquiriesList.filter((item) => item.id !== id);
+        setInquiriesList(nextList);
+        setInquiryCounts(recomputeInquiryCounts(nextList));
+        setConfirmDeleteInquiryId(null);
+        const nextSelected = nextList[0] || null;
+        setSelectedInquiryId(nextSelected ? nextSelected.id : null);
+        setInquiryNotesDraft(nextSelected ? nextSelected.adminNotes || '' : '');
+        showNotification('Inquiry removed from inbox.');
+      }
+    } catch (err) {
+      console.warn('Inquiry delete warning:', err);
+    } finally {
+      setIsUpdatingInquiry(false);
+    }
+  };
+
+  const filteredInquiries = inquiriesList.filter((inq) => {
+    const q = inquirySearch.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      inq.name.toLowerCase().includes(q) ||
+      inq.email.toLowerCase().includes(q) ||
+      (inq.subject || '').toLowerCase().includes(q) ||
+      inq.message.toLowerCase().includes(q);
+    const matchesStatus = inquiryStatusFilter === 'all' || inq.status === inquiryStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const selectedInquiry =
+    filteredInquiries.find((i) => i.id === selectedInquiryId) ||
+    inquiriesList.find((i) => i.id === selectedInquiryId) ||
+    filteredInquiries[0] ||
+    null;
+
   // Only creator users (non-superadmins) are counted and displayed
   const creatorUsers = usersList.filter((u) => u.role !== 'superadmin');
 
@@ -482,7 +622,24 @@ export const SuperAdminPanel: React.FC = () => {
           }`}
         >
           <Receipt className="w-3.5 h-3.5" />
-          <span>Payments & Ledger</span>
+          <span>Payments &amp; Ledger</span>
+        </button>
+
+        <button
+          onClick={() => setActiveAdminTab('inquiries')}
+          className={`flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-colors whitespace-nowrap cursor-pointer ${
+            activeAdminTab === 'inquiries'
+              ? 'bg-[#282828] text-[#e4e7ec] font-semibold'
+              : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+          }`}
+        >
+          <Inbox className="w-3.5 h-3.5" />
+          <span>User Inquiries</span>
+          {inquiryCounts.unread > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#1db954]/20 text-[#3fb970] border border-[#1db954]/30 leading-none">
+              {inquiryCounts.unread}
+            </span>
+          )}
         </button>
 
         <button
@@ -494,7 +651,7 @@ export const SuperAdminPanel: React.FC = () => {
           }`}
         >
           <FileText className="w-3.5 h-3.5" />
-          <span>Legal & Policies</span>
+          <span>Legal &amp; Policies</span>
         </button>
       </div>
 
@@ -836,7 +993,352 @@ export const SuperAdminPanel: React.FC = () => {
         </div>
       )}
 
-      {/* ================= TAB 5: LEGAL & POLICIES MANAGEMENT ================= */}
+      {/* ================= TAB 5: USER INQUIRIES INBOX ================= */}
+      {activeAdminTab === 'inquiries' && (
+        <div className="bg-[#181818] border border-[#282828] rounded-2xl p-6 shadow-xl space-y-5">
+          {/* Section Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
+            <div>
+              <h3 className="text-sm font-bold text-[#e4e7ec] font-display flex items-center gap-2">
+                <Inbox className="w-4 h-4 text-[#3fb970]" />
+                <span>User Inquiries &amp; Contact Inbox</span>
+              </h3>
+              <p className="text-xs text-[#9ca3af] mt-0.5">
+                Incoming questions, agency quota requests, and creator support messages submitted across the platform.
+              </p>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              {(
+                [
+                  { id: 'all', label: 'All', count: inquiryCounts.total },
+                  { id: 'unread', label: 'Unread', count: inquiryCounts.unread },
+                  { id: 'in_review', label: 'In Review', count: inquiryCounts.inReview },
+                  { id: 'resolved', label: 'Resolved', count: inquiryCounts.resolved },
+                ] as const
+              ).map((pill) => {
+                const active = inquiryStatusFilter === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setInquiryStatusFilter(pill.id)}
+                    className={`px-3 py-1 rounded-full border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                      active
+                        ? 'bg-[#282828] border-[#3c3c3c] text-[#e4e7ec] font-semibold'
+                        : 'bg-[#121212] border-[#282828] text-[#9ca3af] hover:text-[#d0d5dd]'
+                    }`}
+                  >
+                    <span>{pill.label}</span>
+                    <span
+                      className={`font-mono text-[11px] px-1.5 rounded-full ${
+                        pill.id === 'unread' && pill.count > 0
+                          ? 'bg-[#1db954]/15 text-[#3fb970]'
+                          : 'text-[#6f7682]'
+                      }`}
+                    >
+                      {pill.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Search Input */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-[#6f7682] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search inquiries by sender name, email, subject, or message..."
+                value={inquirySearch}
+                onChange={(e) => setInquirySearch(e.target.value)}
+                className="pl-9 bg-[#121212] border-[#282828]"
+              />
+            </div>
+
+            <div className="text-xs text-[#9ca3af]">
+              Showing <span className="font-mono text-[#e4e7ec]">{filteredInquiries.length}</span> of{' '}
+              <span className="font-mono text-[#e4e7ec]">{inquiriesList.length}</span> inquiries
+            </div>
+          </div>
+
+          {/* Master-Detail Inbox Layout */}
+          {inquiriesList.length === 0 ? (
+            <div className="py-16 px-4 rounded-xl bg-[#121212] border border-[#282828] text-center space-y-2">
+              <Inbox className="w-9 h-9 text-[#6f7682] mx-auto" />
+              <div className="text-sm font-semibold text-[#e4e7ec]">No User Inquiries Yet</div>
+              <p className="text-xs text-[#9ca3af] max-w-md mx-auto leading-relaxed">
+                When visitors submit the Contact form or signed-in creators send an inquiry, their messages will appear here for review.
+              </p>
+            </div>
+          ) : filteredInquiries.length === 0 ? (
+            <div className="py-14 px-4 rounded-xl bg-[#121212] border border-[#282828] text-center space-y-2">
+              <Search className="w-8 h-8 text-[#6f7682] mx-auto" />
+              <div className="text-sm font-semibold text-[#e4e7ec]">No Matching Inquiries</div>
+              <p className="text-xs text-[#9ca3af]">
+                Try clearing your search query or switching the status filter above.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left Column: Inquiry List */}
+              <div className="lg:col-span-5 border border-[#282828] rounded-xl bg-[#121212] divide-y divide-[#282828] max-h-[600px] overflow-y-auto">
+                {filteredInquiries.map((inq) => {
+                  const isSelected = selectedInquiry?.id === inq.id;
+                  const statusBadge =
+                    inq.status === 'unread'
+                      ? { label: 'Unread', cls: 'bg-[#1db954]/15 text-[#3fb970] border-[#1db954]/30' }
+                      : inq.status === 'in_review'
+                      ? { label: 'In Review', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/25' }
+                      : { label: 'Resolved', cls: 'bg-[#242424] text-[#9ca3af] border-[#34373f]' };
+
+                  return (
+                    <button
+                      key={inq.id}
+                      type="button"
+                      onClick={() => handleSelectInquiry(inq)}
+                      className={`w-full text-left p-4 transition-colors cursor-pointer space-y-1.5 ${
+                        isSelected
+                          ? 'bg-[#1f1f1f] border-l-2 border-l-[#3fb970]'
+                          : 'hover:bg-[#191919]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {inq.status === 'unread' && (
+                            <span className="w-2 h-2 rounded-full bg-[#3fb970] shrink-0" />
+                          )}
+                          <span className="text-xs font-semibold text-[#e4e7ec] truncate">
+                            {inq.name}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-[#6f7682] font-mono shrink-0">
+                          {new Date(inq.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-mono text-[#9ca3af] truncate">
+                          {inq.email}
+                        </span>
+                        <span className="text-[10px] text-[#6f7682] shrink-0">
+                          {inq.source === 'creator_studio' ? 'Creator Studio' : 'Landing Form'}
+                        </span>
+                      </div>
+
+                      <div className="text-xs font-medium text-[#d0d5dd] truncate">
+                        {inq.subject?.trim() ? inq.subject : '(No Subject)'}
+                      </div>
+
+                      <p className="text-xs text-[#9ca3af] line-clamp-2 leading-relaxed">
+                        {inq.message}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${statusBadge.cls}`}
+                        >
+                          {statusBadge.label}
+                        </span>
+                        {inq.adminNotes?.trim() && (
+                          <span className="text-[10px] text-[#6f7682] flex items-center gap-1">
+                            <FileText className="w-3 h-3" />
+                            <span>Has Notes</span>
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Right Column: Selected Inquiry Detail & Triage */}
+              {selectedInquiry && (
+                <div className="lg:col-span-7 border border-[#282828] rounded-xl bg-[#121212] p-5 space-y-5">
+                  {/* Sender Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-[#282828]">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#242424] border border-[#323232] text-[#e4e7ec] font-bold text-sm flex items-center justify-center shrink-0">
+                        {selectedInquiry.name
+                          .split(' ')
+                          .map((p) => p[0])
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-sm font-bold text-[#e4e7ec]">
+                            {selectedInquiry.name}
+                          </h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#1f1f1f] text-[#9ca3af] border border-[#2e2e2e]">
+                            {selectedInquiry.source === 'creator_studio'
+                              ? 'Signed-in Creator'
+                              : 'Public Visitor'}
+                          </span>
+                        </div>
+                        <a
+                          href={`mailto:${selectedInquiry.email}`}
+                          className="text-xs font-mono text-[#3fb970] hover:underline flex items-center gap-1 mt-0.5"
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>{selectedInquiry.email}</span>
+                        </a>
+                        <div className="text-[11px] text-[#6f7682] flex items-center gap-1.5 mt-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Received {new Date(selectedInquiry.createdAt).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Triage Status Switcher */}
+                    <div className="flex items-center gap-1 p-1 bg-[#181818] border border-[#282828] rounded-full self-start">
+                      {(
+                        [
+                          { id: 'unread', label: 'Unread' },
+                          { id: 'in_review', label: 'In Review' },
+                          { id: 'resolved', label: 'Resolved' },
+                        ] as const
+                      ).map((st) => {
+                        const active = selectedInquiry.status === st.id;
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            disabled={isUpdatingInquiry}
+                            onClick={() =>
+                              handleUpdateInquiry(
+                                selectedInquiry.id,
+                                { status: st.id },
+                                `Inquiry marked as ${st.label}.`
+                              )
+                            }
+                            className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                              active
+                                ? st.id === 'unread'
+                                  ? 'bg-[#1db954]/20 text-[#3fb970]'
+                                  : st.id === 'in_review'
+                                  ? 'bg-amber-500/20 text-amber-300'
+                                  : 'bg-[#2c2c2c] text-[#e4e7ec]'
+                                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Subject & Full Message */}
+                  <div className="p-4 rounded-xl bg-[#181818] border border-[#282828] space-y-2.5">
+                    <div className="text-xs uppercase tracking-wider font-semibold text-[#6f7682]">
+                      Subject
+                    </div>
+                    <div className="text-sm font-bold text-[#e4e7ec]">
+                      {selectedInquiry.subject?.trim() || '(No Subject Provided)'}
+                    </div>
+                    <div className="pt-2 border-t border-[#282828] text-sm text-[#d0d5dd] whitespace-pre-wrap leading-relaxed">
+                      {selectedInquiry.message}
+                    </div>
+                  </div>
+
+                  {/* Internal SuperAdmin Notes */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-[#d0d5dd]">
+                        Internal Admin Notes
+                      </label>
+                      <span className="text-[11px] text-[#6f7682]">
+                        Private to SuperAdmin
+                      </span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={inquiryNotesDraft}
+                      onChange={(e) => setInquiryNotesDraft(e.target.value)}
+                      placeholder="Record follow-up actions, custom plan quotes, or resolution notes..."
+                      className="w-full px-3.5 py-2.5 bg-[#181818] border border-[#282828] rounded-xl text-xs text-[#d0d5dd] placeholder-[#6f7682] focus:outline-none focus:border-[#1db954]/60"
+                    />
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] text-[#6f7682]">
+                        Last updated {new Date(selectedInquiry.updatedAt || selectedInquiry.createdAt).toLocaleString()}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={
+                          isUpdatingInquiry ||
+                          inquiryNotesDraft === (selectedInquiry.adminNotes || '')
+                        }
+                        onClick={() =>
+                          handleUpdateInquiry(
+                            selectedInquiry.id,
+                            { adminNotes: inquiryNotesDraft },
+                            'Admin notes saved.'
+                          )
+                        }
+                        className="px-3.5 py-1.5 rounded-full bg-[#242424] hover:bg-[#303030] disabled:opacity-40 text-xs font-semibold text-[#e4e7ec] border border-[#34373f] flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Save className="w-3.5 h-3.5 text-[#3fb970]" />
+                        <span>Save Notes</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Action Footer: Reply via Email & Two-step Delete */}
+                  <div className="pt-4 border-t border-[#282828] flex flex-wrap items-center justify-between gap-3">
+                    <a
+                      href={`mailto:${selectedInquiry.email}?subject=${encodeURIComponent(
+                        `Re: ${selectedInquiry.subject?.trim() || 'Your Scriby Inquiry'}`
+                      )}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-bold transition-colors"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Reply via Email</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+
+                    {confirmDeleteInquiryId === selectedInquiry.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-rose-300">Delete permanently?</span>
+                        <button
+                          type="button"
+                          disabled={isUpdatingInquiry}
+                          onClick={() => handleDeleteInquiry(selectedInquiry.id)}
+                          className="px-3 py-1.5 rounded-full bg-rose-950/70 hover:bg-rose-900/70 text-rose-300 border border-rose-500/30 text-xs font-semibold cursor-pointer"
+                        >
+                          Confirm Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteInquiryId(null)}
+                          className="px-3 py-1.5 rounded-full bg-[#242424] hover:bg-[#2e2e2e] text-[#d0d5dd] text-xs cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteInquiryId(selectedInquiry.id)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1f1f1f] hover:bg-rose-950/50 text-[#9ca3af] hover:text-rose-300 border border-[#282828] hover:border-rose-500/30 text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete Inquiry</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ================= TAB 6: LEGAL & POLICIES MANAGEMENT ================= */}
       {activeAdminTab === 'policies' && (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
