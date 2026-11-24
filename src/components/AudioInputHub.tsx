@@ -20,6 +20,7 @@ import { cacheTranscriptAudio } from '../utils/audioStorage';
 import { useAuth } from '../context/AuthContext';
 import { safeFetchJson, sanitizeErrorMessage } from '../utils/apiClient';
 import { getSttLanguages, getLanguageOption, MoonshineArchKey } from '../utils/voiceLanguages';
+import { generateKeyPointTitle } from '../utils/subtitleUtils';
 import {
   transcribeAudioFileWithMoonshine,
   startMoonshineLiveMicSession,
@@ -201,9 +202,15 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
     language: string;
     modelArch: MoonshineArchKey;
   }) => {
-    setLoadingStep('Saving transcript & caching studio audio...');
+    setLoadingStep('Generating key-point title & saving transcript...');
 
     let savedTranscriptId: number | undefined;
+    const localKeyTitle = generateKeyPointTitle(
+      params.fullTranscript,
+      params.segments,
+      params.audioName
+    );
+    let resolvedTitle = localKeyTitle;
 
     if (token) {
       const maxServerAudioBytes = 38 * 1024 * 1024;
@@ -211,7 +218,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         params.blob.size <= maxServerAudioBytes ? await blobToBase64(params.blob) : undefined;
       const res = await safeFetchJson<{
         success: boolean;
-        data?: { savedTranscriptId?: number };
+        data?: { savedTranscriptId?: number; title?: string };
         error?: string;
       }>('/api/transcripts', {
         method: 'POST',
@@ -220,8 +227,9 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: params.audioName,
+          title: localKeyTitle,
           audioName: params.audioName,
+          autoGenerateTitle: true,
           durationSeconds: params.durationSeconds,
           language: params.language,
           modelArch: params.modelArch,
@@ -246,6 +254,9 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       }
 
       savedTranscriptId = res.data?.data?.savedTranscriptId;
+      if (res.data?.data?.title && res.data.data.title.trim()) {
+        resolvedTitle = res.data.data.title.trim();
+      }
     }
 
     try {
@@ -258,6 +269,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       {
         url: params.playableUrl,
         name: params.audioName,
+        title: resolvedTitle,
         size: params.size,
         duration: params.durationSeconds,
         blob: params.blob,

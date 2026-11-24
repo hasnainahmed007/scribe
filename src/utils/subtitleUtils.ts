@@ -458,3 +458,114 @@ export function createSegmentsFromScript(
     };
   });
 }
+
+/**
+ * Detects whether a title string is still a raw audio filename or generic timestamped recording label.
+ */
+export function isRawAudioFilenameTitle(title?: string, audioName?: string): boolean {
+  const cleanTitle = (title || '').trim();
+  if (!cleanTitle) return true;
+  if (audioName && cleanTitle.toLowerCase() === audioName.trim().toLowerCase()) return true;
+  if (/\.(mp3|wav|m4a|ogg|webm|aac|flac|mp4|mov|mkv|avi)$/i.test(cleanTitle)) return true;
+  if (/^(?:screen\s*recording|recording|audio[\s_-]*recording|live\s+voice\s+recording|voice\s*memo|whatsapp\s+audio|vid|aud|img)[\s_(-]*\d/i.test(cleanTitle)) {
+    return true;
+  }
+  return false;
+}
+
+const CONVERSATIONAL_LEAD_PATTERNS = [
+  /^(?:hi|hello|hey|greetings|welcome(?:\s+back)?|good\s+(?:morning|afternoon|evening)|okay|ok|alright|so|well|now|um+|uh+|basically|actually|anyway|right)\b[\s,.:;!?-]*/i,
+  /^(?:in\s+this\s+(?:video|episode|recording|session|clip)|today\s+(?:we(?:'re|\s+are)\s+(?:going\s+to|gonna)\s+)?(?:talk|discuss|look)\s+about)\b[\s,.:;!?-]*/i,
+];
+
+/**
+ * Generates a concise, readable title from the transcript's main key point when AI title generation
+ * is unavailable or before server persistence.
+ */
+export function generateKeyPointTitle(
+  fullTranscript: string,
+  segments?: readonly { text?: string }[],
+  fallbackLabel?: string
+): string {
+  const combinedFromSegments = Array.isArray(segments)
+    ? segments.map((s) => (s?.text || '').trim()).filter(Boolean).join(' ')
+    : '';
+
+  const rawText = sanitizeSubtitleCueText(fullTranscript || combinedFromSegments);
+  if (!rawText || rawText.length < 4) {
+    const cleanFallback = (fallbackLabel || 'Audio Transcript')
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[_-]+/g, ' ')
+      .trim();
+    return cleanFallback || 'Audio Transcript';
+  }
+
+  const sentences = rawText
+    .split(/(?<=[.!?।。؟])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 6);
+
+  const candidates = sentences.length > 0 ? sentences : [rawText];
+
+  // Score sentences to prefer informative key points over brief filler or rhetorical openers
+  let bestSentence = candidates[0];
+  let bestScore = -1;
+
+  for (let i = 0; i < Math.min(candidates.length, 8); i++) {
+    let candidate = candidates[i];
+    for (const pattern of CONVERSATIONAL_LEAD_PATTERNS) {
+      candidate = candidate.replace(pattern, '').trim();
+    }
+    if (!candidate) continue;
+
+    const words = candidate.split(/\s+/).filter(Boolean);
+    const wordCount = words.length;
+    if (wordCount < 3) continue;
+
+    let score = Math.min(wordCount, 12) * 2;
+    if (i === 0) score += 3;
+    if (i === 1) score += 2;
+    // Prefer declarative key statements slightly over pure short questions
+    if (candidate.endsWith('?') && wordCount < 9) score -= 4;
+    // Reward capitalized proper nouns / numbers / key terms inside sentence
+    const properOrNumeric = words.slice(1).filter((w) => /^[A-Z0-9]/.test(w)).length;
+    score += Math.min(properOrNumeric, 4) * 2;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestSentence = candidate;
+    }
+  }
+
+  let cleaned = bestSentence.replace(/^[•\-–—\s]+/, '').trim();
+  for (const pattern of CONVERSATIONAL_LEAD_PATTERNS) {
+    cleaned = cleaned.replace(pattern, '').trim();
+  }
+  if (!cleaned) cleaned = rawText;
+
+  // Trim cleanly on word boundary to ~8-10 words / 58 chars
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  let clippedWords: string[] = [];
+  let charCount = 0;
+  for (const word of words) {
+    const nextLen = charCount + (clippedWords.length > 0 ? 1 : 0) + word.length;
+    if (clippedWords.length >= 4 && (nextLen > 62 || clippedWords.length >= 10)) {
+      break;
+    }
+    clippedWords.push(word);
+    charCount = nextLen;
+    if (clippedWords.length >= 6 && /[,;:]$/.test(word)) {
+      break;
+    }
+  }
+
+  let result = (clippedWords.length > 0 ? clippedWords.join(' ') : cleaned.slice(0, 58))
+    .replace(/[,;:.!?…\-–—]+$/g, '')
+    .trim();
+
+  if (result.length > 0 && /^[a-z]/.test(result)) {
+    result = result.charAt(0).toUpperCase() + result.slice(1);
+  }
+
+  return result || 'Audio Transcript';
+}

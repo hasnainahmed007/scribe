@@ -25,6 +25,7 @@ interface TranscriptEditorProps {
   segments: TranscriptSegment[];
   summary: string;
   audioName?: string;
+  audioTitle?: string;
   userName?: string;
   currentTime: number;
   isTranscribing?: boolean;
@@ -55,6 +56,7 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   segments,
   summary,
   audioName,
+  audioTitle,
   userName,
   currentTime,
   isTranscribing = false,
@@ -488,10 +490,12 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           <div className="flex items-center gap-2 min-w-0 text-[#9ca3af]">
             <MessageSquareText className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
             <span className="font-semibold text-[#e4e7ec] whitespace-nowrap">Transcript Chat</span>
-            {(chatActivity?.sourceLabel || audioName) && (
+            {(chatActivity?.sourceLabel || audioTitle || audioName) && (
               <>
                 <span className="text-[#4a4e57]">·</span>
-                <span className="truncate text-[#9ca3af]">{chatActivity?.sourceLabel || audioName}</span>
+                <span className="truncate text-[#9ca3af]">
+                  {chatActivity?.sourceLabel || audioTitle || audioName}
+                </span>
               </>
             )}
           </div>

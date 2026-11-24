@@ -9,6 +9,7 @@ export interface TranscriptSegment {
 export interface AudioSource {
   url: string;
   name: string;
+  title?: string;
   size?: number;
   duration: number;
   blob?: Blob;

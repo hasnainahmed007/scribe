@@ -372,8 +372,9 @@ export const transcribeAudioSchema = z
 export type TranscribeAudioInput = z.infer<typeof transcribeAudioSchema>;
 
 export const saveTranscriptSchema = z.object({
-  title: z.string().trim().min(1, 'Transcript title is required.').max(180),
+  title: z.string().trim().max(180).optional().default(''),
   audioName: z.string().trim().max(180).optional().default('Audio Recording'),
+  autoGenerateTitle: z.boolean().optional().default(true),
   durationSeconds: z.coerce.number().min(1).max(36000).default(30),
   language: z.string().trim().max(24).optional().default('en'),
   modelArch: z.string().trim().max(40).optional().default('medium_streaming'),

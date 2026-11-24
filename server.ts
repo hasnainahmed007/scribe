@@ -6,7 +6,11 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
+import {
+  generateKeyPointTitle,
+  isRawAudioFilenameTitle,
+} from './src/utils/subtitleUtils.ts';
 import { db } from './src/db/index.ts';
 import {
   users as usersTable,
@@ -1893,6 +1897,52 @@ Our billing team reviews all claims within two (2) business days and executes ve
 
 // ===================== Client-Side Moonshine STT Persistence & Credits =====================
 
+async function generateTranscriptKeyPointTitle(
+  fullTranscript: string,
+  segments: Array<{ text?: string }>,
+  requestedTitle?: string,
+  audioName?: string,
+  forceAiTitle: boolean = false
+): Promise<string> {
+  const cleanTranscript = (fullTranscript || segments.map((s) => s.text || '').join(' ')).trim();
+  const localTitle = generateKeyPointTitle(cleanTranscript, segments, audioName || requestedTitle);
+  const shouldGenerate = forceAiTitle || isRawAudioFilenameTitle(requestedTitle, audioName);
+
+  if (!shouldGenerate && requestedTitle?.trim()) {
+    return requestedTitle.trim();
+  }
+  if (!cleanTranscript || cleanTranscript.length < 12 || !apiKey) {
+    return localTitle;
+  }
+
+  try {
+    const response = await generateContentWithRetry({
+      models: ['gemini-4-hydrogen', 'gemini-3.1-flash-lite'],
+      timeoutMs: 7500,
+      maxRetriesPerModel: 1,
+      contents: `Generate ONE concise title (3 to 8 words) capturing the main key point or topic of this audio transcript. Write the title in the EXACT SAME language as the transcript. Output ONLY the plain title text with no quotes, numbering, markdown, or trailing punctuation.\n\nTranscript:\n"""\n${cleanTranscript.slice(0, 4500)}\n"""`,
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      },
+    });
+
+    const aiTitle = (response?.text || '')
+      .replace(/^["'`#*>\-\s]+/, '')
+      .replace(/["'`]+$/g, '')
+      .split('\n')[0]
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (aiTitle && aiTitle.length >= 3 && !isRawAudioFilenameTitle(aiTitle, audioName)) {
+      return aiTitle.slice(0, 90);
+    }
+  } catch {
+    // Fall back gracefully to deterministic local key-point title
+  }
+
+  return localTitle;
+}
+
 app.post('/api/transcripts', async (req: Request, res: Response) => {
   try {
     const parse = saveTranscriptSchema.safeParse(req.body);
@@ -1906,6 +1956,7 @@ app.post('/api/transcripts', async (req: Request, res: Response) => {
     const {
       title,
       audioName,
+      autoGenerateTitle,
       durationSeconds,
       language,
       modelArch,
@@ -1960,6 +2011,15 @@ app.post('/api/transcripts', async (req: Request, res: Response) => {
     let savedTranscriptId: number | undefined;
     let audioUrl: string | undefined;
 
+    const resolvedTranscript = (fullTranscript || normalizedSegments.map((s) => s.text).join(' ')).trim();
+    const resolvedTitle = await generateTranscriptKeyPointTitle(
+      resolvedTranscript,
+      normalizedSegments,
+      title,
+      audioName,
+      Boolean(autoGenerateTitle)
+    );
+
     if (authenticatedUser) {
       if (authenticatedUser.role !== 'superadmin') {
         await db
@@ -1973,12 +2033,11 @@ app.post('/api/transcripts', async (req: Request, res: Response) => {
 
       await db.insert(usageLogsTable).values({
         userId: authenticatedUser.id,
-        audioName: audioName || title || 'Audio Recording',
+        audioName: audioName || resolvedTitle || 'Audio Recording',
         durationSeconds: actualDuration,
         creditsDeducted: authenticatedUser.role === 'superadmin' ? 0 : neededCredits,
       });
 
-      const resolvedTranscript = (fullTranscript || normalizedSegments.map((s) => s.text).join(' ')).trim();
       const wordCount = resolvedTranscript ? resolvedTranscript.split(/\s+/).filter(Boolean).length : 0;
 
       const saved = await db
@@ -1986,8 +2045,8 @@ app.post('/api/transcripts', async (req: Request, res: Response) => {
         .values({
           userId: authenticatedUser.id,
           userUid: authenticatedUser.uid,
-          title: title || 'Audio Recording',
-          audioName: audioName || title || 'Audio Recording',
+          title: resolvedTitle,
+          audioName: audioName || resolvedTitle || 'Audio Recording',
           durationSeconds: actualDuration,
           segmentsJson: JSON.stringify(normalizedSegments),
           fullTranscript: resolvedTranscript,
@@ -2009,12 +2068,13 @@ app.post('/api/transcripts', async (req: Request, res: Response) => {
       success: true,
       data: {
         savedTranscriptId,
+        title: resolvedTitle,
         audioUrl,
         language,
         modelArch,
         engine: 'moonshine-wasm',
         segments: normalizedSegments,
-        fullTranscript,
+        fullTranscript: resolvedTranscript,
         summary,
       },
     });
@@ -2124,11 +2184,15 @@ app.get('/api/transcripts', authMiddleware, async (req: AuthenticatedRequest, re
       try {
         segments = JSON.parse(item.segmentsJson);
       } catch {}
+      const displayTitle =
+        isRawAudioFilenameTitle(item.title, item.audioName) && item.fullTranscript
+          ? generateKeyPointTitle(item.fullTranscript, segments, item.title)
+          : item.title;
       return {
         id: item.id,
         userId: item.userId,
         userUid: item.userUid,
-        title: item.title,
+        title: displayTitle,
         audioName: item.audioName,
         duration: item.durationSeconds,
         durationSeconds: item.durationSeconds,
@@ -2170,6 +2234,10 @@ app.get('/api/transcripts/:id', authMiddleware, async (req: AuthenticatedRequest
     try {
       segments = JSON.parse(rows[0].segmentsJson);
     } catch {}
+    const displayTitle =
+      isRawAudioFilenameTitle(rows[0].title, rows[0].audioName) && rows[0].fullTranscript
+        ? generateKeyPointTitle(rows[0].fullTranscript, segments, rows[0].title)
+        : rows[0].title;
 
     return res.json({
       success: true,
@@ -2177,7 +2245,7 @@ app.get('/api/transcripts/:id', authMiddleware, async (req: AuthenticatedRequest
         id: rows[0].id,
         userId: rows[0].userId,
         userUid: rows[0].userUid,
-        title: rows[0].title,
+        title: displayTitle,
         audioName: rows[0].audioName,
         duration: rows[0].durationSeconds,
         durationSeconds: rows[0].durationSeconds,

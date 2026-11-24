@@ -378,6 +378,7 @@ function ScribyApp() {
       setAudioSource({
         url: playableUrl,
         name: item.audioName || item.title,
+        title: item.title,
         duration: safeDuration,
         blob: audioBlob,
         mimeType: audioBlob?.type || 'audio/wav',
@@ -387,7 +388,8 @@ function ScribyApp() {
       const url = URL.createObjectURL(blob);
       setAudioSource({
         url,
-        name: item.title,
+        name: item.audioName || item.title,
+        title: item.title,
         duration: safeDuration,
         blob,
         mimeType: 'audio/wav',
@@ -450,10 +452,11 @@ function ScribyApp() {
     setSummary(item.summary || '');
     setAudioSource((prev) =>
       prev
-        ? { ...prev, name: item.title }
+        ? { ...prev, name: item.audioName || item.title, title: item.title }
         : {
             url: '',
-            name: item.title,
+            name: item.audioName || item.title,
+            title: item.title,
             duration: item.duration,
             mimeType: 'audio/wav',
           }
@@ -485,7 +488,9 @@ function ScribyApp() {
     setChatActivity(null);
     setActiveTab('studio');
 
-    if (newSegments.length > 0) {
+    if (newSource.title) {
+      setThumbnailTitle(newSource.title);
+    } else if (newSegments.length > 0) {
       setThumbnailTitle(newSegments[0].text);
     }
 
@@ -833,13 +838,21 @@ function ScribyApp() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
                   <div className="min-w-0">
                     <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display truncate">
-                      {audioSource?.name || 'Transcript Chat Workspace'}
+                      {audioSource?.title || audioSource?.name || 'Transcript Chat Workspace'}
                     </h2>
-                    <div className="text-xs text-[#9ca3af] mt-0.5">
+                    <div className="text-xs text-[#9ca3af] mt-0.5 flex items-center flex-wrap gap-x-2">
                       <span>{segments.length} Subtitle Segments</span>
-                      <span className="mx-2 text-[#4a4e57]">·</span>
+                      {audioSource?.title && audioSource?.name && audioSource.title !== audioSource.name && (
+                        <>
+                          <span className="text-[#4a4e57]">·</span>
+                          <span className="truncate max-w-[260px] text-[#9ca3af]" title={audioSource.name}>
+                            {audioSource.name}
+                          </span>
+                        </>
+                      )}
+                      <span className="text-[#4a4e57]">·</span>
                       <span>Waveform Alignment</span>
-                      <span className="mx-2 text-[#4a4e57]">·</span>
+                      <span className="text-[#4a4e57]">·</span>
                       <span>SRT, DOCX, TXT, JSON</span>
                     </div>
                   </div>
@@ -893,6 +906,7 @@ function ScribyApp() {
                   segments={segments}
                   summary={summary}
                   audioName={audioSource?.name}
+                  audioTitle={audioSource?.title}
                   userName={user.name}
                   currentTime={currentTime}
                   isTranscribing={isLoadingTranscription}
@@ -1091,7 +1105,7 @@ function ScribyApp() {
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
         segments={segments}
-        audioName={audioSource?.name || 'audio_transcript'}
+        audioName={audioSource?.title || audioSource?.name || 'audio_transcript'}
         summary={summary}
         onOpenPricing={() => {
           setIsExportOpen(false);
