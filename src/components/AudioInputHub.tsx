@@ -53,7 +53,8 @@ interface AudioInputHubProps {
     audioSource: AudioSource,
     segments: TranscriptSegment[],
     fullTranscript: string,
-    summary: string
+    summary: string,
+    savedTranscriptId?: number
   ) => void;
   onTranscriptionAbort?: () => void;
   onActivityChange?: (activity: ChatSttActivity | null) => void;
@@ -122,6 +123,8 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
     modelArch: MoonshineArchKey;
   } | null>(null);
 
+  const [isCancelling, setIsCancelling] = useState(false);
+
   const micSessionRef = useRef<LiveMicCaptureSession | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -135,6 +138,11 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         micSessionRef.current.abort();
         micSessionRef.current = null;
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
       if (recordedUrl) URL.revokeObjectURL(recordedUrl);
     };
   }, [recordedUrl]);
@@ -277,10 +285,87 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       },
       params.segments,
       params.fullTranscript,
-      params.summary
+      params.summary,
+      savedTranscriptId
     );
 
     if (token) refreshProfile();
+  };
+
+  const handleCancelledTranscription = async (
+    err: MoonshineSttCancelledError,
+    params: {
+      sourceBlob: Blob;
+      audioName: string;
+      size?: number;
+      mimeTypeFallback?: string;
+      onAfterSave?: () => void;
+    }
+  ) => {
+    const partial = err.partialResult;
+    if (partial && partial.segments.length > 0 && partial.fullTranscript.trim()) {
+      try {
+        setLoadingStep('Saving partial transcript & Audio Synopsis...');
+        const processed = await preparePlayableAudio(
+          params.sourceBlob,
+          params.audioName,
+          partial.durationSeconds
+        );
+        await persistTranscriptAndOpen({
+          blob: processed.blob,
+          audioName: params.audioName,
+          size: params.size,
+          durationSeconds: processed.duration || partial.durationSeconds,
+          mimeType: processed.mimeType || params.mimeTypeFallback || 'audio/wav',
+          playableUrl: processed.url,
+          segments: partial.segments,
+          fullTranscript: partial.fullTranscript,
+          summary: partial.summary,
+          language: partial.language,
+          modelArch: partial.modelArch,
+        });
+        params.onAfterSave?.();
+      } catch (saveErr: unknown) {
+        const rawMsg =
+          saveErr instanceof Error
+            ? saveErr.message
+            : 'Failed to save partial transcript to workspace history.';
+        const { message } = sanitizeErrorMessage(rawMsg);
+        setErrorMessage(message);
+
+        // Preserve completed blocks & Audio Synopsis in the active studio session
+        onTranscriptionComplete(
+          {
+            url: URL.createObjectURL(params.sourceBlob),
+            name: params.audioName,
+            title: generateKeyPointTitle(
+              partial.fullTranscript,
+              partial.segments,
+              params.audioName
+            ),
+            size: params.size,
+            duration: partial.durationSeconds,
+            blob: params.sourceBlob,
+            mimeType: params.sourceBlob.type || params.mimeTypeFallback || 'audio/wav',
+          },
+          partial.segments,
+          partial.fullTranscript,
+          partial.summary
+        );
+      } finally {
+        setIsCancelling(false);
+        setIsLoading(false);
+        setDownloadProgress(null);
+        setChunkProgress(null);
+      }
+      return;
+    }
+
+    setIsCancelling(false);
+    setIsLoading(false);
+    setDownloadProgress(null);
+    setChunkProgress(null);
+    onTranscriptionAbort?.();
   };
 
   // Handle File Upload via local Moonshine WASM
@@ -308,6 +393,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
 
     setActiveSourceLabel(file.name);
     setActiveSourceType('upload');
+    setIsCancelling(false);
     setIsLoading(true);
     setLoadingStep('Initializing Moonshine WebAssembly engine...');
     onTranscriptionStart?.(file.name, 'upload');
@@ -340,15 +426,18 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         modelArch: result.modelArch,
       });
 
+      setIsCancelling(false);
       setIsLoading(false);
       setDownloadProgress(null);
       setChunkProgress(null);
     } catch (err: unknown) {
       if (err instanceof MoonshineSttCancelledError) {
-        setIsLoading(false);
-        setDownloadProgress(null);
-        setChunkProgress(null);
-        onTranscriptionAbort?.();
+        await handleCancelledTranscription(err, {
+          sourceBlob: file,
+          audioName: file.name,
+          size: file.size,
+          mimeTypeFallback: file.type || 'audio/wav',
+        });
         return;
       }
       if (err instanceof MoonshineIsolationError) {
@@ -357,6 +446,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       const rawMsg = err instanceof Error ? err.message : 'Moonshine transcription failed.';
       const { message } = sanitizeErrorMessage(rawMsg);
       setErrorMessage(message);
+      setIsCancelling(false);
       setIsLoading(false);
       setDownloadProgress(null);
       setChunkProgress(null);
@@ -504,6 +594,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
     const recName = `Live Voice Recording (${new Date().toLocaleTimeString()})`;
     setActiveSourceLabel(recName);
     setActiveSourceType('record');
+    setIsCancelling(false);
     setIsLoading(true);
     setErrorMessage(null);
     onTranscriptionStart?.(recName, 'record');
@@ -550,20 +641,33 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
       setLiveCommittedLines([]);
       setLivePartialText('');
       setRecordingSeconds(0);
+      setIsCancelling(false);
       setIsLoading(false);
       setDownloadProgress(null);
       setChunkProgress(null);
     } catch (err: unknown) {
       if (err instanceof MoonshineSttCancelledError) {
-        setIsLoading(false);
-        setDownloadProgress(null);
-        setChunkProgress(null);
-        onTranscriptionAbort?.();
+        await handleCancelledTranscription(err, {
+          sourceBlob: recordedBlob,
+          audioName: recName,
+          size: recordedBlob.size,
+          mimeTypeFallback: 'audio/wav',
+          onAfterSave: () => {
+            if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+            setRecordedBlob(null);
+            setRecordedUrl(null);
+            setLiveCapturedResult(null);
+            setLiveCommittedLines([]);
+            setLivePartialText('');
+            setRecordingSeconds(0);
+          },
+        });
         return;
       }
       const rawMsg = err instanceof Error ? err.message : 'Failed to finalize recording.';
       const { message } = sanitizeErrorMessage(rawMsg);
       setErrorMessage(message);
+      setIsCancelling(false);
       setIsLoading(false);
       setDownloadProgress(null);
       setChunkProgress(null);
@@ -686,16 +790,23 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
             </div>
             <button
               type="button"
+              disabled={isCancelling}
               onClick={() => {
-                abortActiveSttSession();
-                setIsLoading(false);
-                setDownloadProgress(null);
-                setChunkProgress(null);
-                onTranscriptionAbort?.();
+                const aborted = abortActiveSttSession();
+                if (aborted) {
+                  setIsCancelling(true);
+                  setLoadingStep('Stopping & saving completed transcript...');
+                } else {
+                  setIsCancelling(false);
+                  setIsLoading(false);
+                  setDownloadProgress(null);
+                  setChunkProgress(null);
+                  onTranscriptionAbort?.();
+                }
               }}
-              className="px-3 py-1 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#32363f] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="px-3 py-1 bg-[#202227] hover:bg-[#2a2d34] disabled:opacity-60 text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#32363f] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              Cancel
+              {isCancelling ? 'Stopping...' : 'Cancel'}
             </button>
           </div>
         ) : (

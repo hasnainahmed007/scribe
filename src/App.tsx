@@ -480,18 +480,20 @@ function ScribyApp() {
     }, 100);
   };
 
-  // Callback when transcription finishes
+  // Callback when transcription finishes (or completes partial save after cancellation)
   const handleTranscriptionComplete = (
     newSource: AudioSource,
     newSegments: TranscriptSegment[],
     newFullText: string,
-    newSummary: string
+    newSummary: string,
+    savedId?: number
   ) => {
     setAudioSource(newSource);
     setSegments(newSegments);
     setFullTranscript(newFullText);
     setSummary(newSummary);
     setDuration(newSource.duration);
+    setLoadedTranscriptId(typeof savedId === 'number' ? savedId : null);
     setChatActivity(null);
     setIsInspectorOpen(true);
     setActiveTab('studio');
@@ -942,9 +944,20 @@ function ScribyApp() {
                   isTranscribing={isLoadingTranscription}
                   chatActivity={chatActivity}
                   onCancelTranscription={() => {
-                    abortActiveSttSession();
-                    setIsLoadingTranscription(false);
-                    setChatActivity(null);
+                    const aborted = abortActiveSttSession();
+                    if (!aborted) {
+                      setIsLoadingTranscription(false);
+                      setChatActivity(null);
+                    } else {
+                      setChatActivity((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              loadingStep: 'Stopping & saving completed transcript...',
+                            }
+                          : null
+                      );
+                    }
                   }}
                   onUpdateSegment={handleUpdateSegment}
                   onDeleteSegment={handleDeleteSegment}

@@ -79,23 +79,37 @@ let activeTtsCache: {
 } | null = null;
 
 export class MoonshineSttCancelledError extends Error {
-  constructor() {
+  public partialResult?: MoonshineTranscriptionResult;
+
+  constructor(partialResult?: MoonshineTranscriptionResult) {
     super('Transcription cancelled.');
     this.name = 'MoonshineSttCancelledError';
+    this.partialResult = partialResult;
   }
 }
 
-let activeSttAbortController: { cancelled: boolean; worker?: Worker | null } | null = null;
+let activeSttAbortController: {
+  cancelled: boolean;
+  worker?: Worker | null;
+  abortClient?: (() => void) | null;
+} | null = null;
 
-export function abortActiveSttSession(): void {
-  if (!activeSttAbortController) return;
+export function abortActiveSttSession(): boolean {
+  if (!activeSttAbortController) return false;
   activeSttAbortController.cancelled = true;
+  if (activeSttAbortController.abortClient) {
+    try {
+      activeSttAbortController.abortClient();
+    } catch {}
+    activeSttAbortController.abortClient = null;
+  }
   if (activeSttAbortController.worker) {
     try {
       activeSttAbortController.worker.terminate();
     } catch {}
     activeSttAbortController.worker = null;
   }
+  return true;
 }
 
 export function releaseCachedTranscriber(): void {
@@ -1064,7 +1078,12 @@ export function refineSpeakersFromAudioPcm(
   return normalizeSpeakersChronologically(out);
 }
 
-export function buildLocalSummary(fullTranscript: string, durationSeconds: number, languageLabel: string): string {
+export function buildLocalSummary(
+  fullTranscript: string,
+  durationSeconds: number,
+  languageLabel: string,
+  totalAudioDurationSeconds?: number
+): string {
   const trimmed = fullTranscript.trim();
   if (!trimmed) {
     return `No intelligible speech detected in this ${Math.round(durationSeconds)}s audio clip.`;
@@ -1076,6 +1095,12 @@ export function buildLocalSummary(fullTranscript: string, durationSeconds: numbe
   const words = trimmed.split(/\s+/).filter(Boolean).length;
   const preview = sentences.slice(0, 2).join(' ');
   const clipped = preview.length > 210 ? `${preview.slice(0, 207)}...` : preview;
+  if (
+    typeof totalAudioDurationSeconds === 'number' &&
+    totalAudioDurationSeconds > durationSeconds + 2
+  ) {
+    return `${languageLabel} partial transcript saved at ${Math.round(durationSeconds)}s of ${Math.round(totalAudioDurationSeconds)}s (${words} words). Key excerpt: ${clipped}`;
+  }
   return `${languageLabel} transcript generated locally (${words} words, ${Math.round(durationSeconds)}s). Key excerpt: ${clipped}`;
 }
 
@@ -1540,10 +1565,21 @@ class MoonshineSttWorkerClient {
   >();
   private terminated = false;
   public diarizationEnabled = false;
+  private abortState: {
+    cancelled: boolean;
+    worker?: Worker | null;
+    abortClient?: (() => void) | null;
+  };
 
-  constructor(abortState: { cancelled: boolean; worker?: Worker | null }) {
+  constructor(abortState: {
+    cancelled: boolean;
+    worker?: Worker | null;
+    abortClient?: (() => void) | null;
+  }) {
+    this.abortState = abortState;
     this.worker = new Worker('/moonshine-stt-worker.js', { type: 'module' });
     abortState.worker = this.worker;
+    abortState.abortClient = () => this.terminate();
 
     this.worker.onmessage = (event: MessageEvent) => {
       const msg = event.data || {};
@@ -1640,6 +1676,10 @@ class MoonshineSttWorkerClient {
   public terminate(): void {
     if (this.terminated) return;
     this.terminated = true;
+    if (this.abortState.worker === this.worker) {
+      this.abortState.worker = null;
+    }
+    this.abortState.abortClient = null;
     for (const slot of this.pending.values()) {
       slot.reject(new Error('STT worker terminated.'));
     }
@@ -1661,7 +1701,7 @@ interface ChunkRunner {
 async function createWorkerChunkRunner(params: {
   language: string;
   archKey: MoonshineArchKey;
-  abortState: { cancelled: boolean; worker?: Worker | null };
+  abortState: { cancelled: boolean; worker?: Worker | null; abortClient?: (() => void) | null };
   onProgress?: (prog: MoonshineDownloadProgress) => void;
 }): Promise<ChunkRunner> {
   let diarizationFlag = true;
@@ -1803,7 +1843,11 @@ export async function transcribeAudioFileWithMoonshine(params: {
   releaseCachedTts();
   releaseCachedTranscriber();
 
-  const abortState: { cancelled: boolean; worker?: Worker | null } = { cancelled: false, worker: null };
+  const abortState: {
+    cancelled: boolean;
+    worker?: Worker | null;
+    abortClient?: (() => void) | null;
+  } = { cancelled: false, worker: null, abortClient: null };
   activeSttAbortController = abortState;
 
   params.onStage?.('Decoding & resampling audio to 16 kHz mono...');
@@ -1887,6 +1931,7 @@ export async function transcribeAudioFileWithMoonshine(params: {
   const registry = new CrossChunkSpeakerRegistry();
   const idCounter = { next: 0 };
   const allSegments: TranscriptSegment[] = [];
+  let lastProcessedSeconds = 0;
 
   try {
     for (let i = 0; i < chunks.length; i++) {
@@ -1941,6 +1986,7 @@ export async function transcribeAudioFileWithMoonshine(params: {
         });
       }
 
+      lastProcessedSeconds = Math.min(durationSeconds, win.endTime);
       params.onPartialSegments?.([...allSegments]);
 
       params.onChunkProgress?.({
@@ -1954,6 +2000,41 @@ export async function transcribeAudioFileWithMoonshine(params: {
         autoSwitchNotice: archDecision.notice,
       });
     }
+  } catch (loopErr) {
+    if (abortState.cancelled || loopErr instanceof MoonshineSttCancelledError) {
+      const completedSegments = allSegments.filter(
+        (s) => s.text && s.text.trim().length > 0
+      );
+      if (completedSegments.length > 0) {
+        const partialTranscript = completedSegments.map((s) => s.text).join(' ').trim();
+        const langLabel = opt.label || opt.code.toUpperCase();
+        const speakers = Array.from(
+          new Set(completedSegments.map((s) => s.speaker || 'Speaker 1'))
+        );
+        const lastSegEnd = completedSegments[completedSegments.length - 1]?.end || 0;
+        const processedSec = Math.max(1, lastProcessedSeconds || lastSegEnd);
+        const partialSummary = buildLocalSummary(
+          partialTranscript,
+          processedSec,
+          langLabel,
+          durationSeconds
+        );
+        throw new MoonshineSttCancelledError({
+          language: opt.code,
+          modelArch: arch,
+          requestedModelArch: requestedArch,
+          autoSwitchedModel: Boolean(archDecision.autoSwitchedFrom),
+          segments: completedSegments,
+          fullTranscript: partialTranscript,
+          summary: partialSummary,
+          durationSeconds,
+          speakerCount: speakers.length,
+          speakers,
+        });
+      }
+      throw new MoonshineSttCancelledError();
+    }
+    throw loopErr;
   } finally {
     // Always terminate STT worker / release model memory immediately after transcription completes or aborts
     activeRunner.dispose();
