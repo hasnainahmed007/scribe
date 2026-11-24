@@ -571,11 +571,27 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
   };
 
   const selectedLangOption = getLanguageOption(selectedSttLanguage);
+  const showTopStage = Boolean(
+    isLoading ||
+      (activeMode === 'record' && (isStartingMic || isRecording || recordedBlob))
+  );
 
   return (
     <div
       id="studio-chat-composer"
-      className="max-w-3xl mx-auto w-full rounded-2xl bg-[#181818] border border-[#2e3138] shadow-[0_10px_32px_rgba(0,0,0,0.48)] p-3 space-y-2.5"
+      onDragOver={(e) => {
+        if (isLoading || activeMode !== 'upload') return;
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        if (activeMode !== 'upload') return;
+        handleDrop(e);
+      }}
+      className={`max-w-3xl mx-auto w-full rounded-2xl bg-[#181818] border shadow-[0_10px_32px_rgba(0,0,0,0.48)] px-3 py-2.5 space-y-2.5 transition-colors ${
+        dragOver ? 'border-[#3fb970] bg-[#1db954]/5' : 'border-[#2e3138]'
+      }`}
     >
       {/* Cross-Origin Isolation Warning if running inside non-isolated embedded iframe */}
       {needsStandaloneTab && (
@@ -643,145 +659,104 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         }}
       />
 
-      {/* Composer Prompt / Capture Stage */}
-      {isLoading ? (
-        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930]">
-          <div className="flex items-center gap-3 min-w-0">
-            <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
-            <div className="min-w-0">
-              <div className="text-xs font-medium text-[#e4e7ec] truncate">
-                {loadingStep || 'Processing audio in isolated Moonshine worker...'}
-              </div>
-              {chunkProgress && chunkProgress.totalChunks > 1 ? (
-                <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
-                  Segment {chunkProgress.currentChunk}/{chunkProgress.totalChunks} ·{' '}
-                  {formatPlayerTime(chunkProgress.processedSeconds)} /{' '}
-                  {formatPlayerTime(chunkProgress.totalSeconds)} ·{' '}
-                  {Math.round(chunkProgress.fraction * 100)}%
-                </div>
-              ) : downloadProgress && downloadProgress.fraction >= 0 && downloadProgress.fraction < 1 ? (
-                <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
-                  Caching {downloadProgress.file}: {formatBytesMb(downloadProgress.loadedBytes)} /{' '}
-                  {formatBytesMb(downloadProgress.totalBytes)}
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              abortActiveSttSession();
-              setIsLoading(false);
-              setDownloadProgress(null);
-              setChunkProgress(null);
-              onTranscriptionAbort?.();
-            }}
-            className="px-3 py-1 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#32363f] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
-      ) : activeMode === 'upload' ? (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-dashed transition-all cursor-pointer ${
-            dragOver
-              ? 'border-[#3fb970] bg-[#1db954]/10'
-              : 'border-[#2f333c] hover:border-[#4b5563] bg-[#131417]/80 hover:bg-[#16181d]'
-          }`}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20 shrink-0">
-              <UploadCloud className="w-4 h-4" />
-            </div>
-            <div className="text-left min-w-0">
-              <div className="text-xs font-medium text-[#e4e7ec]">
-                Drop audio or video file here, or click to browse
-              </div>
-              <div className="text-[11px] text-[#9ca3af] truncate">
-                MP3, WAV, M4A, AAC, WebM, OGG · Multi-speaker &amp; chunked long-file support ({selectedLangOption?.label || 'English'})
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930] flex flex-col sm:flex-row items-center justify-between gap-3">
-          {isStartingMic ? (
-            <div className="flex items-center gap-2.5 text-xs text-[#e4e7ec] w-full">
+      {/* Active Processing / Live Mic Status Stage (Only shown when active) */}
+      {showTopStage && (
+        isLoading ? (
+          <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930]">
+            <div className="flex items-center gap-3 min-w-0">
               <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
-              <span>{loadingStep}</span>
-            </div>
-          ) : isRecording ? (
-            <div className="flex items-center gap-3 min-w-0 w-full">
-              <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 flex items-center justify-center shrink-0">
-                <Mic className="w-4 h-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="font-mono tabular-nums font-bold text-red-400">
-                    {formatPlayerTime(recordingSeconds)}
-                  </span>
-                  <span className="text-[#9ca3af] truncate">
-                    Streaming live ({selectedLangOption?.label || 'English'})...
-                  </span>
+              <div className="min-w-0">
+                <div className="text-xs font-medium text-[#e4e7ec] truncate">
+                  {loadingStep || 'Processing audio in isolated Moonshine worker...'}
                 </div>
-                {livePartialText && (
-                  <div className="text-[11px] text-[#d0d5dd] italic truncate">
-                    {livePartialText}
+                {chunkProgress && chunkProgress.totalChunks > 1 ? (
+                  <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
+                    Segment {chunkProgress.currentChunk}/{chunkProgress.totalChunks} ·{' '}
+                    {formatPlayerTime(chunkProgress.processedSeconds)} /{' '}
+                    {formatPlayerTime(chunkProgress.totalSeconds)} ·{' '}
+                    {Math.round(chunkProgress.fraction * 100)}%
                   </div>
-                )}
+                ) : downloadProgress && downloadProgress.fraction >= 0 && downloadProgress.fraction < 1 ? (
+                  <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
+                    Caching {downloadProgress.file}: {formatBytesMb(downloadProgress.loadedBytes)} /{' '}
+                    {formatBytesMb(downloadProgress.totalBytes)}
+                  </div>
+                ) : null}
               </div>
             </div>
-          ) : recordedBlob ? (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5">
-              <div className="flex items-center gap-3 w-full flex-1 min-w-0">
-                {recordedUrl && (
-                  <audio controls src={recordedUrl} className="h-8 flex-1 min-w-[180px]" />
-                )}
+            <button
+              type="button"
+              onClick={() => {
+                abortActiveSttSession();
+                setIsLoading(false);
+                setDownloadProgress(null);
+                setChunkProgress(null);
+                onTranscriptionAbort?.();
+              }}
+              className="px-3 py-1 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#32363f] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <div className="px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930] flex flex-col sm:flex-row items-center justify-between gap-3">
+            {isStartingMic ? (
+              <div className="flex items-center gap-2.5 text-xs text-[#e4e7ec] w-full">
+                <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
+                <span>{loadingStep}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (recordedUrl) URL.revokeObjectURL(recordedUrl);
-                  setRecordedBlob(null);
-                  setRecordedUrl(null);
-                  setLiveCapturedResult(null);
-                  setLiveCommittedLines([]);
-                  setLivePartialText('');
-                  setRecordingSeconds(0);
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#32363f] whitespace-nowrap cursor-pointer shrink-0"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset</span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 min-w-0 w-full">
-              <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20 flex items-center justify-center shrink-0">
-                <Mic className="w-4 h-4" />
-              </div>
-              <div className="text-left min-w-0">
-                <div className="text-xs font-medium text-[#e4e7ec]">
-                  Record live speech directly into this inference thread
+            ) : isRecording ? (
+              <div className="flex items-center gap-3 min-w-0 w-full">
+                <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 flex items-center justify-center shrink-0">
+                  <Mic className="w-4 h-4" />
                 </div>
-                <div className="text-[11px] text-[#9ca3af] truncate">
-                  Real-time Moonshine microphone capture with automatic timecodes
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-mono tabular-nums font-bold text-red-400">
+                      {formatPlayerTime(recordingSeconds)}
+                    </span>
+                    <span className="text-[#9ca3af] truncate">
+                      Streaming live ({selectedLangOption?.label || 'English'})...
+                    </span>
+                  </div>
+                  {livePartialText && (
+                    <div className="text-[11px] text-[#d0d5dd] italic truncate">
+                      {livePartialText}
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            ) : recordedBlob ? (
+              <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <div className="flex items-center gap-3 w-full flex-1 min-w-0">
+                  {recordedUrl && (
+                    <audio controls src={recordedUrl} className="h-8 flex-1 min-w-[180px]" />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+                    setRecordedBlob(null);
+                    setRecordedUrl(null);
+                    setLiveCapturedResult(null);
+                    setLiveCommittedLines([]);
+                    setLivePartialText('');
+                    setRecordingSeconds(0);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#32363f] whitespace-nowrap cursor-pointer shrink-0"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )
       )}
 
       {/* Claude Code Bottom Control Bar: Mode + Language + Model Left, Action CTA Right */}
-      <div className="pt-2 border-t border-[#24262c] flex flex-wrap items-center justify-between gap-2">
+      <div className={`${showTopStage ? 'pt-2 border-t border-[#24262c]' : ''} flex flex-wrap items-center justify-between gap-2`}>
         <div className="flex flex-wrap items-center gap-1.5">
           {/* Mode Switcher */}
           <div className="flex items-center gap-0.5 p-0.5 bg-[#121316] rounded-lg border border-[#282a30]">

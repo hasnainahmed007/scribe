@@ -808,7 +808,7 @@ function ScribyApp() {
           {activeTab === 'studio' ? (
             <div className="flex-1 min-w-0 h-[calc(100vh-57px)] flex overflow-hidden">
               {/* Center Claude Inference Column */}
-              <div className="flex-1 min-w-0 flex flex-col h-full">
+              <div className="relative flex-1 min-w-0 flex flex-col h-full">
                 {globalAiQuotaNotice && (
                   <div className="shrink-0 px-4 lg:px-6 pt-3">
                     <AiQuotaNotice
@@ -819,68 +819,47 @@ function ScribyApp() {
                   </div>
                 )}
 
-                {/* Slim Studio Header */}
-                <div className="shrink-0 px-4 lg:px-6 py-3 border-b border-[#24262c] flex flex-wrap items-center justify-between gap-3 bg-[#121212]">
-                  <div className="min-w-0">
-                    <h2 className="text-sm sm:text-base font-semibold text-[#e4e7ec] tracking-tight font-display truncate">
-                      {audioSource?.title || audioSource?.name || 'Transcript Chat Workspace'}
-                    </h2>
-                    <div className="text-xs text-[#9ca3af] mt-0.5 flex items-center flex-wrap gap-x-2">
-                      <span>{segments.length} Subtitle Segments</span>
-                      {audioSource?.title && audioSource?.name && audioSource.title !== audioSource.name && (
-                        <>
-                          <span className="text-[#4a4e57]">·</span>
-                          <span className="truncate max-w-[260px] text-[#9ca3af]" title={audioSource.name}>
-                            {audioSource.name}
-                          </span>
-                        </>
-                      )}
-                      <span className="text-[#4a4e57]">·</span>
-                      <span>Waveform Alignment</span>
-                      <span className="text-[#4a4e57]">·</span>
-                      <span>SRT, DOCX, TXT, JSON</span>
-                    </div>
-                  </div>
+                {/* Floating Top-Right Studio Action Buttons (No Full-Width Header Div) */}
+                <div className="absolute top-3 right-4 lg:right-6 z-20 flex items-center gap-2">
+                  {(segments.length > 0 || audioSource) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearStudioState}
+                      className="text-xs text-[#9ca3af] hover:text-rose-400 bg-[#141519]/85 hover:bg-[#22252b] backdrop-blur-md border border-[#282b33]/80 h-8"
+                      title="Clear studio workspace"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" />
+                      <span>Clear Studio</span>
+                    </Button>
+                  )}
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {(segments.length > 0 || audioSource) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClearStudioState}
-                        className="text-xs text-[#9ca3af] hover:text-rose-400 hover:bg-[#282828] h-8"
-                        title="Clear studio workspace"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        <span>Clear Studio</span>
-                      </Button>
-                    )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsExportOpen(true)}
+                    className="bg-[#141519]/85 backdrop-blur-md"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export</span>
+                  </Button>
 
+                  {hasInspectorContent && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setIsExportOpen(true)}
+                      onClick={() => setIsInspectorOpen((prev) => !prev)}
+                      title={isInspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
+                      className="bg-[#141519]/85 backdrop-blur-md"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Export</span>
+                      {isInspectorOpen ? (
+                        <PanelRightClose className="w-3.5 h-3.5 text-[#3fb970]" />
+                      ) : (
+                        <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
+                      )}
+                      <span className="hidden sm:inline">Inspector</span>
                     </Button>
-
-                    {hasInspectorContent && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsInspectorOpen((prev) => !prev)}
-                        title={isInspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
-                      >
-                        {isInspectorOpen ? (
-                          <PanelRightClose className="w-3.5 h-3.5 text-[#3fb970]" />
-                        ) : (
-                          <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
-                        )}
-                        <span className="hidden sm:inline">Inspector</span>
-                      </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 {/* Borderless Claude Inference Stream + Docked Composer */}
