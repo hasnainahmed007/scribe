@@ -52,7 +52,6 @@ import {
 } from '../utils/subtitleUtils';
 import {
   CUSTOM_ACCENT_ID,
-  SAMPLE_SCRIPTS_BY_LANGUAGE,
   getSynthesisLanguages,
   getCloningLanguages,
   getAccentsForLanguage,
@@ -71,6 +70,7 @@ import {
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
+import { Select } from './ui/Select';
 
 interface VoiceoverStudioProps {
   currentSubtitleText?: string;
@@ -1103,24 +1103,6 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {ttsLanguage !== 'auto' && SAMPLE_SCRIPTS_BY_LANGUAGE[ttsLanguage] && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setDialogueCues([]);
-                        setScript(SAMPLE_SCRIPTS_BY_LANGUAGE[ttsLanguage]);
-                        showToast(`Loaded native ${getShortLanguageLabel(ttsLanguage)} sample script!`);
-                      }}
-                      className="text-xs h-7 gap-1.5 border-[#34373f] text-[#4cc37c] hover:bg-[#24272c] hover:border-[#1db954]/45 cursor-pointer"
-                      title={`Load native ${getShortLanguageLabel(ttsLanguage)} test script`}
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span>Load {getShortLanguageLabel(ttsLanguage)} Sample</span>
-                    </Button>
-                  )}
-
                   {/* Option A: Use Platform Subtitles */}
                   <Button
                     type="button"
@@ -1205,33 +1187,37 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                                 {dialogueCues.filter((c) => c.speaker === spName).length} cues
                               </span>
                             </div>
-                            <select
+                            <Select
+                              ariaLabel={`Voice for ${spName}`}
+                              size="md"
+                              menuWidth="auto"
                               value={assignedVoiceId}
-                              onChange={(e) =>
+                              onChange={(val) =>
                                 setSpeakerVoiceMap((prev) => ({
                                   ...prev,
-                                  [spName]: e.target.value,
+                                  [spName]: val,
                                 }))
                               }
-                              className="w-full h-9 bg-[#1f2126] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-2.5 outline-none focus:border-[#1db954]/55"
-                            >
-                              {customVoices.length > 0 && (
-                                <optgroup label="Your Cloned Voices (ZipVoice)">
-                                  {customVoices.map((v) => (
-                                    <option key={v.id} value={String(v.id)}>
-                                      {v.name} ({getEffectiveVoiceGender(v) === 'female' ? 'Female Clone' : 'Male Clone'})
-                                    </option>
-                                  ))}
-                                </optgroup>
-                              )}
-                              <optgroup label="Studio Catalog Voices">
-                                {studioVoices.map((v) => (
-                                  <option key={v.id} value={String(v.id)}>
-                                    {v.name} ({getEffectiveVoiceGender(v) === 'female' ? 'Female' : 'Male'} · {getShortLanguageLabel(v.language)})
-                                  </option>
-                                ))}
-                              </optgroup>
-                            </select>
+                              options={[
+                                ...customVoices.map((v) => ({
+                                  value: String(v.id),
+                                  label: v.name,
+                                  sublabel:
+                                    getEffectiveVoiceGender(v) === 'female'
+                                      ? 'Female Clone'
+                                      : 'Male Clone',
+                                  group: 'Your Cloned Voices (ZipVoice)',
+                                })),
+                                ...studioVoices.map((v) => ({
+                                  value: String(v.id),
+                                  label: v.name,
+                                  sublabel: `${
+                                    getEffectiveVoiceGender(v) === 'female' ? 'Female' : 'Male'
+                                  } · ${getShortLanguageLabel(v.language)}`,
+                                  group: 'Studio Catalog Voices',
+                                })),
+                              ]}
+                            />
                           </div>
                         );
                       })}
@@ -1343,23 +1329,20 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       <Globe className="w-3.5 h-3.5 text-[#34a866]" />
                       <span>Primary Language</span>
                     </label>
-                    <select
+                    <Select
                       id="tts-primary-language"
+                      ariaLabel="Primary Language"
                       value={ttsLanguage}
-                      onChange={(e) => handleTtsLanguageChange(e.target.value)}
-                      className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                    >
-                      {synthesisLanguages.map((lang) => (
-                        <option
-                          key={lang.code}
-                          value={lang.code}
-                          disabled={lang.code !== 'auto' && !lang.ttsSupported}
-                        >
-                          {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
-                          {lang.code !== 'auto' && !lang.ttsSupported ? ' — WASM pack pending' : ''}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={handleTtsLanguageChange}
+                      leadingIcon={<Globe className="w-3.5 h-3.5 text-[#34a866]" />}
+                      options={synthesisLanguages.map((lang) => ({
+                        value: lang.code,
+                        label: lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label,
+                        sublabel:
+                          lang.code !== 'auto' && !lang.ttsSupported ? 'WASM pack pending' : undefined,
+                        disabled: lang.code !== 'auto' && !lang.ttsSupported,
+                      }))}
+                    />
                   </div>
 
                   {/* Linked Accent / Dialect Select */}
@@ -1370,19 +1353,22 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     >
                       Accent / Dialect
                     </label>
-                    <select
+                    <Select
                       id="tts-accent-select"
+                      ariaLabel="Accent or Dialect"
                       value={ttsAccent}
-                      onChange={(e) => setTtsAccent(e.target.value)}
-                      className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                    >
-                      {ttsAccentOptions.map((acc) => (
-                        <option key={acc.id} value={acc.label}>
-                          {acc.label}
-                        </option>
-                      ))}
-                      <option value={CUSTOM_ACCENT_ID}>Custom Accent...</option>
-                    </select>
+                      onChange={setTtsAccent}
+                      options={[
+                        ...ttsAccentOptions.map((acc) => ({
+                          value: acc.label,
+                          label: acc.label,
+                        })),
+                        {
+                          value: CUSTOM_ACCENT_ID,
+                          label: 'Custom Accent...',
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
 
@@ -1419,16 +1405,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 {/* Speech Delivery Tone */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-[#9ca3af]">Delivery Tone</label>
-                  <select
+                  <Select
+                    ariaLabel="Delivery Tone"
                     value={tone}
-                    onChange={(e) => setTone(e.target.value as VoiceTone)}
-                    className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                  >
-                    <option value="natural">Natural Conversational</option>
-                    <option value="broadcast">Professional Broadcast / News</option>
-                    <option value="storytelling">Storytelling & Narrative</option>
-                    <option value="energetic">Energetic Promo / High CTR</option>
-                  </select>
+                    onChange={(val) => setTone(val as VoiceTone)}
+                    options={[
+                      { value: 'natural', label: 'Natural Conversational' },
+                      { value: 'broadcast', label: 'Professional Broadcast / News' },
+                      { value: 'storytelling', label: 'Storytelling & Narrative' },
+                      { value: 'energetic', label: 'Energetic Promo / High CTR' },
+                    ]}
+                  />
                 </div>
 
                 {/* Speech Speed */}
@@ -2010,53 +1997,57 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-[#9ca3af]">Gender / Timbre</label>
-                  <select
+                  <Select
+                    ariaLabel="Gender or Timbre"
                     value={cloneGender}
-                    onChange={(e) => setCloneGender(e.target.value as VoiceGender)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                  >
-                    <option value="custom">Auto-Detect from Voice Sample</option>
-                    <option value="male">Male (Deep Studio Voice)</option>
-                    <option value="female">Female (Clear Narrative Voice)</option>
-                  </select>
+                    onChange={(val) => setCloneGender(val as VoiceGender)}
+                    options={[
+                      { value: 'custom', label: 'Auto-Detect from Voice Sample' },
+                      { value: 'male', label: 'Male (Deep Studio Voice)' },
+                      { value: 'female', label: 'Female (Clear Narrative Voice)' },
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
                   <label htmlFor="clone-primary-language" className="text-xs font-semibold text-[#9ca3af]">
                     Primary Language
                   </label>
-                  <select
+                  <Select
                     id="clone-primary-language"
+                    ariaLabel="Clone Primary Language"
                     value={cloneLanguage}
-                    onChange={(e) => handleCloneLanguageChange(e.target.value)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                  >
-                    {cloningLanguages.map((lang) => (
-                      <option key={lang.code} value={lang.code} disabled={!lang.ttsSupported}>
-                        {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
-                        {!lang.ttsSupported ? ' — WASM pack pending' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={handleCloneLanguageChange}
+                    leadingIcon={<Globe className="w-3.5 h-3.5 text-[#34a866]" />}
+                    options={cloningLanguages.map((lang) => ({
+                      value: lang.code,
+                      label: lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label,
+                      sublabel: !lang.ttsSupported ? 'WASM pack pending' : undefined,
+                      disabled: !lang.ttsSupported,
+                    }))}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
                   <label htmlFor="clone-accent-select" className="text-xs font-semibold text-[#9ca3af]">
                     Accent / Dialect
                   </label>
-                  <select
+                  <Select
                     id="clone-accent-select"
+                    ariaLabel="Clone Accent or Dialect"
                     value={cloneAccent}
-                    onChange={(e) => setCloneAccent(e.target.value)}
-                    className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
-                  >
-                    {cloneAccentOptions.map((acc) => (
-                      <option key={acc.id} value={acc.label}>
-                        {acc.label}
-                      </option>
-                    ))}
-                    <option value={CUSTOM_ACCENT_ID}>Custom Accent...</option>
-                  </select>
+                    onChange={setCloneAccent}
+                    options={[
+                      ...cloneAccentOptions.map((acc) => ({
+                        value: acc.label,
+                        label: acc.label,
+                      })),
+                      {
+                        value: CUSTOM_ACCENT_ID,
+                        label: 'Custom Accent...',
+                      },
+                    ]}
+                  />
                 </div>
               </div>
 

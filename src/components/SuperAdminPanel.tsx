@@ -42,6 +42,7 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { adminPlanCreateSchema, policyUpdateSchema, formatZodFieldErrors } from '../schemas/validation';
 import { Input } from './ui/input';
+import { Select } from './ui/Select';
 
 const AVAILABLE_MODULES: { id: PlanModule; label: string; desc: string }[] = [
   { id: 'subtitles_editor', label: 'Subtitles & Waveform Editor', desc: 'Timestamped Bengali subtitle editor' },
@@ -808,16 +809,19 @@ export const SuperAdminPanel: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#9ca3af]">Status Filter:</span>
-              <select
+              <span className="text-xs text-[#9ca3af] whitespace-nowrap">Status Filter:</span>
+              <Select
+                ariaLabel="Filter users by status"
+                size="md"
                 value={userStatusFilter}
-                onChange={(e: any) => setUserStatusFilter(e.target.value)}
-                className="px-3 py-1.5 bg-[#121212] border border-[#282828] rounded-full text-xs text-[#d0d5dd] focus:outline-none focus:border-[#1db954]/60"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active Only</option>
-                <option value="suspended">Suspended Only</option>
-              </select>
+                onChange={(val) => setUserStatusFilter(val as any)}
+                className="w-40"
+                options={[
+                  { value: 'all', label: 'All Statuses' },
+                  { value: 'active', label: 'Active Only' },
+                  { value: 'suspended', label: 'Suspended Only' },
+                ]}
+              />
             </div>
           </div>
 

@@ -21,6 +21,7 @@ import { useAuth } from '../context/AuthContext';
 import { safeFetchJson, sanitizeErrorMessage } from '../utils/apiClient';
 import { getSttLanguages, getLanguageOption, MoonshineArchKey } from '../utils/voiceLanguages';
 import { generateKeyPointTitle } from '../utils/subtitleUtils';
+import { Select } from './ui/Select';
 import {
   transcribeAudioFileWithMoonshine,
   startMoonshineLiveMicSession,
@@ -900,47 +901,41 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           </div>
 
           {/* Language Selector */}
-          <div className="flex items-center gap-1.5 bg-[#121316] border border-[#282a30] rounded-lg px-2.5 h-7">
-            <Globe className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
-            <select
-              aria-label="Speech Language"
-              value={selectedSttLanguage}
-              onChange={(e) => handleLanguageChange(e.target.value)}
-              disabled={isLoading || isRecording || isStartingMic}
-              className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
-            >
-              {sttLanguages.map((lang) => (
-                <option
-                  key={lang.code}
-                  value={lang.code}
-                  disabled={!lang.sttSupported}
-                  className="bg-[#181818]"
-                >
-                  {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
-                  {!lang.sttSupported ? ' — pending' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            ariaLabel="Speech Language"
+            size="compact"
+            menuWidth="auto"
+            placement="auto"
+            value={selectedSttLanguage}
+            onChange={handleLanguageChange}
+            disabled={isLoading || isRecording || isStartingMic}
+            leadingIcon={<Globe className="w-3.5 h-3.5 text-[#3fb970]" />}
+            triggerClassName="bg-[#121316] border-[#282a30] max-w-[190px]"
+            options={sttLanguages.map((lang) => ({
+              value: lang.code,
+              label: lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label,
+              sublabel: !lang.sttSupported ? 'Pending' : undefined,
+              disabled: !lang.sttSupported,
+            }))}
+          />
 
           {/* Model Arch Selector */}
           {selectedSttLanguage === 'en' ? (
-            <div className="flex items-center gap-1.5 bg-[#121316] border border-[#282a30] rounded-lg px-2.5 h-7">
-              <Cpu className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
-              <select
-                aria-label="WASM Model Architecture"
-                value={selectedSttArch}
-                onChange={(e) => setSelectedSttArch(e.target.value as MoonshineArchKey)}
-                disabled={isLoading || isRecording || isStartingMic}
-                className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
-              >
-                {ENGLISH_ARCH_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#181818]">
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              ariaLabel="WASM Model Architecture"
+              size="compact"
+              menuWidth="auto"
+              placement="auto"
+              value={selectedSttArch}
+              onChange={(val) => setSelectedSttArch(val as MoonshineArchKey)}
+              disabled={isLoading || isRecording || isStartingMic}
+              leadingIcon={<Cpu className="w-3.5 h-3.5 text-[#3fb970]" />}
+              triggerClassName="bg-[#121316] border-[#282a30] max-w-[230px]"
+              options={ENGLISH_ARCH_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: opt.label,
+              }))}
+            />
           ) : (
             <div className="h-7 bg-[#121316] border border-[#282a30] text-xs text-[#d0d5dd] rounded-lg px-2.5 flex items-center gap-1.5 whitespace-nowrap">
               <Cpu className="w-3.5 h-3.5 text-[#3fb970]" />

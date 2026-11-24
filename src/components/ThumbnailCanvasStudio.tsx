@@ -31,6 +31,7 @@ import { safeFetchJson } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
+import { Select } from './ui/Select';
 import { AiQuotaNotice } from './AiQuotaNotice';
 
 interface ThumbnailCanvasStudioProps {
@@ -1477,16 +1478,37 @@ export const ThumbnailCanvasStudio: React.FC<ThumbnailCanvasStudioProps> = ({
               {/* Font Family Selection */}
               <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-semibold text-[#9ca3af]">Typography Font Family</label>
-                <select
+                <Select
+                  ariaLabel="Typography Font Family"
                   value={config.fontFamily}
-                  onChange={(e) => setConfig({ ...config, fontFamily: e.target.value })}
-                  className="w-full bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-xl p-2.5 outline-none focus:border-[#1db954]/60"
-                >
-                  <option value="Outfit, sans-serif">Outfit (High-CTR Bold Sans · Recommended)</option>
-                  <option value="Plus Jakarta Sans, sans-serif">Plus Jakarta Sans (Modern Clean Geometric)</option>
-                  <option value="Noto Sans Bengali, sans-serif">Noto Sans Bengali (Authentic Bengali & Indic)</option>
-                  <option value="JetBrains Mono, monospace">JetBrains Mono (Tech & Gaming)</option>
-                </select>
+                  onChange={(val) => setConfig({ ...config, fontFamily: val })}
+                  options={[
+                    {
+                      value: 'Outfit, sans-serif',
+                      label: 'Outfit',
+                      sublabel: 'High-CTR Bold',
+                      style: { fontFamily: 'Outfit, sans-serif' },
+                    },
+                    {
+                      value: 'Plus Jakarta Sans, sans-serif',
+                      label: 'Plus Jakarta Sans',
+                      sublabel: 'Modern Clean',
+                      style: { fontFamily: 'Plus Jakarta Sans, sans-serif' },
+                    },
+                    {
+                      value: 'Noto Sans Bengali, sans-serif',
+                      label: 'Noto Sans Bengali',
+                      sublabel: 'Bengali & Indic',
+                      style: { fontFamily: 'Noto Sans Bengali, sans-serif' },
+                    },
+                    {
+                      value: 'JetBrains Mono, monospace',
+                      label: 'JetBrains Mono',
+                      sublabel: 'Tech & Gaming',
+                      style: { fontFamily: 'JetBrains Mono, monospace' },
+                    },
+                  ]}
+                />
               </div>
 
               {/* Text & Stroke Colors */}

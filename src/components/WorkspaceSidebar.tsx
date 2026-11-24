@@ -530,7 +530,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
         <div
           ref={menuRef}
           style={{ top: `${menuAnchor.top}px`, left: `${menuAnchor.left}px` }}
-          className="fixed z-50 w-44 rounded-xl bg-[#1b1d21] border border-[#32363f] shadow-[0_12px_32px_rgba(0,0,0,0.75)] py-1.5 text-xs animate-in fade-in"
+          className="fixed z-50 w-44 rounded-xl bg-[#191c22]/96 backdrop-blur-md border border-[#323744] shadow-[0_14px_38px_rgba(0,0,0,0.75)] p-1.5 text-xs animate-in fade-in zoom-in-95 duration-150 space-y-0.5"
           onClick={(e) => e.stopPropagation()}
         >
           <button
@@ -539,7 +539,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               onTogglePin(menuAnchor.item.id);
               setMenuAnchor(null);
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-[#d0d5dd] hover:bg-[#262a31] hover:text-[#e4e7ec] transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#d0d5dd] hover:bg-[#242833] hover:text-[#e4e7ec] transition-colors cursor-pointer"
           >
             {pinnedSet.has(menuAnchor.item.id) ? (
               <>
@@ -561,7 +561,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               setMenuAnchor(null);
               onExportTranscript(target);
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-[#d0d5dd] hover:bg-[#262a31] hover:text-[#e4e7ec] transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#d0d5dd] hover:bg-[#242833] hover:text-[#e4e7ec] transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-[#9ca3af]" />
             <span>Export</span>
@@ -575,7 +575,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
               onOpenInYouTube(target);
               onCloseMobile();
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-[#d0d5dd] hover:bg-[#262a31] hover:text-[#e4e7ec] transition-colors cursor-pointer"
+            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#d0d5dd] hover:bg-[#242833] hover:text-[#e4e7ec] transition-colors cursor-pointer"
           >
             <Youtube className="w-3.5 h-3.5 text-rose-400" />
             <span>YouTube SEO</span>
@@ -598,7 +598,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
                   setMenuAnchor(null);
                 }
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-rose-300 bg-rose-950/50 hover:bg-rose-900/60 font-semibold transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-300 bg-rose-950/50 hover:bg-rose-900/60 font-semibold transition-colors cursor-pointer"
             >
               {deletingId === menuAnchor.item.id ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -611,7 +611,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
             <button
               type="button"
               onClick={() => setConfirmDeleteId(menuAnchor.item.id)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-rose-400 hover:bg-rose-950/35 transition-colors cursor-pointer"
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-rose-400 hover:bg-rose-950/35 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Delete</span>
