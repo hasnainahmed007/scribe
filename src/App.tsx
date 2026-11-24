@@ -827,112 +827,118 @@ function ScribyApp() {
                 )}
 
                 {/* Floating Top-Right Studio Action Buttons (Vertical Icon-Only Stack when Inspector is Open) */}
-                <div
-                  className={`absolute top-3 right-3 lg:right-4 z-20 flex transition-all duration-200 ${
-                    isVerticalQuickActions
-                      ? 'flex-col items-center p-1.5 rounded-2xl bg-[#141519]/92 backdrop-blur-md border border-[#2a2d36] shadow-[0_10px_28px_rgba(0,0,0,0.55)] gap-1.5'
-                      : 'flex-row items-center gap-2'
-                  }`}
-                >
-                  {isVerticalQuickActions ? (
-                    <>
-                      <Tooltip
-                        content="Hide Inspector"
-                        sublabel={audioSource?.title || audioSource?.name}
-                        side="left"
-                        tone="accent"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setIsInspectorOpen(false)}
-                          aria-label="Hide Inspector"
-                          className="w-8 h-8 rounded-xl bg-[#1db954]/15 hover:bg-[#1db954]/25 text-[#4cc37c] border border-[#1db954]/30 flex items-center justify-center transition-all cursor-pointer"
-                        >
-                          <PanelRightClose className="w-4 h-4" />
-                        </button>
-                      </Tooltip>
-
-                      <Tooltip
-                        content="Export"
-                        sublabel="SRT, DOCX, TXT, JSON"
-                        side="left"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => setIsExportOpen(true)}
-                          aria-label="Export"
-                          className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#22252e] flex items-center justify-center transition-all cursor-pointer"
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                      </Tooltip>
-
-                      {(segments.length > 0 || audioSource) && (
+                {(segments.length > 0 || audioSource || hasInspectorContent) && (
+                  <div
+                    className={`absolute top-3 right-3 lg:right-4 z-20 flex transition-all duration-200 ${
+                      isVerticalQuickActions
+                        ? 'flex-col items-center p-1.5 rounded-2xl bg-[#141519]/92 backdrop-blur-md border border-[#2a2d36] shadow-[0_10px_28px_rgba(0,0,0,0.55)] gap-1.5'
+                        : 'flex-row items-center gap-2'
+                    }`}
+                  >
+                    {isVerticalQuickActions ? (
+                      <>
                         <Tooltip
-                          content="Clear Studio"
+                          content="Hide Inspector"
+                          sublabel={audioSource?.title || audioSource?.name}
                           side="left"
-                          tone="danger"
+                          tone="accent"
                         >
                           <button
                             type="button"
-                            onClick={handleClearStudioState}
-                            aria-label="Clear Studio"
-                            className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center transition-all cursor-pointer"
+                            onClick={() => setIsInspectorOpen(false)}
+                            aria-label="Hide Inspector"
+                            className="w-8 h-8 rounded-xl bg-[#1db954]/15 hover:bg-[#1db954]/25 text-[#4cc37c] border border-[#1db954]/30 flex items-center justify-center transition-all cursor-pointer"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <PanelRightClose className="w-4 h-4" />
                           </button>
                         </Tooltip>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {(segments.length > 0 || audioSource) && (
-                        <Tooltip content="Clear workspace & audio" side="bottom" tone="danger">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleClearStudioState}
-                            className="text-xs text-[#9ca3af] hover:text-rose-400 bg-[#141519]/85 hover:bg-[#22252b] backdrop-blur-md border border-[#282b33]/80 h-8"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-1" />
-                            <span>Clear Studio</span>
-                          </Button>
-                        </Tooltip>
-                      )}
 
-                      <Tooltip content="Download SRT, DOCX, TXT or JSON" side="bottom">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsExportOpen(true)}
-                          className="bg-[#141519]/85 backdrop-blur-md"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          <span>Export</span>
-                        </Button>
-                      </Tooltip>
-
-                      {hasInspectorContent && (
-                        <Tooltip
-                          content="Open Session Inspector"
-                          sublabel={audioSource?.title || audioSource?.name}
-                          side="bottom"
-                          tone="accent"
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsInspectorOpen(true)}
-                            className="bg-[#141519]/85 backdrop-blur-md"
+                        {segments.length > 0 && (
+                          <Tooltip
+                            content="Export"
+                            sublabel="SRT, DOCX, TXT, JSON"
+                            side="left"
                           >
-                            <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
-                            <span className="hidden sm:inline">Inspector</span>
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </>
-                  )}
-                </div>
+                            <button
+                              type="button"
+                              onClick={() => setIsExportOpen(true)}
+                              aria-label="Export"
+                              className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#22252e] flex items-center justify-center transition-all cursor-pointer"
+                            >
+                              <Download className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        )}
+
+                        {(segments.length > 0 || audioSource) && (
+                          <Tooltip
+                            content="Clear Studio"
+                            side="left"
+                            tone="danger"
+                          >
+                            <button
+                              type="button"
+                              onClick={handleClearStudioState}
+                              aria-label="Clear Studio"
+                              className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </Tooltip>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {(segments.length > 0 || audioSource) && (
+                          <Tooltip content="Clear workspace & audio" side="bottom" tone="danger">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleClearStudioState}
+                              className="text-xs text-[#9ca3af] hover:text-rose-400 bg-[#141519]/85 hover:bg-[#22252b] backdrop-blur-md border border-[#282b33]/80 h-8"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 mr-1" />
+                              <span>Clear Studio</span>
+                            </Button>
+                          </Tooltip>
+                        )}
+
+                        {segments.length > 0 && (
+                          <Tooltip content="Download SRT, DOCX, TXT or JSON" side="bottom">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsExportOpen(true)}
+                              className="bg-[#141519]/85 backdrop-blur-md"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Export</span>
+                            </Button>
+                          </Tooltip>
+                        )}
+
+                        {hasInspectorContent && (
+                          <Tooltip
+                            content="Open Session Inspector"
+                            sublabel={audioSource?.title || audioSource?.name}
+                            side="bottom"
+                            tone="accent"
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsInspectorOpen(true)}
+                              className="bg-[#141519]/85 backdrop-blur-md"
+                            >
+                              <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
+                              <span className="hidden sm:inline">Inspector</span>
+                            </Button>
+                          </Tooltip>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {/* Borderless Claude Inference Stream + Docked Composer */}
                 <TranscriptEditor
