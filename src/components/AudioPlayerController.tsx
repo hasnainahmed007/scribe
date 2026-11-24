@@ -9,6 +9,7 @@ import {
   Repeat,
 } from 'lucide-react';
 import { formatPlayerTime } from '../utils/timeFormat';
+import { Tooltip } from './ui/Tooltip';
 
 interface AudioPlayerControllerProps {
   audioUrl: string;
@@ -166,62 +167,72 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
         <div className="flex items-center justify-between gap-2">
           {/* Playback Controls */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onSeek(Math.max(0, safeCurrentTime - 5))}
-              className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
-              title="Rewind 5 seconds"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
+            <Tooltip content="Rewind 5 seconds" side="top">
+              <button
+                type="button"
+                onClick={() => onSeek(Math.max(0, safeCurrentTime - 5))}
+                className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
+                aria-label="Rewind 5 seconds"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </Tooltip>
 
-            <button
-              type="button"
-              onClick={onPlayPause}
-              className="w-9 h-9 rounded-full bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer font-semibold"
-              title={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4 fill-current" />
-              ) : (
-                <Play className="w-4 h-4 fill-current ml-0.5" />
-              )}
-            </button>
+            <Tooltip content={isPlaying ? 'Pause' : 'Play'} side="top" tone="accent">
+              <button
+                type="button"
+                onClick={onPlayPause}
+                className="w-9 h-9 rounded-full bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer font-semibold"
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                )}
+              </button>
+            </Tooltip>
 
-            <button
-              type="button"
-              onClick={() => onSeek(Math.min(safeDuration, safeCurrentTime + 5))}
-              className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
-              title="Forward 5 seconds"
-            >
-              <RotateCw className="w-4 h-4" />
-            </button>
+            <Tooltip content="Forward 5 seconds" side="top">
+              <button
+                type="button"
+                onClick={() => onSeek(Math.min(safeDuration, safeCurrentTime + 5))}
+                className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
+                aria-label="Forward 5 seconds"
+              >
+                <RotateCw className="w-4 h-4" />
+              </button>
+            </Tooltip>
 
-            <button
-              type="button"
-              onClick={onToggleLoop}
-              className={`p-1.5 rounded-full transition-colors cursor-pointer relative ${
-                isLooping ? 'text-[#3fb970]' : 'text-[#6f7682] hover:text-[#9ca3af]'
-              }`}
-              title={isLooping ? 'Looping enabled' : 'Loop disabled'}
-            >
-              <Repeat className="w-4 h-4" />
-              {isLooping && (
-                <span className="w-1 h-1 rounded-full bg-[#1db954] absolute bottom-0 left-1/2 -translate-x-1/2" />
-              )}
-            </button>
+            <Tooltip content={isLooping ? 'Looping enabled' : 'Loop disabled'} side="top">
+              <button
+                type="button"
+                onClick={onToggleLoop}
+                className={`p-1.5 rounded-full transition-colors cursor-pointer relative ${
+                  isLooping ? 'text-[#3fb970]' : 'text-[#6f7682] hover:text-[#9ca3af]'
+                }`}
+                aria-label={isLooping ? 'Looping enabled' : 'Loop disabled'}
+              >
+                <Repeat className="w-4 h-4" />
+                {isLooping && (
+                  <span className="w-1 h-1 rounded-full bg-[#1db954] absolute bottom-0 left-1/2 -translate-x-1/2" />
+                )}
+              </button>
+            </Tooltip>
           </div>
 
           {compact && (
             <div className="flex items-center gap-1.5 text-[#9ca3af]">
-              <button
-                type="button"
-                onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
-                className="hover:text-[#e4e7ec] cursor-pointer p-1"
-                title={volume === 0 ? 'Unmute' : 'Mute'}
-              >
-                {volume === 0 ? <VolumeX className="w-3.5 h-3.5 text-[#e88791]" /> : <Volume2 className="w-3.5 h-3.5" />}
-              </button>
+              <Tooltip content={volume === 0 ? 'Unmute' : 'Mute'} side="top">
+                <button
+                  type="button"
+                  onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
+                  className="hover:text-[#e4e7ec] cursor-pointer p-1"
+                  aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+                >
+                  {volume === 0 ? <VolumeX className="w-3.5 h-3.5 text-[#e88791]" /> : <Volume2 className="w-3.5 h-3.5" />}
+                </button>
+              </Tooltip>
               <input
                 type="range"
                 min="0"
@@ -230,7 +241,7 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
                 value={volume}
                 onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
                 className="w-16 h-1 bg-[#34373f] rounded-full appearance-none cursor-pointer accent-[#1db954]"
-                title="Volume Control"
+                aria-label="Volume Control"
               />
             </div>
           )}
@@ -264,14 +275,16 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
         {/* Volume Slider (non-compact row placement) */}
         {!compact && (
           <div className="flex items-center gap-2 text-[#9ca3af]">
-            <button
-              type="button"
-              onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
-              className="hover:text-[#e4e7ec] cursor-pointer p-1"
-              title={volume === 0 ? 'Unmute' : 'Mute'}
-            >
-              {volume === 0 ? <VolumeX className="w-4 h-4 text-[#e88791]" /> : <Volume2 className="w-4 h-4" />}
-            </button>
+            <Tooltip content={volume === 0 ? 'Unmute' : 'Mute'} side="top">
+              <button
+                type="button"
+                onClick={() => onVolumeChange(volume > 0 ? 0 : 1)}
+                className="hover:text-[#e4e7ec] cursor-pointer p-1"
+                aria-label={volume === 0 ? 'Unmute' : 'Mute'}
+              >
+                {volume === 0 ? <VolumeX className="w-4 h-4 text-[#e88791]" /> : <Volume2 className="w-4 h-4" />}
+              </button>
+            </Tooltip>
             <input
               type="range"
               min="0"
@@ -280,7 +293,7 @@ export const AudioPlayerController: React.FC<AudioPlayerControllerProps> = ({
               value={volume}
               onChange={(e) => onVolumeChange(parseFloat(e.target.value))}
               className="w-20 h-1 bg-[#34373f] rounded-full appearance-none cursor-pointer accent-[#1db954]"
-              title="Volume Control"
+              aria-label="Volume Control"
             />
           </div>
         )}

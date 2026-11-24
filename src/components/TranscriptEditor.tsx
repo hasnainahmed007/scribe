@@ -15,6 +15,7 @@ import {
 import { TranscriptSegment } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
 import type { ChatSttActivity } from './AudioInputHub';
+import { Tooltip } from './ui/Tooltip';
 
 interface TranscriptEditorProps {
   segments: TranscriptSegment[];
@@ -414,40 +415,41 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                               </span>
 
                               {/* Play Audio Block Timestamp Button */}
-                              <button
-                                onClick={() => handlePlayBlockAudio(seg)}
-                                className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#262930] rounded-full text-xs font-mono tabular-nums text-[#d0d5dd] border border-[#2e3138] transition-all cursor-pointer"
-                                title="Play audio from this timestamp"
-                              >
-                                <Play className="w-3 h-3 fill-current text-[#34a866]" />
-                                <span>
-                                  {formatPlayerTime(seg.start)} – {formatPlayerTime(seg.end)}
-                                </span>
-                              </button>
+                              <Tooltip content="Play audio from this timestamp" side="top">
+                                <button
+                                  onClick={() => handlePlayBlockAudio(seg)}
+                                  className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#262930] rounded-full text-xs font-mono tabular-nums text-[#d0d5dd] border border-[#2e3138] transition-all cursor-pointer"
+                                >
+                                  <Play className="w-3 h-3 fill-current text-[#34a866]" />
+                                  <span>
+                                    {formatPlayerTime(seg.start)} – {formatPlayerTime(seg.end)}
+                                  </span>
+                                </button>
+                              </Tooltip>
 
                               {/* Dedicated Text-To-Speech (TTS) Voice Button */}
-                              <button
-                                onClick={() => handleSpeakText(seg.id, seg.text)}
-                                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                                  isSpeaking
-                                    ? 'bg-[#262930] text-[#3fb970] border-[#1db954]/50'
-                                    : 'bg-[#121212] hover:bg-[#262930] text-[#9ca3af] hover:text-[#e4e7ec] border-[#2e3138]'
-                                }`}
-                                title={
-                                  isSpeaking
-                                    ? 'Stop speaking'
-                                    : 'Read text aloud (Text-to-Speech)'
-                                }
+                              <Tooltip
+                                content={isSpeaking ? 'Stop speaking' : 'Read text aloud (Text-to-Speech)'}
+                                side="top"
                               >
-                                <Volume2
-                                  className={`w-3.5 h-3.5 ${
-                                    isSpeaking ? 'text-[#3fb970]' : 'text-[#9ca3af]'
+                                <button
+                                  onClick={() => handleSpeakText(seg.id, seg.text)}
+                                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                                    isSpeaking
+                                      ? 'bg-[#262930] text-[#3fb970] border-[#1db954]/50'
+                                      : 'bg-[#121212] hover:bg-[#262930] text-[#9ca3af] hover:text-[#e4e7ec] border-[#2e3138]'
                                   }`}
-                                />
-                                <span className="text-xs font-semibold">
-                                  {isSpeaking ? 'Reading...' : 'TTS'}
-                                </span>
-                              </button>
+                                >
+                                  <Volume2
+                                    className={`w-3.5 h-3.5 ${
+                                      isSpeaking ? 'text-[#3fb970]' : 'text-[#9ca3af]'
+                                    }`}
+                                  />
+                                  <span className="text-xs font-semibold">
+                                    {isSpeaking ? 'Reading...' : 'TTS'}
+                                  </span>
+                                </button>
+                              </Tooltip>
 
                               {/* Speaker Label */}
                               {editingSpeakerId === seg.id ? (
@@ -480,17 +482,18 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                                       ? 'bg-rose-500/12 text-rose-300 border-rose-500/30 hover:bg-rose-500/20'
                                       : 'bg-[#121212] hover:bg-[#262930] text-[#c2c8d1] border-[#2e3138]';
                                   return (
-                                    <button
-                                      onClick={() => {
-                                        setEditingSpeakerId(seg.id);
-                                        setSpeakerInputValue(spName);
-                                      }}
-                                      className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${speakerToneClass}`}
-                                      title="Click to rename speaker"
-                                    >
-                                      <User className="w-3 h-3 opacity-80" />
-                                      <span>{spName}</span>
-                                    </button>
+                                    <Tooltip content="Click to rename speaker" side="top">
+                                      <button
+                                        onClick={() => {
+                                          setEditingSpeakerId(seg.id);
+                                          setSpeakerInputValue(spName);
+                                        }}
+                                        className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${speakerToneClass}`}
+                                      >
+                                        <User className="w-3 h-3 opacity-80" />
+                                        <span>{spName}</span>
+                                      </button>
+                                    </Tooltip>
                                   );
                                 })()
                               )}
@@ -499,28 +502,34 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                             {/* Subtitle Action Tools */}
                             <div className="flex items-center gap-1 text-[#9ca3af]">
                               {index < segments.length - 1 && (
-                                <button
-                                  onClick={() => onMergeSegments(seg.id)}
-                                  className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                                  title="Merge with next block"
-                                >
-                                  <Merge className="w-3.5 h-3.5" />
-                                </button>
+                                <Tooltip content="Merge with next block" side="top">
+                                  <button
+                                    onClick={() => onMergeSegments(seg.id)}
+                                    className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                                    aria-label="Merge with next block"
+                                  >
+                                    <Merge className="w-3.5 h-3.5" />
+                                  </button>
+                                </Tooltip>
                               )}
-                              <button
-                                onClick={() => onAddSegment(seg.id)}
-                                className="p-1.5 text-[#9ca3af] hover:text-[#3fb970] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                                title="Insert block below"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => onDeleteSegment(seg.id)}
-                                className="p-1.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                                title="Delete block"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                              <Tooltip content="Insert block below" side="top">
+                                <button
+                                  onClick={() => onAddSegment(seg.id)}
+                                  className="p-1.5 text-[#9ca3af] hover:text-[#3fb970] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                                  aria-label="Insert block below"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
+                              <Tooltip content="Delete block" side="top" tone="danger">
+                                <button
+                                  onClick={() => onDeleteSegment(seg.id)}
+                                  className="p-1.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                                  aria-label="Delete block"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
                             </div>
                           </div>
 

@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Tooltip } from './ui/Tooltip';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -141,25 +142,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
 
             {onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-                title="Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
+              <Tooltip content="Settings" side="bottom">
+                <button
+                  onClick={onOpenSettings}
+                  className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                  aria-label="Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </Tooltip>
             )}
 
-            <button
-              onClick={() => {
-                logout();
-                setActiveTab('landing');
-              }}
-              className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <Tooltip content="Sign Out" side="bottom">
+              <button
+                onClick={() => {
+                  logout();
+                  setActiveTab('landing');
+                }}
+                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </div>
         )}
 
@@ -180,45 +185,53 @@ export const Navbar: React.FC<NavbarProps> = ({
 
 
             {onOpenInquiry && (
-              <button
-                onClick={onOpenInquiry}
-                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-                title="Send Inquiry / Support"
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
+              <Tooltip content="Send Inquiry / Support" side="bottom">
+                <button
+                  onClick={onOpenInquiry}
+                  className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                  aria-label="Send Inquiry / Support"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                </button>
+              </Tooltip>
             )}
 
             {onOpenOnboarding && (
-              <button
-                onClick={onOpenOnboarding}
-                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-                title="Product Tour"
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
+              <Tooltip content="Product Tour" side="bottom">
+                <button
+                  onClick={onOpenOnboarding}
+                  className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                  aria-label="Product Tour"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              </Tooltip>
             )}
 
             {onOpenSettings && (
-              <button
-                onClick={onOpenSettings}
-                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-                title="Studio Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </button>
+              <Tooltip content="Studio Settings" side="bottom">
+                <button
+                  onClick={onOpenSettings}
+                  className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                  aria-label="Studio Settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
+              </Tooltip>
             )}
 
-            <button
-              onClick={() => {
-                logout();
-                setActiveTab('landing');
-              }}
-              className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <Tooltip content="Sign Out" side="bottom">
+              <button
+                onClick={() => {
+                  logout();
+                  setActiveTab('landing');
+                }}
+                className="p-2 text-[#9ca3af] hover:text-[#e4e7ec] rounded-full hover:bg-[#282828] transition-colors cursor-pointer"
+                aria-label="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>

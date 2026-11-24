@@ -17,9 +17,12 @@ import {
   Loader2,
   Zap,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { ActiveTab, SavedTranscript } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { Tooltip } from './ui/Tooltip';
 
 interface WorkspaceSidebarProps {
   activeTab: ActiveTab;
@@ -36,6 +39,8 @@ interface WorkspaceSidebarProps {
   onDeleteTranscript: (item: SavedTranscript) => Promise<void>;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface MenuAnchorState {
@@ -59,6 +64,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   onDeleteTranscript,
   isMobileOpen,
   onCloseMobile,
+  isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const { user, isSuperAdmin } = useAuth();
   const [pinnedOpen, setPinnedOpen] = useState(true);
@@ -148,41 +155,47 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     const isMenuOpen = menuAnchor?.item.id === item.id;
 
     return (
-      <div
+      <Tooltip
         key={item.id}
-        onClick={() => {
-          onLoadTranscript(item);
-          onCloseMobile();
-        }}
-        className={`group relative flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
-          isActive
-            ? 'bg-[#24272d] text-[#e4e7ec] font-medium'
-            : 'text-[#b3bac5] hover:bg-[#1c1e22] hover:text-[#e4e7ec]'
-        }`}
-        title={item.title}
+        content={item.title || item.audioName || 'Untitled audio'}
+        side="right"
+        delayMs={240}
+        className="block"
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {isPinned ? (
-            <Pin className="w-3 h-3 text-[#3fb970] shrink-0" />
-          ) : (
-            <FileAudio className="w-3 h-3 text-[#6f7682] group-hover:text-[#9ca3af] shrink-0" />
-          )}
-          <span className="truncate">{item.title || item.audioName || 'Untitled audio'}</span>
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => handleOpenMenu(e, item)}
-          aria-label={`Actions for ${item.title}`}
-          className={`p-1 rounded-md text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#2c3038] transition-opacity shrink-0 cursor-pointer ${
-            isMenuOpen
-              ? 'opacity-100 bg-[#2c3038] text-[#e4e7ec]'
-              : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+        <div
+          onClick={() => {
+            onLoadTranscript(item);
+            onCloseMobile();
+          }}
+          className={`group relative flex items-center justify-between gap-1.5 px-2.5 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+            isActive
+              ? 'bg-[#24272d] text-[#e4e7ec] font-medium'
+              : 'text-[#b3bac5] hover:bg-[#1c1e22] hover:text-[#e4e7ec]'
           }`}
         >
-          <MoreHorizontal className="w-3.5 h-3.5" />
-        </button>
-      </div>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {isPinned ? (
+              <Pin className="w-3 h-3 text-[#3fb970] shrink-0" />
+            ) : (
+              <FileAudio className="w-3 h-3 text-[#6f7682] group-hover:text-[#9ca3af] shrink-0" />
+            )}
+            <span className="truncate">{item.title || item.audioName || 'Untitled audio'}</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={(e) => handleOpenMenu(e, item)}
+            aria-label={`Actions for ${item.title}`}
+            className={`p-1 rounded-md text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#2c3038] transition-opacity shrink-0 cursor-pointer ${
+              isMenuOpen
+                ? 'opacity-100 bg-[#2c3038] text-[#e4e7ec]'
+                : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+            }`}
+          >
+            <MoreHorizontal className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </Tooltip>
     );
   };
 
@@ -228,7 +241,26 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
   ];
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#141414] border-r border-[#282828] select-none">
+    <div className="flex flex-col h-full w-64 bg-[#141414] border-r border-[#282828] select-none">
+      {/* Desktop Collapse Header */}
+      {onToggleCollapse && (
+        <div className="hidden lg:flex px-3 pt-3 pb-1 items-center justify-between shrink-0">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6f7682] px-1">
+            Workspace
+          </span>
+          <Tooltip content="Collapse sidebar" side="right">
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="w-7 h-7 rounded-lg bg-[#1a1c22] hover:bg-[#242832] border border-[#2a2e39] text-[#9ca3af] hover:text-[#4cc37c] flex items-center justify-center transition-all cursor-pointer"
+              aria-label="Collapse left sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
+        </div>
+      )}
+
       {/* Mobile Drawer Header */}
       <div className="lg:hidden px-4 py-3 border-b border-[#282828] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -248,7 +280,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
       </div>
 
       {/* Top Layer: Workspace Navigation */}
-      <nav className="p-3 space-y-1 shrink-0" aria-label="Workspace Navigation">
+      <nav className="p-3 pt-2 space-y-1 shrink-0" aria-label="Workspace Navigation">
         {navItems.map((nav) => {
           const isPlans = nav.id === 'plans';
           const isActive = !isPlans && activeTab === nav.id;
@@ -387,11 +419,97 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({
     </div>
   );
 
+  const collapsedRailContent = (
+    <div className="flex flex-col items-center h-full w-14 bg-[#141414] border-r border-[#282828] py-3 select-none">
+      {/* Expand Sidebar Button */}
+      {onToggleCollapse && (
+        <Tooltip content="Expand sidebar" side="right" tone="accent">
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="w-9 h-9 rounded-xl bg-[#1a1c22] hover:bg-[#242832] border border-[#2a2e39] text-[#9ca3af] hover:text-[#4cc37c] flex items-center justify-center transition-all cursor-pointer mb-2"
+            aria-label="Expand left sidebar"
+          >
+            <PanelLeftOpen className="w-4 h-4" />
+          </button>
+        </Tooltip>
+      )}
+
+      <div className="w-7 border-t border-[#24262c] my-1.5 shrink-0" />
+
+      {/* Compact Vertical Navigation Icons */}
+      <nav className="flex-1 flex flex-col items-center gap-1.5 py-1.5" aria-label="Collapsed Workspace Navigation">
+        {navItems.map((nav) => {
+          const isPlans = nav.id === 'plans';
+          const isActive = !isPlans && activeTab === nav.id;
+
+          return (
+            <Tooltip
+              key={nav.id}
+              content={nav.label}
+              sublabel={nav.locked ? 'Upgrade required' : undefined}
+              side="right"
+              tone={isActive ? 'accent' : 'default'}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  if (isPlans) {
+                    onOpenPricing();
+                  } else {
+                    handleNavClick(nav.id as ActiveTab);
+                  }
+                }}
+                aria-label={nav.label}
+                className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#23262c] text-[#4cc37c] border border-[#32363f]'
+                    : 'text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#1c1e22] border border-transparent'
+                }`}
+              >
+                {nav.icon}
+                {nav.locked && (
+                  <Lock className="w-2.5 h-2.5 text-[#9ca3af] absolute bottom-1 right-1" />
+                )}
+              </button>
+            </Tooltip>
+          );
+        })}
+      </nav>
+
+      {/* Bottom Compact Quota Pill */}
+      {user && (
+        <Tooltip
+          content={`${user.creditsRemaining}m Audio Minutes left`}
+          sublabel={`${user.planName} · Click to upgrade`}
+          side="right"
+          tone="accent"
+        >
+          <button
+            type="button"
+            onClick={onOpenPricing}
+            aria-label="Audio Minutes & Plans"
+            className="w-9 h-9 rounded-xl bg-[#181a1f] hover:bg-[#22252d] border border-[#2a2e38] flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors"
+          >
+            <Zap className="w-3.5 h-3.5 text-amber-400/90" />
+            <span className="text-[9px] font-mono tabular-nums font-semibold text-[#3fb970] leading-none">
+              {user.creditsRemaining}m
+            </span>
+          </button>
+        </Tooltip>
+      )}
+    </div>
+  );
+
   return (
     <>
-      {/* Desktop Sticky Sidebar */}
-      <aside className="hidden lg:block w-64 shrink-0 sticky top-[57px] h-[calc(100vh-57px)] z-30">
-        {sidebarContent}
+      {/* Desktop Collapsible Sticky Sidebar */}
+      <aside
+        className={`hidden lg:block shrink-0 sticky top-[57px] h-[calc(100vh-57px)] z-30 transition-[width] duration-200 ease-out overflow-hidden ${
+          isCollapsed ? 'w-14' : 'w-64'
+        }`}
+      >
+        {isCollapsed ? collapsedRailContent : sidebarContent}
       </aside>
 
       {/* Mobile Drawer Sidebar */}

@@ -12,10 +12,12 @@ import {
   SlidersHorizontal,
   Volume2,
   FileText,
+  PanelRightClose,
 } from 'lucide-react';
 import { AudioSource, TranscriptSegment } from '../types';
 import { AudioPlayerController } from './AudioPlayerController';
 import { formatPlayerTime } from '../utils/timeFormat';
+import { Tooltip } from './ui/Tooltip';
 
 interface SessionInspectorProps {
   audioSource: AudioSource | null;
@@ -124,25 +126,27 @@ export const SessionInspector: React.FC<SessionInspectorProps> = ({
   const hasContent = Boolean(
     audioSource || segments.length > 0 || (summary && !isTranscribing)
   );
-  if (!hasContent || !isOpen) return null;
+  if (!hasContent) return null;
 
   const inspectorInner = (
-    <div className="flex flex-col h-full bg-[#131315] border-l border-[#24262c]">
+    <div className="flex flex-col h-full w-[348px] max-w-full bg-[#131315] border-l border-[#24262c]">
       {/* Inspector Header */}
       <div className="px-4 py-3 border-b border-[#24262c] flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#e4e7ec]">
           <SlidersHorizontal className="w-3.5 h-3.5 text-[#3fb970]" />
           <span>Session Inspector</span>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 text-[#9ca3af] hover:text-[#e4e7ec] rounded-md hover:bg-[#22252b] transition-colors cursor-pointer"
-          title="Collapse Inspector"
-          aria-label="Close session inspector"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <Tooltip content="Collapse sidebar" side="left">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg bg-[#1a1c22] hover:bg-[#242832] border border-[#2a2e39] text-[#9ca3af] hover:text-[#4cc37c] flex items-center justify-center transition-all cursor-pointer"
+            aria-label="Collapse session inspector"
+          >
+            <PanelRightClose className="w-3.5 h-3.5 hidden xl:block" />
+            <X className="w-3.5 h-3.5 xl:hidden" />
+          </button>
+        </Tooltip>
       </div>
 
       {/* Scrollable Inspector Sections */}
@@ -249,18 +253,27 @@ export const SessionInspector: React.FC<SessionInspectorProps> = ({
 
                 {/* Quick Block Operations */}
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (segments.length > 1) setShowMergeAllConfirm(true);
-                    }}
-                    disabled={segments.length <= 1}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1a1c21] hover:bg-[#23262d] disabled:opacity-40 disabled:cursor-not-allowed text-[#d0d5dd] rounded-lg text-xs font-medium border border-[#2b2e37] transition-colors cursor-pointer whitespace-nowrap"
-                    title="Merge all subtitle segments into one block"
+                  <Tooltip
+                    content={
+                      segments.length > 1
+                        ? `Merge all ${segments.length} segments into 1 block`
+                        : 'Requires at least 2 segments to merge'
+                    }
+                    side="top"
+                    className="flex-1 flex"
                   >
-                    <Combine className="w-3.5 h-3.5 text-[#34a866]" />
-                    <span>Merge All</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (segments.length > 1) setShowMergeAllConfirm(true);
+                      }}
+                      disabled={segments.length <= 1}
+                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1a1c21] hover:bg-[#23262d] disabled:opacity-40 disabled:cursor-not-allowed text-[#d0d5dd] rounded-lg text-xs font-medium border border-[#2b2e37] transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      <Combine className="w-3.5 h-3.5 text-[#34a866]" />
+                      <span>Merge All</span>
+                    </button>
+                  </Tooltip>
 
                   <button
                     type="button"
@@ -375,18 +388,25 @@ export const SessionInspector: React.FC<SessionInspectorProps> = ({
 
   return (
     <>
-      {/* Desktop Right Inspector Rail */}
-      <aside className="hidden xl:block w-[348px] shrink-0 h-full overflow-hidden">
+      {/* Desktop Collapsible Right Inspector Rail */}
+      <aside
+        aria-hidden={!isOpen}
+        className={`hidden xl:block shrink-0 h-full overflow-hidden transition-[width,opacity] duration-200 ease-out ${
+          isOpen ? 'w-[348px] opacity-100' : 'w-0 opacity-0 pointer-events-none'
+        }`}
+      >
         {inspectorInner}
       </aside>
 
       {/* Tablet / Mobile Slide-over Drawer */}
-      <div className="fixed inset-0 z-50 xl:hidden flex justify-end">
-        <div className="fixed inset-0 bg-black/65 backdrop-blur-xs" onClick={onClose} />
-        <aside className="relative w-80 max-w-[90vw] h-full z-10 shadow-2xl">
-          {inspectorInner}
-        </aside>
-      </div>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden flex justify-end">
+          <div className="fixed inset-0 bg-black/65 backdrop-blur-xs" onClick={onClose} />
+          <aside className="relative w-80 max-w-[90vw] h-full z-10 shadow-2xl">
+            {inspectorInner}
+          </aside>
+        </div>
+      )}
     </>
   );
 };

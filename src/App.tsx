@@ -41,6 +41,7 @@ import {
   PanelRightClose,
 } from 'lucide-react';
 import { Button } from './components/ui/button';
+import { Tooltip } from './components/ui/Tooltip';
 
 function ScribyApp() {
   const { user, isSuperAdmin, token, refreshProfile, isLoadingSession } = useAuth();
@@ -99,6 +100,7 @@ function ScribyApp() {
   const [isLoadingTranscription, setIsLoadingTranscription] = useState<boolean>(false);
   const [chatActivity, setChatActivity] = useState<ChatSttActivity | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isLeftSidebarCollapsed, setIsLeftSidebarCollapsed] = useState<boolean>(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(true);
 
   // Sidebar History & Pinned Transcripts
@@ -706,6 +708,7 @@ function ScribyApp() {
   const hasInspectorContent = Boolean(
     audioSource || segments.length > 0 || (summary && !isLoadingTranscription)
   );
+  const isVerticalQuickActions = hasInspectorContent && isInspectorOpen;
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#d0d5dd] flex flex-col font-sans">
@@ -803,6 +806,8 @@ function ScribyApp() {
             onDeleteTranscript={handleDeleteTranscriptFromSidebar}
             isMobileOpen={isMobileSidebarOpen}
             onCloseMobile={() => setIsMobileSidebarOpen(false)}
+            isCollapsed={isLeftSidebarCollapsed}
+            onToggleCollapse={() => setIsLeftSidebarCollapsed((prev) => !prev)}
           />
 
           {activeTab === 'studio' ? (
@@ -819,46 +824,111 @@ function ScribyApp() {
                   </div>
                 )}
 
-                {/* Floating Top-Right Studio Action Buttons (No Full-Width Header Div) */}
-                <div className="absolute top-3 right-4 lg:right-6 z-20 flex items-center gap-2">
-                  {(segments.length > 0 || audioSource) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearStudioState}
-                      className="text-xs text-[#9ca3af] hover:text-rose-400 bg-[#141519]/85 hover:bg-[#22252b] backdrop-blur-md border border-[#282b33]/80 h-8"
-                      title="Clear studio workspace"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mr-1" />
-                      <span>Clear Studio</span>
-                    </Button>
-                  )}
+                {/* Floating Top-Right Studio Action Buttons (Vertical Icon-Only Stack when Inspector is Open) */}
+                <div
+                  className={`absolute top-3 right-3 lg:right-4 z-20 flex transition-all duration-200 ${
+                    isVerticalQuickActions
+                      ? 'flex-col items-center p-1.5 rounded-2xl bg-[#141519]/92 backdrop-blur-md border border-[#2a2d36] shadow-[0_10px_28px_rgba(0,0,0,0.55)] gap-1.5'
+                      : 'flex-row items-center gap-2'
+                  }`}
+                >
+                  {isVerticalQuickActions ? (
+                    <>
+                      <Tooltip
+                        content="Hide Inspector"
+                        sublabel={audioSource?.title || audioSource?.name}
+                        side="left"
+                        tone="accent"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setIsInspectorOpen(false)}
+                          aria-label="Hide Inspector"
+                          className="w-8 h-8 rounded-xl bg-[#1db954]/15 hover:bg-[#1db954]/25 text-[#4cc37c] border border-[#1db954]/30 flex items-center justify-center transition-all cursor-pointer"
+                        >
+                          <PanelRightClose className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsExportOpen(true)}
-                    className="bg-[#141519]/85 backdrop-blur-md"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Export</span>
-                  </Button>
+                      <Tooltip
+                        content="Export"
+                        sublabel="SRT, DOCX, TXT, JSON"
+                        side="left"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setIsExportOpen(true)}
+                          aria-label="Export"
+                          className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#22252e] flex items-center justify-center transition-all cursor-pointer"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
 
-                  {hasInspectorContent && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsInspectorOpen((prev) => !prev)}
-                      title={isInspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
-                      className="bg-[#141519]/85 backdrop-blur-md"
-                    >
-                      {isInspectorOpen ? (
-                        <PanelRightClose className="w-3.5 h-3.5 text-[#3fb970]" />
-                      ) : (
-                        <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
+                      {(segments.length > 0 || audioSource) && (
+                        <Tooltip
+                          content="Clear Studio"
+                          side="left"
+                          tone="danger"
+                        >
+                          <button
+                            type="button"
+                            onClick={handleClearStudioState}
+                            aria-label="Clear Studio"
+                            className="w-8 h-8 rounded-xl text-[#9ca3af] hover:text-rose-400 hover:bg-rose-500/10 flex items-center justify-center transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </Tooltip>
                       )}
-                      <span className="hidden sm:inline">Inspector</span>
-                    </Button>
+                    </>
+                  ) : (
+                    <>
+                      {(segments.length > 0 || audioSource) && (
+                        <Tooltip content="Clear workspace & audio" side="bottom" tone="danger">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearStudioState}
+                            className="text-xs text-[#9ca3af] hover:text-rose-400 bg-[#141519]/85 hover:bg-[#22252b] backdrop-blur-md border border-[#282b33]/80 h-8"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            <span>Clear Studio</span>
+                          </Button>
+                        </Tooltip>
+                      )}
+
+                      <Tooltip content="Download SRT, DOCX, TXT or JSON" side="bottom">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsExportOpen(true)}
+                          className="bg-[#141519]/85 backdrop-blur-md"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Export</span>
+                        </Button>
+                      </Tooltip>
+
+                      {hasInspectorContent && (
+                        <Tooltip
+                          content="Open Session Inspector"
+                          sublabel={audioSource?.title || audioSource?.name}
+                          side="bottom"
+                          tone="accent"
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsInspectorOpen(true)}
+                            className="bg-[#141519]/85 backdrop-blur-md"
+                          >
+                            <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
+                            <span className="hidden sm:inline">Inspector</span>
+                          </Button>
+                        </Tooltip>
+                      )}
+                    </>
                   )}
                 </div>
 
