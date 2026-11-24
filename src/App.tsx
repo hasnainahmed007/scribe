@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { LandingPage } from './components/LandingPage';
-import { AudioPlayerController } from './components/AudioPlayerController';
+import { SessionInspector } from './components/SessionInspector';
 import { AudioInputHub, ChatSttActivity } from './components/AudioInputHub';
 import { TranscriptEditor } from './components/TranscriptEditor';
 import { YouTubeMetadataStudio } from './components/YouTubeMetadataStudio';
@@ -37,6 +37,8 @@ import { safeFetchJson } from './utils/apiClient';
 import {
   Download,
   Trash2,
+  PanelRightOpen,
+  PanelRightClose,
 } from 'lucide-react';
 import { Button } from './components/ui/button';
 
@@ -97,6 +99,7 @@ function ScribyApp() {
   const [isLoadingTranscription, setIsLoadingTranscription] = useState<boolean>(false);
   const [chatActivity, setChatActivity] = useState<ChatSttActivity | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(true);
 
   // Sidebar History & Pinned Transcripts
   const [transcriptHistory, setTranscriptHistory] = useState<SavedTranscript[]>([]);
@@ -401,6 +404,7 @@ function ScribyApp() {
       setCurrentTime(0);
       setIsPlaying(false);
     }
+    setIsInspectorOpen(true);
     setActiveTab(targetTab);
   };
 
@@ -443,6 +447,7 @@ function ScribyApp() {
       audioRef.current.src = audioUrl;
       setIsPlaying(false);
     }
+    setIsInspectorOpen(true);
     setActiveTab('studio');
   };
 
@@ -486,6 +491,7 @@ function ScribyApp() {
     setSummary(newSummary);
     setDuration(newSource.duration);
     setChatActivity(null);
+    setIsInspectorOpen(true);
     setActiveTab('studio');
 
     if (newSource.title) {
@@ -604,30 +610,6 @@ function ScribyApp() {
     }
   };
 
-  const handleSplitSegment = (id: string, splitIndex: number) => {
-    const index = segments.findIndex((s) => s.id === id);
-    if (index === -1) return;
-    const current = segments[index];
-    const midpoint = (current.start + current.end) / 2;
-
-    const firstHalf: TranscriptSegment = {
-      ...current,
-      end: midpoint,
-      text: current.text.slice(0, splitIndex).trim(),
-    };
-    const secondHalf: TranscriptSegment = {
-      id: `seg-${Date.now()}`,
-      start: midpoint,
-      end: current.end,
-      speaker: current.speaker,
-      text: current.text.slice(splitIndex).trim(),
-    };
-
-    const updated = [...segments];
-    updated.splice(index, 1, firstHalf, secondHalf);
-    setSegments(updated);
-  };
-
   const handleSearchReplace = (searchTerm: string, replaceTerm: string): number => {
     let count = 0;
     const regex = new RegExp(searchTerm, 'gi');
@@ -720,6 +702,10 @@ function ScribyApp() {
       setActiveTab('studio');
     }
   };
+
+  const hasInspectorContent = Boolean(
+    audioSource || segments.length > 0 || (summary && !isLoadingTranscription)
+  );
 
   return (
     <div className="min-h-screen bg-[#121212] text-[#d0d5dd] flex flex-col font-sans">
@@ -819,25 +805,24 @@ function ScribyApp() {
             onCloseMobile={() => setIsMobileSidebarOpen(false)}
           />
 
-          <main className="flex-1 min-w-0 max-w-6xl mx-auto w-full px-4 lg:px-8 py-6 space-y-6">
-            {/* Global AI Quota Notice if API rate limit or peak capacity occurs */}
-            {globalAiQuotaNotice && (
-              <div className="mb-4">
-                <AiQuotaNotice
-                  message={globalAiQuotaNotice}
-                  onDismiss={() => setGlobalAiQuotaNotice(null)}
-                  onOpenPricing={() => setIsPricingOpen(true)}
-                />
-              </div>
-            )}
+          {activeTab === 'studio' ? (
+            <div className="flex-1 min-w-0 h-[calc(100vh-57px)] flex overflow-hidden">
+              {/* Center Claude Inference Column */}
+              <div className="flex-1 min-w-0 flex flex-col h-full">
+                {globalAiQuotaNotice && (
+                  <div className="shrink-0 px-4 lg:px-6 pt-3">
+                    <AiQuotaNotice
+                      message={globalAiQuotaNotice}
+                      onDismiss={() => setGlobalAiQuotaNotice(null)}
+                      onOpenPricing={() => setIsPricingOpen(true)}
+                    />
+                  </div>
+                )}
 
-            {/* 3A. SUBTITLES & CHAT WORKSPACE */}
-            {activeTab === 'studio' && (
-              <div className="space-y-6">
-                {/* Workspace Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
+                {/* Slim Studio Header */}
+                <div className="shrink-0 px-4 lg:px-6 py-3 border-b border-[#24262c] flex flex-wrap items-center justify-between gap-3 bg-[#121212]">
                   <div className="min-w-0">
-                    <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display truncate">
+                    <h2 className="text-sm sm:text-base font-semibold text-[#e4e7ec] tracking-tight font-display truncate">
                       {audioSource?.title || audioSource?.name || 'Transcript Chat Workspace'}
                     </h2>
                     <div className="text-xs text-[#9ca3af] mt-0.5 flex items-center flex-wrap gap-x-2">
@@ -879,32 +864,28 @@ function ScribyApp() {
                       <Download className="w-3.5 h-3.5" />
                       <span>Export</span>
                     </Button>
+
+                    {hasInspectorContent && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsInspectorOpen((prev) => !prev)}
+                        title={isInspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
+                      >
+                        {isInspectorOpen ? (
+                          <PanelRightClose className="w-3.5 h-3.5 text-[#3fb970]" />
+                        ) : (
+                          <PanelRightOpen className="w-3.5 h-3.5 text-[#3fb970]" />
+                        )}
+                        <span className="hidden sm:inline">Inspector</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                {/* Global Seekable Waveform Player */}
-                {audioSource && (
-                  <AudioPlayerController
-                    audioUrl={audioSource.url}
-                    audioName={audioSource.name}
-                    currentTime={currentTime}
-                    duration={Number.isFinite(duration) && duration > 0 ? duration : (audioSource.duration || 0)}
-                    isPlaying={isPlaying}
-                    playbackRate={playbackRate}
-                    volume={volume}
-                    isLooping={isLooping}
-                    onPlayPause={handlePlayPause}
-                    onSeek={handleSeek}
-                    onPlaybackRateChange={handlePlaybackRateChange}
-                    onVolumeChange={handleVolumeChange}
-                    onToggleLoop={() => setIsLooping(!isLooping)}
-                  />
-                )}
-
-                {/* Full-Width Chat & Subtitle Editor */}
+                {/* Borderless Claude Inference Stream + Docked Composer */}
                 <TranscriptEditor
                   segments={segments}
-                  summary={summary}
                   audioName={audioSource?.name}
                   audioTitle={audioSource?.title}
                   userName={user.name}
@@ -920,13 +901,8 @@ function ScribyApp() {
                   onDeleteSegment={handleDeleteSegment}
                   onAddSegment={handleAddSegment}
                   onMergeSegments={handleMergeSegments}
-                  onMergeAllSegments={handleMergeAllSegments}
-                  onUndoMergeAll={handleUndoMergeAll}
-                  canUndoMergeAll={!!previousSegmentsBackup}
-                  onSplitSegment={handleSplitSegment}
                   onSeek={handleSeek}
                   onPlaySegment={handlePlaySegment}
-                  onSearchReplace={handleSearchReplace}
                   composerFooter={
                     <AudioInputHub
                       onTranscriptionStart={(sourceLabel) => {
@@ -941,6 +917,7 @@ function ScribyApp() {
                         setLoadedTranscriptId(null);
                         setYoutubeMetadata(null);
                         setThumbnailTitle(sourceLabel);
+                        setIsInspectorOpen(true);
                       }}
                       onPartialSegments={(partialSegs) => {
                         setSegments(partialSegs);
@@ -959,7 +936,45 @@ function ScribyApp() {
                   }
                 />
               </div>
-            )}
+
+              {/* Right Organized Session Inspector (Audio Player, Synopsis, Stats & Tools) */}
+              <SessionInspector
+                audioSource={audioSource}
+                segments={segments}
+                summary={summary}
+                isTranscribing={isLoadingTranscription}
+                currentTime={currentTime}
+                duration={duration}
+                isPlaying={isPlaying}
+                playbackRate={playbackRate}
+                volume={volume}
+                isLooping={isLooping}
+                onPlayPause={handlePlayPause}
+                onSeek={handleSeek}
+                onPlaybackRateChange={handlePlaybackRateChange}
+                onVolumeChange={handleVolumeChange}
+                onToggleLoop={() => setIsLooping(!isLooping)}
+                onAddSegment={() => handleAddSegment()}
+                onMergeAllSegments={handleMergeAllSegments}
+                onUndoMergeAll={handleUndoMergeAll}
+                canUndoMergeAll={!!previousSegmentsBackup}
+                onSearchReplace={handleSearchReplace}
+                isOpen={isInspectorOpen}
+                onClose={() => setIsInspectorOpen(false)}
+              />
+            </div>
+          ) : (
+            <main className="flex-1 min-w-0 max-w-6xl mx-auto w-full px-4 lg:px-8 py-6 space-y-6">
+              {/* Global AI Quota Notice if API rate limit or peak capacity occurs */}
+              {globalAiQuotaNotice && (
+                <div className="mb-4">
+                  <AiQuotaNotice
+                    message={globalAiQuotaNotice}
+                    onDismiss={() => setGlobalAiQuotaNotice(null)}
+                    onOpenPricing={() => setIsPricingOpen(true)}
+                  />
+                </div>
+              )}
 
             {/* 3B. TRANSCRIPT HISTORY ARCHIVE */}
             {activeTab === 'history' && (
@@ -1096,7 +1111,8 @@ function ScribyApp() {
                 )}
               </div>
             )}
-          </main>
+            </main>
+          )}
         </div>
       )}
 

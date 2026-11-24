@@ -573,10 +573,13 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
   const selectedLangOption = getLanguageOption(selectedSttLanguage);
 
   return (
-    <div id="studio-chat-composer" className="bg-[#161616] border-t border-[#282828] p-3.5 space-y-3">
+    <div
+      id="studio-chat-composer"
+      className="max-w-3xl mx-auto w-full rounded-2xl bg-[#181818] border border-[#2e3138] shadow-[0_10px_32px_rgba(0,0,0,0.48)] p-3 space-y-2.5"
+    >
       {/* Cross-Origin Isolation Warning if running inside non-isolated embedded iframe */}
       {needsStandaloneTab && (
-        <div className="p-3 bg-amber-950/30 border border-amber-700/60 rounded-xl text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="p-2.5 bg-amber-950/30 border border-amber-700/60 rounded-xl text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
             <span>
@@ -599,7 +602,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
 
       {/* Credit Exceeded or Runtime Error Alert */}
       {errorMessage && (
-        <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
+        <div className="p-2.5 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
@@ -626,83 +629,6 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         </div>
       )}
 
-      {/* Composer Toolbar: Mode Switcher + Language + Model Arch */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <div className="flex items-center gap-1 p-0.5 bg-[#121212] rounded-lg border border-[#282828]">
-          <button
-            type="button"
-            disabled={isLoading || isRecording || isStartingMic}
-            onClick={() => setActiveMode('upload')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
-              activeMode === 'upload'
-                ? 'bg-[#1db954]/15 text-[#4cc37c] border border-[#1db954]/30'
-                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
-            }`}
-          >
-            <FileAudio className="w-3.5 h-3.5" />
-            <span>Upload Audio</span>
-          </button>
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => setActiveMode('record')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
-              activeMode === 'record'
-                ? 'bg-[#1db954]/15 text-[#4cc37c] border border-[#1db954]/30'
-                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            <span>Live Mic</span>
-          </button>
-        </div>
-
-        {/* Inline Speech Language & Model Arch Controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-[#1f1f1f] border border-[#2e3138] rounded-lg px-2.5 h-8">
-            <Globe className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
-            <select
-              aria-label="Speech Language"
-              value={selectedSttLanguage}
-              onChange={(e) => handleLanguageChange(e.target.value)}
-              disabled={isLoading || isRecording || isStartingMic}
-              className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
-            >
-              {sttLanguages.map((lang) => (
-                <option key={lang.code} value={lang.code} disabled={!lang.sttSupported} className="bg-[#1f1f1f]">
-                  {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
-                  {!lang.sttSupported ? ' — pending' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {selectedSttLanguage === 'en' ? (
-            <div className="flex items-center gap-1.5 bg-[#1f1f1f] border border-[#2e3138] rounded-lg px-2.5 h-8">
-              <Cpu className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
-              <select
-                aria-label="WASM Model Architecture"
-                value={selectedSttArch}
-                onChange={(e) => setSelectedSttArch(e.target.value as MoonshineArchKey)}
-                disabled={isLoading || isRecording || isStartingMic}
-                className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
-              >
-                {ENGLISH_ARCH_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value} className="bg-[#1f1f1f]">
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="h-8 bg-[#1f1f1f] border border-[#2e3138] text-xs text-[#d0d5dd] rounded-lg px-2.5 flex items-center gap-2 whitespace-nowrap">
-              <Cpu className="w-3.5 h-3.5 text-[#3fb970]" />
-              <span>{selectedLangOption?.sttModelLabel || 'Base'}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Hidden File Picker */}
       <input
         ref={fileInputRef}
@@ -717,9 +643,9 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
         }}
       />
 
-      {/* Composer Body */}
+      {/* Composer Prompt / Capture Stage */}
       {isLoading ? (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#121212] border border-[#282828]">
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930]">
           <div className="flex items-center gap-3 min-w-0">
             <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
             <div className="min-w-0">
@@ -729,7 +655,8 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
               {chunkProgress && chunkProgress.totalChunks > 1 ? (
                 <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
                   Segment {chunkProgress.currentChunk}/{chunkProgress.totalChunks} ·{' '}
-                  {formatPlayerTime(chunkProgress.processedSeconds)} / {formatPlayerTime(chunkProgress.totalSeconds)} ·{' '}
+                  {formatPlayerTime(chunkProgress.processedSeconds)} /{' '}
+                  {formatPlayerTime(chunkProgress.totalSeconds)} ·{' '}
                   {Math.round(chunkProgress.fraction * 100)}%
                 </div>
               ) : downloadProgress && downloadProgress.fraction >= 0 && downloadProgress.fraction < 1 ? (
@@ -749,7 +676,7 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
               setChunkProgress(null);
               onTranscriptionAbort?.();
             }}
-            className="px-3 py-1.5 bg-[#202020] hover:bg-[#2a2a2a] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#323232] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-3 py-1 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#32363f] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             Cancel
           </button>
@@ -763,129 +690,226 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-xl border border-dashed transition-all cursor-pointer ${
+          className={`flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl border border-dashed transition-all cursor-pointer ${
             dragOver
               ? 'border-[#3fb970] bg-[#1db954]/10'
-              : 'border-[#323232] hover:border-[#4b5563] bg-[#121212] hover:bg-[#191919]'
+              : 'border-[#2f333c] hover:border-[#4b5563] bg-[#131417]/80 hover:bg-[#16181d]'
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20 shrink-0">
               <UploadCloud className="w-4 h-4" />
             </div>
             <div className="text-left min-w-0">
-              <div className="text-xs font-semibold text-[#e4e7ec]">
-                Drop audio/video file here or browse to transcribe into chat
+              <div className="text-xs font-medium text-[#e4e7ec]">
+                Drop audio or video file here, or click to browse
               </div>
               <div className="text-[11px] text-[#9ca3af] truncate">
                 MP3, WAV, M4A, AAC, WebM, OGG · Multi-speaker &amp; chunked long-file support ({selectedLangOption?.label || 'English'})
               </div>
             </div>
           </div>
-
-          <span className="px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0">
-            Attach Audio
-          </span>
         </div>
       ) : (
-        <div className="px-4 py-3 rounded-xl bg-[#121212] border border-[#282828] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="px-3.5 py-2.5 rounded-xl bg-[#131417] border border-[#262930] flex flex-col sm:flex-row items-center justify-between gap-3">
           {isStartingMic ? (
             <div className="flex items-center gap-2.5 text-xs text-[#e4e7ec] w-full">
               <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
               <span>{loadingStep}</span>
             </div>
           ) : isRecording ? (
-            <>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 flex items-center justify-center shrink-0">
-                  <Mic className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-mono tabular-nums font-bold text-red-400">
-                      {formatPlayerTime(recordingSeconds)}
-                    </span>
-                    <span className="text-[#9ca3af] truncate">
-                      Streaming live ({selectedLangOption?.label || 'English'})...
-                    </span>
-                  </div>
-                  {livePartialText && (
-                    <div className="text-[11px] text-[#d0d5dd] italic truncate max-w-md">
-                      {livePartialText}
-                    </div>
-                  )}
-                </div>
+            <div className="flex items-center gap-3 min-w-0 w-full">
+              <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 flex items-center justify-center shrink-0">
+                <Mic className="w-4 h-4" />
               </div>
-              <button
-                type="button"
-                onClick={stopRecording}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-500 text-[#f3f4f6] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span>Stop Recording</span>
-              </button>
-            </>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-mono tabular-nums font-bold text-red-400">
+                    {formatPlayerTime(recordingSeconds)}
+                  </span>
+                  <span className="text-[#9ca3af] truncate">
+                    Streaming live ({selectedLangOption?.label || 'English'})...
+                  </span>
+                </div>
+                {livePartialText && (
+                  <div className="text-[11px] text-[#d0d5dd] italic truncate">
+                    {livePartialText}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : recordedBlob ? (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <div className="flex items-center gap-3 w-full flex-1 min-w-0">
                 {recordedUrl && (
                   <audio controls src={recordedUrl} className="h-8 flex-1 min-w-[180px]" />
                 )}
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
-                    setRecordedBlob(null);
-                    setRecordedUrl(null);
-                    setLiveCapturedResult(null);
-                    setLiveCommittedLines([]);
-                    setLivePartialText('');
-                    setRecordingSeconds(0);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202020] hover:bg-[#2a2a2a] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#323232] whitespace-nowrap cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={transcribeRecordedAudio}
-                  className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Add Recording to Chat</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20 flex items-center justify-center shrink-0">
-                  <Mic className="w-4 h-4" />
-                </div>
-                <div className="text-left min-w-0">
-                  <div className="text-xs font-semibold text-[#e4e7ec]">
-                    Record live speech directly into the transcript chat
-                  </div>
-                  <div className="text-[11px] text-[#9ca3af] truncate">
-                    Real-time Moonshine microphone capture with automatic timecodes
-                  </div>
-                </div>
-              </div>
               <button
                 type="button"
-                onClick={startRecording}
-                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                onClick={() => {
+                  if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+                  setRecordedBlob(null);
+                  setRecordedUrl(null);
+                  setLiveCapturedResult(null);
+                  setLiveCommittedLines([]);
+                  setLivePartialText('');
+                  setRecordingSeconds(0);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202227] hover:bg-[#2a2d34] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#32363f] whitespace-nowrap cursor-pointer shrink-0"
               >
-                <Mic className="w-3.5 h-3.5" />
-                <span>Start Mic</span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset</span>
               </button>
-            </>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 min-w-0 w-full">
+              <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20 flex items-center justify-center shrink-0">
+                <Mic className="w-4 h-4" />
+              </div>
+              <div className="text-left min-w-0">
+                <div className="text-xs font-medium text-[#e4e7ec]">
+                  Record live speech directly into this inference thread
+                </div>
+                <div className="text-[11px] text-[#9ca3af] truncate">
+                  Real-time Moonshine microphone capture with automatic timecodes
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
+
+      {/* Claude Code Bottom Control Bar: Mode + Language + Model Left, Action CTA Right */}
+      <div className="pt-2 border-t border-[#24262c] flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* Mode Switcher */}
+          <div className="flex items-center gap-0.5 p-0.5 bg-[#121316] rounded-lg border border-[#282a30]">
+            <button
+              type="button"
+              disabled={isLoading || isRecording || isStartingMic}
+              onClick={() => setActiveMode('upload')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+                activeMode === 'upload'
+                  ? 'bg-[#1db954]/15 text-[#4cc37c]'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+              }`}
+            >
+              <FileAudio className="w-3.5 h-3.5" />
+              <span>Upload Audio</span>
+            </button>
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={() => setActiveMode('record')}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+                activeMode === 'record'
+                  ? 'bg-[#1db954]/15 text-[#4cc37c]'
+                  : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Live Mic</span>
+            </button>
+          </div>
+
+          {/* Language Selector */}
+          <div className="flex items-center gap-1.5 bg-[#121316] border border-[#282a30] rounded-lg px-2.5 h-7">
+            <Globe className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
+            <select
+              aria-label="Speech Language"
+              value={selectedSttLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              disabled={isLoading || isRecording || isStartingMic}
+              className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
+            >
+              {sttLanguages.map((lang) => (
+                <option
+                  key={lang.code}
+                  value={lang.code}
+                  disabled={!lang.sttSupported}
+                  className="bg-[#181818]"
+                >
+                  {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                  {!lang.sttSupported ? ' — pending' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Model Arch Selector */}
+          {selectedSttLanguage === 'en' ? (
+            <div className="flex items-center gap-1.5 bg-[#121316] border border-[#282a30] rounded-lg px-2.5 h-7">
+              <Cpu className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
+              <select
+                aria-label="WASM Model Architecture"
+                value={selectedSttArch}
+                onChange={(e) => setSelectedSttArch(e.target.value as MoonshineArchKey)}
+                disabled={isLoading || isRecording || isStartingMic}
+                className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
+              >
+                {ENGLISH_ARCH_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-[#181818]">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="h-7 bg-[#121316] border border-[#282a30] text-xs text-[#d0d5dd] rounded-lg px-2.5 flex items-center gap-1.5 whitespace-nowrap">
+              <Cpu className="w-3.5 h-3.5 text-[#3fb970]" />
+              <span>{selectedLangOption?.sttModelLabel || 'Base'}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right Primary Action Slot */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          {!isLoading && activeMode === 'upload' && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Attach Audio</span>
+            </button>
+          )}
+
+          {!isLoading && activeMode === 'record' && !isRecording && !recordedBlob && !isStartingMic && (
+            <button
+              type="button"
+              onClick={startRecording}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Start Mic</span>
+            </button>
+          )}
+
+          {!isLoading && activeMode === 'record' && isRecording && (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-[#f3f4f6] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <Square className="w-3.5 h-3.5 fill-current" />
+              <span>Stop Recording</span>
+            </button>
+          )}
+
+          {!isLoading && activeMode === 'record' && recordedBlob && (
+            <button
+              type="button"
+              onClick={transcribeRecordedAudio}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Add to Stream</span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
