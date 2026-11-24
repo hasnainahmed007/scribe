@@ -2,10 +2,19 @@ import { VoiceGender, VoiceTone } from '../types';
 
 export const CUSTOM_ACCENT_ID = '__custom__';
 
+export type MoonshineArchKey =
+  | 'tiny'
+  | 'base'
+  | 'tiny_streaming'
+  | 'small_streaming'
+  | 'medium_streaming';
+
 export interface VoiceAccentOption {
   id: string;
   label: string;
-  promptHint: string;
+  moonshineLang?: string;
+  voiceFemaleOverride?: string;
+  voiceMaleOverride?: string;
 }
 
 export interface VoiceLanguageOption {
@@ -14,38 +23,76 @@ export interface VoiceLanguageOption {
   nativeName?: string;
   forSynthesis?: boolean;
   forCloning?: boolean;
+  forStt?: boolean;
+  sttSupported?: boolean;
+  ttsSupported?: boolean;
+  defaultSttArch?: MoonshineArchKey;
+  availableSttArches?: MoonshineArchKey[];
+  sttModelLabel?: string;
+  ttsFemaleVoiceId?: string;
+  ttsMaleVoiceId?: string;
   accents: VoiceAccentOption[];
 }
 
+export const MOONSHINE_LANGUAGE_CODES = [
+  'en',
+  'es',
+  'de',
+  'ja',
+  'ar',
+  'zh',
+  'vi',
+  'tl',
+  'ko',
+  'uk',
+] as const;
+
 export const SAMPLE_SCRIPTS_BY_LANGUAGE: Record<string, string> = {
-  en: 'Welcome to Scriby AI Voiceover Studio. This recording demonstrates crisp studio pronunciation, natural pacing, and authentic regional accent delivery.',
-  bn: 'আসসালামু আলাইকুম, স্ক্রাইবি এআই ভয়েসওভার স্টুডিওতে আপনাকে স্বাগতম। আজকের এই অডিওতে আমাদের আঞ্চলিক উচ্চারণ ও স্বাভাবিক কণ্ঠস্বর পরীক্ষা করা হচ্ছে।',
-  hi: 'नमस्ते, स्क्राइबी एआई वॉइसओवर स्टूडियो में आपका स्वागत है। यह रिकॉर्डिंग स्पष्ट उच्चारण और क्षेत्रीय लहजे का परीक्षण करने के लिए है।',
-  ar: 'مرحباً بكم في استوديو سكرايبي للتعليق الصوتي بالذكاء الاصطناعي. يختبر هذا التسجيل وضوح المخارج واللهجة الإقليمية الطبيعية.',
-  es: 'Bienvenidos a Scriby AI Voiceover Studio. Esta grabación demuestra una pronunciación clara y un acento regional auténtico.',
-  fr: 'Bienvenue dans Scriby AI Voiceover Studio. Cet enregistrement met en valeur une diction claire et un accent régional authentique.',
-  pt: 'Bem-vindo ao Scriby AI Voiceover Studio. Esta gravação demonstra uma pronúncia natural e um sotaque regional autêntico.',
-  de: 'Willkommen im Scriby AI Voiceover Studio. Diese Aufnahme demonstriert eine klare Aussprache und einen authentischen regionalen Akzent.',
-  ja: 'スクリビAIボイスオーバースタジオへようこそ。この音声は自然なイントネーションと発音スタイルをテストしています。',
-  ko: '스크라이비 AI 보이스오버 스튜디오에 오신 것을 환영합니다. 이 녹음은 자연스러운 억양과 발음을 테스트합니다.',
-  zh: '欢迎来到 Scriby AI 配音工作室。这段录音旨在展示清晰自然的发音以及地道准确的区域口音表现。',
-  ur: 'اسکرائیبی اے آئی وائس اوور اسٹوڈیو میں خوش آمدید۔ یہ ریکارڈنگ صاف تلفظ اور علاقائی لہجے کی جانچ کے لیے ہے۔',
-  tr: 'Scriby Yapay Zeka Seslendirme Stüdyosuna hoş geldiniz. Bu kayıt akıcı telaffuz ve bölgesel vurgu testidir.',
-  it: 'Benvenuti in Scriby AI Voiceover Studio. Questa registrazione dimostra una dizione nitida e un accento regionale autentico.',
+  en: 'Welcome to Scriby Voiceover Studio. This speech sample runs locally in your browser using Moonshine WebAssembly for clear pacing and natural voice cloning.',
+  es: 'Bienvenidos a Scriby Studio. Esta grabacion se sintetiza directamente en tu navegador con Moonshine WebAssembly.',
+  de: 'Willkommen im Scriby Studio. Diese Sprachaufnahme wird lokal in Ihrem Browser mit Moonshine WebAssembly erzeugt.',
+  ja: 'スクリビスタジオへようこそ。この音声はブラウザ上のムーンシャインでローカル生成されています。',
+  ar: 'مرحبا بكم في استوديو سكرايبي. يتم توليد هذا الصوت محليا داخل المتصفح عبر تقنية ويب أسمبلي.',
+  zh: '欢迎来到 Scriby 工作室。这段语音正在浏览器本地通过 Moonshine WebAssembly 引擎直接合成。',
+  vi: 'Chao mung den voi Scriby Studio. Giong noi nay duoc tong hop truc tiep trong trinh duyet bang Moonshine WebAssembly.',
+  tl: 'Maligayang pagdating sa Scriby Studio. Gumagamit ang sistemang ito ng lokal na Moonshine WebAssembly sa iyong browser.',
+  ko: '스크라이비 스튜디오에 오신 것을 환영합니다. 이 음성은 브라우저 내 문샤인 웹어셈블리로 생성됩니다.',
+  uk: 'Ласкаво просимо до студії Scriby. Цей голос синтезується локально у вашому браузері через Moonshine WebAssembly.',
 };
 
 export function detectScriptCategory(
   text?: string
-): 'bengali' | 'devanagari' | 'arabic' | 'japanese' | 'korean' | 'cjk' | 'latin' | 'unknown' {
+): 'arabic' | 'japanese' | 'korean' | 'cjk' | 'cyrillic' | 'latin' | 'unknown' {
   if (!text || !text.trim()) return 'unknown';
-  if (/[\u0980-\u09FF]/.test(text)) return 'bengali';
-  if (/[\u0900-\u097F]/.test(text)) return 'devanagari';
   if (/[\u0600-\u06FF]/.test(text)) return 'arabic';
   if (/[\u3040-\u30FF]/.test(text)) return 'japanese';
   if (/[\uAC00-\uD7AF]/.test(text)) return 'korean';
   if (/[\u4E00-\u9FFF]/.test(text)) return 'cjk';
+  if (/[\u0400-\u04FF]/.test(text)) return 'cyrillic';
   if (/[A-Za-z]/.test(text)) return 'latin';
   return 'unknown';
+}
+
+export function resolveMoonshineLanguageFromText(text?: string, requestedLang?: string): string {
+  const normalized = normalizeLanguageCode(requestedLang, 'auto');
+  if (normalized !== 'auto' && normalized !== 'multilingual') {
+    return normalized;
+  }
+  const cat = detectScriptCategory(text);
+  switch (cat) {
+    case 'arabic':
+      return 'ar';
+    case 'japanese':
+      return 'ja';
+    case 'korean':
+      return 'ko';
+    case 'cjk':
+      return 'zh';
+    case 'cyrillic':
+      return 'uk';
+    default:
+      return 'en';
+  }
 }
 
 export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
@@ -54,44 +101,17 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     label: 'Auto-Detect from Script',
     forSynthesis: true,
     forCloning: false,
+    forStt: false,
+    sttSupported: false,
+    ttsSupported: true,
     accents: [
       {
         id: 'Native / Standard',
         label: 'Native / Standard',
-        promptHint: 'Detect the script language automatically and speak with authentic native pronunciation and natural cadence.',
       },
       {
-        id: 'Neutral Broadcast Studio',
-        label: 'Neutral Broadcast Studio',
-        promptHint: 'Speak in the detected script language with crisp, authoritative newsroom broadcast articulation.',
-      },
-      {
-        id: 'Warm Storytelling',
-        label: 'Warm Storytelling',
-        promptHint: 'Speak in the detected script language with warm, expressive documentary narrative phrasing.',
-      },
-    ],
-  },
-  {
-    code: 'multilingual',
-    label: 'Universal Multilingual (All Languages)',
-    forSynthesis: false,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Standard Studio',
-        label: 'Standard Studio',
-        promptHint: 'Adapt naturally to the script language with authentic native pronunciation.',
-      },
-      {
-        id: 'Neutral International',
-        label: 'Neutral International',
-        promptHint: 'Maintain clear, internationally intelligible pronunciation across languages.',
-      },
-      {
-        id: 'Warm Narrative',
-        label: 'Warm Narrative',
-        promptHint: 'Expressive storytelling inflection with natural breathing pauses.',
+        id: 'Studio Broadcast',
+        label: 'Studio Broadcast',
       },
     ],
   },
@@ -100,138 +120,35 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     label: 'English',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'medium_streaming',
+    availableSttArches: ['medium_streaming', 'small_streaming', 'tiny_streaming', 'base', 'tiny'],
+    sttModelLabel: 'Medium Streaming',
+    ttsFemaleVoiceId: 'kokoro_af_heart',
+    ttsMaleVoiceId: 'kokoro_am_adam',
     accents: [
       {
         id: 'American (General US)',
         label: 'American (General US)',
-        promptHint: 'Speak in unmistakable General American English with rhotic /r/, relaxed flap-T, and standard US broadcast cadence.',
+        moonshineLang: 'en_us',
+        voiceFemaleOverride: 'kokoro_af_heart',
+        voiceMaleOverride: 'kokoro_am_adam',
       },
       {
         id: 'British (RP / London)',
         label: 'British (RP / London)',
-        promptHint: 'Speak in unmistakable British English (London / Received Pronunciation): drop trailing /r/ (non-rhotic), crisp /t/ consonants, broad /ah/ and rounded British vowels.',
+        moonshineLang: 'en_gb',
+        voiceFemaleOverride: 'kokoro_bf_emma',
+        voiceMaleOverride: 'kokoro_bm_george',
       },
       {
-        id: 'Australian',
-        label: 'Australian',
-        promptHint: 'Speak in unmistakable Australian English (Sydney/Melbourne): broad Australian vowel shifts, non-rhotic endings, and relaxed upward Aussie phrase inflection.',
-      },
-      {
-        id: 'Indian English',
-        label: 'Indian English',
-        promptHint: 'Speak in unmistakable Indian English: crisp syllable-timed rhythm, retroflex /t/ and /d/, rolled /r/, unreduced vowels, and authentic South Asian English prosody.',
-      },
-      {
-        id: 'Irish',
-        label: 'Irish',
-        promptHint: 'Speak in unmistakable Irish English (Dublin): warm melodic lilt, soft dental /th/ consonants, rounded vowels, and lively Celtic rhythm.',
-      },
-      {
-        id: 'Canadian',
-        label: 'Canadian',
-        promptHint: 'Speak in natural Canadian English with crisp North American broadcast phrasing and authentic Canadian vowel raising.',
-      },
-      {
-        id: 'Scottish',
-        label: 'Scottish',
-        promptHint: 'Speak in unmistakable Scottish English (Edinburgh/Glasgow): tapped/rolled rhotic /r/, short pure vowels, and distinct Scottish rising-falling pitch contour.',
-      },
-    ],
-  },
-  {
-    code: 'bn',
-    label: 'Bengali',
-    nativeName: 'বাংলা',
-    forSynthesis: true,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Bangladeshi (Dhaka Standard)',
-        label: 'Bangladeshi (Dhaka Standard)',
-        promptHint: 'Speak in authentic Bangladeshi Dhaka Promito Bangla: grounded warm chest resonance, clear aspirated consonants (kh, bh, dh, ph), natural Dhaka urban conversational rhythm, and typical Bangladeshi sentence melody.',
-      },
-      {
-        id: 'West Bengal (Kolkata Standard)',
-        label: 'West Bengal (Kolkata Standard)',
-        promptHint: 'Speak in unmistakable West Bengal Kolkata Bangla (urban Ghoti accent): bright forward tongue placement, soft crisp sibilants, distinctly lyrical rising Kolkata vowel intonation at phrase endings, and crisp West Bengal articulation.',
-      },
-      {
-        id: 'Sylheti-inflected Warm',
-        label: 'Sylheti-inflected Warm',
-        promptHint: 'Speak Bengali with an unmistakable, strong Sylheti (Sylhet, Bangladesh) regional accent and dialectal prosody: airy fricative softening on k/p stops (Sylheti kh/f coloring), lilting sing-song Sylheti pitch rises, and warm Surma valley folk cadence.',
-      },
-      {
-        id: 'Chittagonian-inflected Neutral',
-        label: 'Chittagonian-inflected Neutral',
-        promptHint: 'Speak Bengali with an unmistakable, strong Chattogram (Chittagonian) southeastern Bangladeshi regional accent and dialectal prosody: fast punchy clipped syllables, sharp downward Chittagonian tonal drop at clause endings, nasalized open vowels, and coastal Chattogram speech melody.',
-      },
-      {
-        id: 'Classic Literary / Recitation',
-        label: 'Classic Literary / Recitation',
-        promptHint: 'Speak Bengali in dramatic classical Abritti stage recitation style: deep sustained open vowels, poetic rhythmic pauses, and elevated literary pronunciation.',
-      },
-    ],
-  },
-  {
-    code: 'hi',
-    label: 'Hindi',
-    nativeName: 'हिन्दी',
-    forSynthesis: true,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Standard Khari Boli (Delhi / NCR)',
-        label: 'Standard Khari Boli (Delhi / NCR)',
-        promptHint: 'Speak in authentic Delhi NCR Khari Boli Hindi with crisp retroflex stops, clear aspirated consonants, and natural northern Indian cadence.',
-      },
-      {
-        id: 'Mumbai Conversational',
-        label: 'Mumbai Conversational',
-        promptHint: 'Speak in unmistakable Mumbai Bambaiya-tinted conversational Hindi with brisk urban rhythm, friendly upward inflections, and relaxed colloquial flow.',
-      },
-      {
-        id: 'Lucknow Polite',
-        label: 'Lucknow Polite',
-        promptHint: 'Speak in refined Awadhi-influenced Lucknow Hindi (Tahzeeb diction): soft melodic Urdu-Hindi consonants (q, kh, gh, z), measured polite pacing, and warm courtly grace.',
-      },
-      {
-        id: 'Broadcast Formal',
-        label: 'Broadcast Formal',
-        promptHint: 'Speak in crisp, authoritative Shuddh Hindi documentary and news anchor style.',
-      },
-    ],
-  },
-  {
-    code: 'ar',
-    label: 'Arabic',
-    nativeName: 'العربية',
-    forSynthesis: true,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Modern Standard Arabic (Fusha)',
-        label: 'Modern Standard Arabic (Fusha)',
-        promptHint: 'Speak in crisp Modern Standard Arabic (Al-Fusha) with precise pharyngeal consonants (ayn, ha, qaf) and formal newsroom cadence.',
-      },
-      {
-        id: 'Egyptian (Cairo)',
-        label: 'Egyptian (Cairo)',
-        promptHint: 'Speak in unmistakable Egyptian Arabic (Cairo Masri): hard /g/ for jeem, bright Cairo vowel melody, warm expressive rhythm, and lively conversational flow.',
-      },
-      {
-        id: 'Gulf (Khaleeji)',
-        label: 'Gulf (Khaleeji)',
-        promptHint: 'Speak in unmistakable Gulf Arabic (Khaleeji): deep resonant throat consonants, softened qaf/kaf inflection, and measured Arabian Peninsula cadence.',
-      },
-      {
-        id: 'Levantine (Beirut / Damascus)',
-        label: 'Levantine (Beirut / Damascus)',
-        promptHint: 'Speak in unmistakable Levantine Arabic (Beirut/Damascus Shami): smooth glottal qaf softening, lyrical melodic vowel rises, and gentle Mediterranean rhythm.',
-      },
-      {
-        id: 'Moroccan (Maghrebi)',
-        label: 'Moroccan (Maghrebi)',
-        promptHint: 'Speak in unmistakable Moroccan Darija / Maghrebi Arabic with crisp consonant clusters, brisk North African rhythm, and authentic Moroccan intonation.',
+        id: 'Studio Clear (Bella / Michael)',
+        label: 'Studio Clear (Bella / Michael)',
+        moonshineLang: 'en_us',
+        voiceFemaleOverride: 'kokoro_af_bella',
+        voiceMaleOverride: 'kokoro_am_michael',
       },
     ],
   },
@@ -241,84 +158,28 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     nativeName: 'Español',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'kokoro_ef_dora',
+    ttsMaleVoiceId: 'kokoro_em_alex',
     accents: [
       {
-        id: 'Latin American (Neutral)',
-        label: 'Latin American (Neutral)',
-        promptHint: 'Speak in clear neutral Latin American Spanish with uniform seseo pronunciation and smooth broadcast pacing.',
+        id: 'Castilian / Neutral (Dora / Alex)',
+        label: 'Castilian / Neutral (Dora / Alex)',
+        moonshineLang: 'es',
+        voiceFemaleOverride: 'kokoro_ef_dora',
+        voiceMaleOverride: 'kokoro_em_alex',
       },
       {
-        id: 'Mexican',
-        label: 'Mexican',
-        promptHint: 'Speak in unmistakable Mexican Spanish (CDMX): crisp syllable-final consonants, sing-song central Mexican rising cadence, and warm expressive vowels.',
-      },
-      {
-        id: 'Castilian (Spain / Madrid)',
-        label: 'Castilian (Spain / Madrid)',
-        promptHint: 'Speak in unmistakable European Castilian Spanish (Madrid): authentic interdental /th/ distinction (ceceo on z/ci/ce), retracted /s/, and brisk Peninsular rhythm.',
-      },
-      {
-        id: 'Colombian (Bogota)',
-        label: 'Colombian (Bogota)',
-        promptHint: 'Speak in unmistakable Bogota Colombian Spanish: hyper-clear enunciation, gentle melodic pauses, and polite Andean intonation.',
-      },
-      {
-        id: 'Rioplatense (Argentina)',
-        label: 'Rioplatense (Argentina)',
-        promptHint: 'Speak in unmistakable Argentine Rioplatense Spanish (Buenos Aires): characteristic "sh/zh" sheismo on ll/y and expressive Italianate Buenos Aires pitch contours.',
-      },
-    ],
-  },
-  {
-    code: 'fr',
-    label: 'French',
-    nativeName: 'Français',
-    forSynthesis: true,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Metropolitan (Paris Standard)',
-        label: 'Metropolitan (Paris Standard)',
-        promptHint: 'Speak in authentic Parisian Metropolitan French with uvular /r/, crisp nasal vowels, smooth liaison, and understated Parisian melody.',
-      },
-      {
-        id: 'Canadian (Quebecois)',
-        label: 'Canadian (Quebecois)',
-        promptHint: 'Speak in unmistakable Quebecois Canadian French: affricated /dz/ and /ts/ before i/u, diphthongized long vowels, and distinct Quebecois rhythmic swing.',
-      },
-      {
-        id: 'Southern French (Marseille)',
-        label: 'Southern French (Marseille)',
-        promptHint: 'Speak in unmistakable Southern French (Marseille Midi accent): pronounced mute-e syllables, open oral vowels instead of heavy nasals, and sunny Mediterranean cadence.',
-      },
-      {
-        id: 'Belgian / Swiss Neutral',
-        label: 'Belgian / Swiss Neutral',
-        promptHint: 'Speak in measured Belgian/Swiss French with clear vowel length distinctions and steady studio pacing.',
-      },
-    ],
-  },
-  {
-    code: 'pt',
-    label: 'Portuguese',
-    nativeName: 'Português',
-    forSynthesis: true,
-    forCloning: true,
-    accents: [
-      {
-        id: 'Brazilian (Sao Paulo / Rio)',
-        label: 'Brazilian (Sao Paulo / Rio)',
-        promptHint: 'Speak in unmistakable Brazilian Portuguese: open melodic vowels, palatalized /tʃ/ and /dʒ/ before i/e, musical Brazilian prosody.',
-      },
-      {
-        id: 'European (Lisbon)',
-        label: 'European (Lisbon)',
-        promptHint: 'Speak in unmistakable European Portuguese (Lisbon): clipped unstressed vowels, palatalized syllable-final "sh/zh", and crisp Continental cadence.',
-      },
-      {
-        id: 'Northeastern Brazilian',
-        label: 'Northeastern Brazilian',
-        promptHint: 'Speak in unmistakable Northeastern Brazilian Portuguese (Recife/Bahia): open unpalatalized t/d, warm singing intonation, and expressive regional rhythm.',
+        id: 'Latin American (Mexico)',
+        label: 'Latin American (Mexico)',
+        moonshineLang: 'es',
+        voiceFemaleOverride: 'piper_es_MX-claude-high',
+        voiceMaleOverride: 'piper_es_MX-ald-medium',
       },
     ],
   },
@@ -328,26 +189,26 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     nativeName: 'Deutsch',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: false, // Pending WASM STT manifest in moonshine-wasm@0.1.6 (TTS supported)
+    ttsSupported: true,
+    sttModelLabel: 'TTS Ready (STT pending)',
+    ttsFemaleVoiceId: 'piper_de_DE-kerstin-low',
+    ttsMaleVoiceId: 'piper_de_DE-thorsten-high',
     accents: [
       {
         id: 'Standard German (Hochdeutsch)',
         label: 'Standard German (Hochdeutsch)',
-        promptHint: 'Speak in crisp Standard High German (Hochdeutsch) with clean glottal stops and clear broadcast articulation.',
+        moonshineLang: 'de',
+        voiceFemaleOverride: 'piper_de_DE-kerstin-low',
+        voiceMaleOverride: 'piper_de_DE-thorsten-high',
       },
       {
-        id: 'Austrian (Vienna)',
-        label: 'Austrian (Vienna)',
-        promptHint: 'Speak in unmistakable Viennese Austrian German: softened word-initial consonants, softer rounded vowels, and gentle melodic Austrian cadence.',
-      },
-      {
-        id: 'Swiss Standard German',
-        label: 'Swiss Standard German',
-        promptHint: 'Speak in unmistakable Swiss High German: guttural ch/k coloring, trilled/clear /r/, and measured rhythmic phrasing.',
-      },
-      {
-        id: 'Bavarian-inflected Warm',
-        label: 'Bavarian-inflected Warm',
-        promptHint: 'Speak German with a warm Southern Bavarian regional inflection: rolled /r/, softened p/t stops, and friendly Munich phrasing.',
+        id: 'Expressive Studio (Thorsten / Eva)',
+        label: 'Expressive Studio (Thorsten / Eva)',
+        moonshineLang: 'de',
+        voiceFemaleOverride: 'piper_de_DE-eva_k-x_low',
+        voiceMaleOverride: 'piper_de_DE-thorsten_emotional-medium',
       },
     ],
   },
@@ -357,45 +218,52 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     nativeName: '日本語',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base', 'tiny'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'kokoro_jf_alpha',
+    ttsMaleVoiceId: 'kokoro_jm_kumo',
     accents: [
       {
         id: 'Tokyo Standard (Hyojungo)',
         label: 'Tokyo Standard (Hyojungo)',
-        promptHint: 'Speak in natural Tokyo Standard Japanese (Hyojungo) with accurate standard pitch accent and clean mora timing.',
+        moonshineLang: 'ja',
+        voiceFemaleOverride: 'kokoro_jf_alpha',
+        voiceMaleOverride: 'kokoro_jm_kumo',
       },
       {
-        id: 'Kansai (Osaka / Kyoto)',
-        label: 'Kansai (Osaka / Kyoto)',
-        promptHint: 'Speak in unmistakable Kansai (Osaka/Kyoto) Japanese pitch accent: expressive low-start pitch rises, lively vowel elongation, and warm Kansai melody.',
-      },
-      {
-        id: 'Calm Documentary Narration',
-        label: 'Calm Documentary Narration',
-        promptHint: 'Speak in measured, articulate Japanese documentary broadcast voiceover style.',
+        id: 'Soft Narrative (Gongitsune)',
+        label: 'Soft Narrative (Gongitsune)',
+        moonshineLang: 'ja',
+        voiceFemaleOverride: 'kokoro_jf_gongitsune',
+        voiceMaleOverride: 'kokoro_jm_kumo',
       },
     ],
   },
   {
-    code: 'ko',
-    label: 'Korean',
-    nativeName: '한국어',
+    code: 'ar',
+    label: 'Arabic',
+    nativeName: 'العربية',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'piper_ar_JO-kareem-medium',
+    ttsMaleVoiceId: 'piper_ar_JO-kareem-medium',
     accents: [
       {
-        id: 'Seoul Standard (Pyojuneo)',
-        label: 'Seoul Standard (Pyojuneo)',
-        promptHint: 'Speak in natural Seoul Standard Korean (Pyojuneo) with smooth modern Seoul intonation.',
-      },
-      {
-        id: 'Busan (Gyeongsang)',
-        label: 'Busan (Gyeongsang)',
-        promptHint: 'Speak Korean with an unmistakable Busan / Gyeongsang tonal accent: strong high-low pitch contrasts on initial syllables and punchy southeastern cadence.',
-      },
-      {
-        id: 'Broadcast Anchor',
-        label: 'Broadcast Anchor',
-        promptHint: 'Speak in crisp, authoritative Korean newsroom broadcast articulation.',
+        id: 'Modern Standard Arabic (Fusha)',
+        label: 'Modern Standard Arabic (Fusha)',
+        moonshineLang: 'ar',
+        voiceFemaleOverride: 'piper_ar_JO-kareem-medium',
+        voiceMaleOverride: 'piper_ar_JO-kareem-medium',
       },
     ],
   },
@@ -405,100 +273,125 @@ export const VOICE_LANGUAGES: VoiceLanguageOption[] = [
     nativeName: '中文',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'kokoro_zf_xiaoxiao',
+    ttsMaleVoiceId: 'kokoro_zm_yunjian',
     accents: [
       {
         id: 'Mainland Standard (Putonghua)',
         label: 'Mainland Standard (Putonghua)',
-        promptHint: 'Speak in crisp Mainland Standard Mandarin (Putonghua) with full retroflex zh/ch/sh, natural Beijing erhua clarity, and accurate four tones.',
+        moonshineLang: 'zh',
+        voiceFemaleOverride: 'kokoro_zf_xiaoxiao',
+        voiceMaleOverride: 'kokoro_zm_yunjian',
       },
       {
-        id: 'Taiwanese Mandarin (Taipei)',
-        label: 'Taiwanese Mandarin (Taipei)',
-        promptHint: 'Speak in unmistakable Taiwanese Mandarin (Taipei Guoyu): softer de-retroflexed z/c/s consonants, gentle floating phrase endings, and warm Taipei cadence.',
-      },
-      {
-        id: 'Singaporean Mandarin',
-        label: 'Singaporean Mandarin',
-        promptHint: 'Speak in natural Singaporean Mandarin with even tonal transitions and brisk conversational pacing.',
+        id: 'Studio Clear (Xiaoyi / Yunxi)',
+        label: 'Studio Clear (Xiaoyi / Yunxi)',
+        moonshineLang: 'zh',
+        voiceFemaleOverride: 'kokoro_zf_xiaoyi',
+        voiceMaleOverride: 'kokoro_zm_yunxi',
       },
     ],
   },
   {
-    code: 'ur',
-    label: 'Urdu',
-    nativeName: 'اردو',
+    code: 'vi',
+    label: 'Vietnamese',
+    nativeName: 'Tiếng Việt',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'piper_vi_VN-vivos-x_low',
+    ttsMaleVoiceId: 'piper_vi_VN-vais1000-medium',
     accents: [
       {
-        id: 'Pakistani Standard (Karachi / Lahore)',
-        label: 'Pakistani Standard (Karachi / Lahore)',
-        promptHint: 'Speak in authentic Pakistani Urdu (Karachi/Lahore) with crisp uvular qaf/ghain consonants, grounded warm tone, and natural Pakistani phrasing.',
-      },
-      {
-        id: 'Classic Literary (Lucknow)',
-        label: 'Classic Literary (Lucknow)',
-        promptHint: 'Speak in refined poetic Lucknow Urdu diction with deliberate classical cadence and crystal-clear consonant enunciation.',
+        id: 'Standard Vietnamese',
+        label: 'Standard Vietnamese',
+        moonshineLang: 'vi',
+        voiceFemaleOverride: 'piper_vi_VN-vivos-x_low',
+        voiceMaleOverride: 'piper_vi_VN-vais1000-medium',
       },
     ],
   },
   {
-    code: 'tr',
-    label: 'Turkish',
-    nativeName: 'Türkçe',
+    code: 'tl',
+    label: 'Tagalog',
+    nativeName: 'Tagalog / Filipino',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: false, // Pending WASM manifest in moonshine-wasm@0.1.6
+    ttsSupported: false,
+    sttModelLabel: 'WASM Pack Pending',
     accents: [
       {
-        id: 'Istanbul Standard',
-        label: 'Istanbul Standard',
-        promptHint: 'Speak in natural Istanbul Standard Turkish with smooth vowel harmony and crisp alveolar consonants.',
-      },
-      {
-        id: 'Broadcast Formal',
-        label: 'Broadcast Formal',
-        promptHint: 'Speak in crisp, authoritative Turkish TRT newsroom broadcast style.',
+        id: 'Standard Tagalog',
+        label: 'Standard Tagalog',
       },
     ],
   },
   {
-    code: 'it',
-    label: 'Italian',
-    nativeName: 'Italiano',
+    code: 'ko',
+    label: 'Korean',
+    nativeName: '한국어',
     forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'tiny',
+    availableSttArches: ['tiny'],
+    sttModelLabel: 'Tiny',
+    ttsFemaleVoiceId: 'piper_ko_KR-melotts-medium',
+    ttsMaleVoiceId: 'piper_ko_KR-melotts-medium',
     accents: [
       {
-        id: 'Standard Italian',
-        label: 'Standard Italian',
-        promptHint: 'Speak in crisp Standard Italian with clean geminate consonants and balanced melodic intonation.',
-      },
-      {
-        id: 'Roman (Rome)',
-        label: 'Roman (Rome)',
-        promptHint: 'Speak in unmistakable Roman Italian (Roma): warm open vowels, lively Roman speech rhythm, and conversational cadence.',
-      },
-      {
-        id: 'Southern Italian',
-        label: 'Southern Italian',
-        promptHint: 'Speak in unmistakable Southern Italian (Naples/Sicily): musical drawn vowels, strong rhythmic emphasis, and expressive Mediterranean storytelling.',
+        id: 'Seoul Standard (Pyojuneo)',
+        label: 'Seoul Standard (Pyojuneo)',
+        moonshineLang: 'ko',
+        voiceFemaleOverride: 'piper_ko_KR-melotts-medium',
+        voiceMaleOverride: 'piper_ko_KR-melotts-medium',
       },
     ],
   },
   {
-    code: 'other',
-    label: 'Other Global Language',
-    forSynthesis: false,
+    code: 'uk',
+    label: 'Ukrainian',
+    nativeName: 'Українська',
+    forSynthesis: true,
     forCloning: true,
+    forStt: true,
+    sttSupported: true,
+    ttsSupported: true,
+    defaultSttArch: 'base',
+    availableSttArches: ['base'],
+    sttModelLabel: 'Base',
+    ttsFemaleVoiceId: 'piper_uk_UA-lada-x_low',
+    ttsMaleVoiceId: 'piper_uk_UA-ukrainian_tts-medium',
     accents: [
       {
-        id: 'Native / Standard',
-        label: 'Native / Standard',
-        promptHint: 'Speak naturally with clear native pronunciation for the chosen language.',
+        id: 'Standard Ukrainian',
+        label: 'Standard Ukrainian',
+        moonshineLang: 'uk',
+        voiceFemaleOverride: 'piper_uk_UA-lada-x_low',
+        voiceMaleOverride: 'piper_uk_UA-ukrainian_tts-medium',
       },
     ],
   },
 ];
+
+export function getSttLanguages(): VoiceLanguageOption[] {
+  return VOICE_LANGUAGES.filter((l) => l.forStt === true);
+}
 
 export function getSynthesisLanguages(): VoiceLanguageOption[] {
   return VOICE_LANGUAGES.filter((l) => l.forSynthesis !== false);
@@ -511,11 +404,18 @@ export function getCloningLanguages(): VoiceLanguageOption[] {
 export function getLanguageOption(code?: string): VoiceLanguageOption | undefined {
   if (!code) return undefined;
   const normalized = code.trim().toLowerCase();
+  if (normalized === 'en_us' || normalized === 'en_gb') {
+    return VOICE_LANGUAGES.find((l) => l.code === 'en');
+  }
+  if (normalized === 'zh_hans') {
+    return VOICE_LANGUAGES.find((l) => l.code === 'zh');
+  }
   return VOICE_LANGUAGES.find((l) => l.code.toLowerCase() === normalized);
 }
 
 export function getLanguageLabel(code?: string): string {
-  if (!code) return 'Auto-Detect';
+  if (!code || code === 'auto') return 'Auto-Detect';
+  if (code === 'multilingual') return 'Moonshine Multi-Language';
   const opt = getLanguageOption(code);
   if (opt) {
     return opt.nativeName ? `${opt.label} (${opt.nativeName})` : opt.label;
@@ -526,7 +426,7 @@ export function getLanguageLabel(code?: string): string {
 export function getShortLanguageLabel(code?: string): string {
   if (!code) return 'Auto-Detect';
   if (code === 'auto') return 'Auto-Detect';
-  if (code === 'multilingual') return 'Multilingual';
+  if (code === 'multilingual') return 'English';
   const opt = getLanguageOption(code);
   return opt ? opt.label : code.toUpperCase();
 }
@@ -542,15 +442,51 @@ export function getDefaultAccentForLanguage(code?: string): string {
   return accents[0]?.label || 'Native / Standard';
 }
 
-export function normalizeLanguageCode(raw?: string, fallback: string = 'auto'): string {
+export function normalizeLanguageCode(raw?: string, fallback: string = 'en'): string {
   if (!raw || typeof raw !== 'string') return fallback;
   const trimmed = raw.trim().toLowerCase();
-  if (!trimmed) return fallback;
+  if (!trimmed || trimmed === 'multilingual' || trimmed === 'other') return fallback;
+  if (trimmed === 'en_us' || trimmed === 'en_gb') return 'en';
+  if (trimmed === 'zh_hans') return 'zh';
   const direct = VOICE_LANGUAGES.find((l) => l.code.toLowerCase() === trimmed);
   if (direct) return direct.code;
-  // Allow clean ISO-like codes (e.g. 'ru', 'nl', 'id') cleanly up to 24 chars
-  const cleaned = trimmed.replace(/[^a-z0-9_-]/g, '').slice(0, 24);
-  return cleaned || fallback;
+  return fallback;
+}
+
+export function resolveMoonshineVoiceSelection(params: {
+  language?: string;
+  accent?: string;
+  gender?: VoiceGender | string;
+  scriptText?: string;
+}): {
+  resolvedLanguage: string;
+  moonshineLanguage: string;
+  voiceId: string;
+  accentLabel: string;
+} {
+  const resolvedLang = resolveMoonshineLanguageFromText(params.scriptText, params.language);
+  const safeLang =
+    resolvedLang === 'tl' || !getLanguageOption(resolvedLang)?.ttsSupported
+      ? 'en'
+      : resolvedLang;
+  const opt = getLanguageOption(safeLang) || getLanguageOption('en')!;
+  const accents = opt.accents;
+  const chosenAccent = (params.accent || '').trim().toLowerCase();
+  const matchedAccent = accents.find(
+    (a) => a.label.toLowerCase() === chosenAccent || a.id.toLowerCase() === chosenAccent
+  );
+
+  const isFemale = String(params.gender || '').toLowerCase() === 'female';
+  const voiceId = isFemale
+    ? matchedAccent?.voiceFemaleOverride || opt.ttsFemaleVoiceId || 'kokoro_af_heart'
+    : matchedAccent?.voiceMaleOverride || opt.ttsMaleVoiceId || 'kokoro_am_adam';
+
+  return {
+    resolvedLanguage: safeLang,
+    moonshineLanguage: matchedAccent?.moonshineLang || safeLang,
+    voiceId,
+    accentLabel: matchedAccent?.label || accents[0]?.label || 'Native / Standard',
+  };
 }
 
 export function resolveSelectionForVoiceProfile(voice?: {
@@ -564,19 +500,19 @@ export function resolveSelectionForVoiceProfile(voice?: {
 } {
   if (!voice) {
     return {
-      language: 'auto',
-      accent: getDefaultAccentForLanguage('auto'),
+      language: 'en',
+      accent: getDefaultAccentForLanguage('en'),
       customAccent: '',
     };
   }
 
   const rawLang = (voice.language || '').trim().toLowerCase();
   const mappedLang =
-    !rawLang || rawLang === 'multilingual' || rawLang === 'other'
-      ? 'auto'
-      : getSynthesisLanguages().some((l) => l.code === rawLang)
+    !rawLang || rawLang === 'multilingual' || rawLang === 'other' || rawLang === 'auto'
+      ? 'en'
+      : getSynthesisLanguages().some((l) => l.code === rawLang && l.ttsSupported)
       ? rawLang
-      : 'auto';
+      : 'en';
 
   const accents = getAccentsForLanguage(mappedLang);
   const storedAccent = (voice.accent || '').trim();
@@ -603,13 +539,13 @@ export function resolveSelectionForVoiceProfile(voice?: {
     };
   }
 
-  // If the stored accent is a generic placeholder from legacy defaults, keep standard option
   const lower = storedAccent.toLowerCase();
   if (
     lower === 'standard' ||
     lower === 'custom voice clone' ||
     lower === 'studio broadcast' ||
-    lower === 'studio narrative'
+    lower === 'studio narrative' ||
+    lower === 'zero-shot clone'
   ) {
     return {
       language: mappedLang,
@@ -620,8 +556,8 @@ export function resolveSelectionForVoiceProfile(voice?: {
 
   return {
     language: mappedLang,
-    accent: CUSTOM_ACCENT_ID,
-    customAccent: storedAccent,
+    accent: accents[0]?.label || 'Native / Standard',
+    customAccent: '',
   };
 }
 
@@ -633,301 +569,25 @@ export interface VoiceCloneAcousticProfile {
   accentCharacteristics?: string;
   recommendedBaseVoice?: string;
   voiceDesignDirective?: string;
+  engine?: string;
 }
 
-const MALE_PREBUILT_VOICES = ['Charon', 'Fenrir', 'Puck'] as const;
-const FEMALE_PREBUILT_VOICES = ['Kore', 'Aoede', 'Zephyr'] as const;
-
-export function selectGenderLockedPrebuiltVoice(params: {
-  requestedGender?: string;
-  fingerprint?: VoiceCloneAcousticProfile | null;
-  isCustom?: boolean;
-}): {
-  effectiveGender: 'male' | 'female';
-  prebuiltVoiceName: string;
-} {
-  const rawGender = (params.requestedGender || '').toLowerCase();
-  let effectiveGender: 'male' | 'female';
-
-  if (rawGender === 'female') {
-    effectiveGender = 'female';
-  } else if (rawGender === 'male') {
-    effectiveGender = 'male';
-  } else {
-    effectiveGender = params.fingerprint?.detectedGender === 'female' ? 'female' : 'male';
-  }
-
-  const candidate = params.fingerprint?.recommendedBaseVoice;
-  if (effectiveGender === 'female') {
-    const valid = FEMALE_PREBUILT_VOICES.find((v) => v === candidate);
-    return {
-      effectiveGender: 'female',
-      prebuiltVoiceName: valid || (params.isCustom ? 'Aoede' : 'Kore'),
-    };
-  }
-
-  const valid = MALE_PREBUILT_VOICES.find((v) => v === candidate);
-  return {
-    effectiveGender: 'male',
-    prebuiltVoiceName: valid || 'Charon',
-  };
-}
-
-const REGIONAL_VOICE_DESIGN_ACCENTS = new Set([
-  'Irish',
-  'Scottish',
-  'Indian English',
-  'West Bengal (Kolkata Standard)',
-  'Sylheti-inflected Warm',
-  'Chittagonian-inflected Neutral',
-  'Classic Literary / Recitation',
-  'Mumbai Conversational',
-  'Lucknow Polite',
-  'Egyptian (Cairo)',
-  'Gulf (Khaleeji)',
-  'Levantine (Beirut / Damascus)',
-  'Moroccan (Maghrebi)',
-  'Colombian (Bogota)',
-  'Rioplatense (Argentina)',
-  'Canadian (Quebecois)',
-  'Southern French (Marseille)',
-  'European (Lisbon)',
-  'Northeastern Brazilian',
-  'Austrian (Vienna)',
-  'Swiss Standard German',
-  'Bavarian-inflected Warm',
-  'Kansai (Osaka / Kyoto)',
-  'Busan (Gyeongsang)',
-  'Taiwanese Mandarin (Taipei)',
-  'Classic Literary (Lucknow)',
-  'Roman (Rome)',
-  'Southern Italian',
-]);
-
-export function getSpeechLanguageCode(langCode?: string, accentLabel?: string): string | undefined {
-  const code = normalizeLanguageCode(langCode, 'auto');
-  if (!code || code === 'auto' || code === 'multilingual' || code === 'other') {
-    return undefined;
-  }
-
-  const acc = (accentLabel || '').toLowerCase();
-
-  switch (code) {
-    case 'en':
-      if (acc.includes('british') || acc.includes('london') || acc.includes('scottish')) return 'en-GB';
-      if (acc.includes('australian')) return 'en-AU';
-      if (acc.includes('indian')) return 'en-IN';
-      if (acc.includes('irish')) return 'en-IE';
-      if (acc.includes('canadian')) return 'en-CA';
-      return 'en-US';
-    case 'bn':
-      if (acc.includes('kolkata') || acc.includes('west bengal')) return 'bn-IN';
-      return 'bn-BD';
-    case 'hi':
-      return 'hi-IN';
-    case 'ar':
-      if (acc.includes('egyptian') || acc.includes('cairo')) return 'ar-EG';
-      if (acc.includes('gulf') || acc.includes('khaleeji')) return 'ar-SA';
-      if (acc.includes('levantine') || acc.includes('beirut') || acc.includes('damascus')) return 'ar-LB';
-      if (acc.includes('moroccan') || acc.includes('maghrebi')) return 'ar-MA';
-      return 'ar-XA';
-    case 'es':
-      if (acc.includes('castilian') || acc.includes('spain') || acc.includes('madrid')) return 'es-ES';
-      if (acc.includes('mexican')) return 'es-MX';
-      if (acc.includes('colombian') || acc.includes('bogota')) return 'es-CO';
-      if (acc.includes('rioplatense') || acc.includes('argentina')) return 'es-AR';
-      return 'es-419';
-    case 'fr':
-      if (acc.includes('canadian') || acc.includes('quebecois')) return 'fr-CA';
-      if (acc.includes('belgian') || acc.includes('swiss')) return 'fr-BE';
-      return 'fr-FR';
-    case 'pt':
-      if (acc.includes('european') || acc.includes('lisbon')) return 'pt-PT';
-      return 'pt-BR';
-    case 'de':
-      if (acc.includes('austrian') || acc.includes('vienna')) return 'de-AT';
-      if (acc.includes('swiss')) return 'de-CH';
-      return 'de-DE';
-    case 'ja':
-      return 'ja-JP';
-    case 'ko':
-      return 'ko-KR';
-    case 'zh':
-      if (acc.includes('taiwan')) return 'zh-TW';
-      if (acc.includes('singapore')) return 'zh-SG';
-      return 'zh-CN';
-    case 'ur':
-      if (acc.includes('lucknow')) return 'ur-IN';
-      return 'ur-PK';
-    case 'tr':
-      return 'tr-TR';
-    case 'it':
-      return 'it-IT';
-    default:
-      return code.length === 2 ? code : undefined;
-  }
-}
-
-export function shouldPreferVoiceDesignModel(params: {
-  isCustomClone: boolean;
-  resolvedLanguage: string;
-  resolvedAccent: string;
-  isCustomAccent?: boolean;
-}): boolean {
-  if (params.isCustomClone || params.isCustomAccent) return true;
-  if (REGIONAL_VOICE_DESIGN_ACCENTS.has(params.resolvedAccent)) return true;
-  return false;
-}
-
-export function resolveVoiceoverStyleDirective(params: {
+export function buildLocalVoiceCloneProfile(params: {
+  gender?: string;
   language?: string;
-  accent?: string;
-  tone?: VoiceTone | string;
-  speed?: number;
-  pitch?: number;
+  durationSeconds?: number;
   voiceName?: string;
-  gender?: VoiceGender | string;
-  scriptText?: string;
-  customVoiceProfile?: {
-    name: string;
-    language?: string;
-    accent?: string;
-    description?: string;
-    gender?: string;
-  } | null;
-  vocalFingerprint?: VoiceCloneAcousticProfile | null;
-}): {
-  resolvedLanguage: string;
-  resolvedLanguageLabel: string;
-  resolvedAccent: string;
-  resolvedGender: 'male' | 'female';
-  speechLanguageCode: string | undefined;
-  isCustomAccent: boolean;
-  styleDirective: string;
-} {
-  const requestedLang = normalizeLanguageCode(params.language, 'auto');
-  const effectiveLangCode =
-    requestedLang === 'auto' &&
-    params.customVoiceProfile?.language &&
-    params.customVoiceProfile.language !== 'multilingual' &&
-    params.customVoiceProfile.language !== 'other'
-      ? normalizeLanguageCode(params.customVoiceProfile.language, 'auto')
-      : requestedLang;
-
-  const langOpt = getLanguageOption(effectiveLangCode);
-  const accents = getAccentsForLanguage(effectiveLangCode);
-
-  const rawAccent = (params.accent || '').trim();
-  const fallbackProfileAccent = (params.customVoiceProfile?.accent || '').trim();
-  const chosenAccentRaw = rawAccent || fallbackProfileAccent;
-
-  const matchedAccent = accents.find(
-    (a) =>
-      a.label.toLowerCase() === chosenAccentRaw.toLowerCase() ||
-      a.id.toLowerCase() === chosenAccentRaw.toLowerCase()
-  );
-
-  const isCustomAccent = Boolean(
-    !matchedAccent && chosenAccentRaw && chosenAccentRaw !== CUSTOM_ACCENT_ID
-  );
-
-  const resolvedAccent = matchedAccent
-    ? matchedAccent.label
-    : isCustomAccent
-    ? chosenAccentRaw.slice(0, 80)
-    : getDefaultAccentForLanguage(effectiveLangCode);
-
-  const { effectiveGender } = selectGenderLockedPrebuiltVoice({
-    requestedGender: params.customVoiceProfile?.gender || params.gender,
-    fingerprint: params.vocalFingerprint,
-    isCustom: Boolean(params.customVoiceProfile),
-  });
-
-  const speechLanguageCode = getSpeechLanguageCode(effectiveLangCode, resolvedAccent);
-
-  const speakerIntro =
-    effectiveGender === 'female'
-      ? 'Adult female narrator (~185-235 Hz clear alto/soprano)'
-      : 'Adult male narrator (~95-145 Hz grounded baritone/tenor chest voice)';
-
-  const detectedScript = detectScriptCategory(params.scriptText);
-  const nonLatinExpectedMap: Record<string, string> = {
-    bn: 'bengali',
-    hi: 'devanagari',
-    ar: 'arabic',
-    ur: 'arabic',
-    ja: 'japanese',
-    ko: 'korean',
-    zh: 'cjk',
-  };
-  const expectedScript = nonLatinExpectedMap[effectiveLangCode];
-  const isLatinScriptForNonLatinLanguage =
-    Boolean(expectedScript) && detectedScript === 'latin';
-
-  let accentCore: string;
-  if (effectiveLangCode === 'auto' || effectiveLangCode === 'multilingual') {
-    if (matchedAccent) {
-      accentCore = matchedAccent.promptHint;
-    } else if (resolvedAccent && resolvedAccent !== 'Native / Standard') {
-      accentCore = `Detect script language automatically and speak with an unmistakable ${resolvedAccent} accent and regional cadence.`;
-    } else {
-      accentCore = 'Detect script language automatically with authentic native pronunciation.';
-    }
-  } else {
-    const langName = langOpt?.label || effectiveLangCode.toUpperCase();
-    const phoneticDetails = matchedAccent
-      ? matchedAccent.promptHint
-      : `Speak ${langName} with a distinct ${resolvedAccent} regional accent, local vowel coloring, and authentic cadence.`;
-    accentCore = isLatinScriptForNonLatinLanguage
-      ? `${phoneticDetails} Read the written words verbatim without translating them, pronounced in a strong native ${langName} (${resolvedAccent}) speaker accent.`
-      : phoneticDetails;
-  }
-
-  let timbreNote = '';
-  if (params.customVoiceProfile) {
-    const fp = params.vocalFingerprint;
-    const timbreParts = [
-      fp?.pitchRegister || '',
-      fp?.vocalTimbre || '',
-      params.customVoiceProfile.description || '',
-    ]
-      .filter(Boolean)
-      .slice(0, 2);
-    if (timbreParts.length > 0) {
-      timbreNote = `Timbre (${params.customVoiceProfile.name}): ${timbreParts.join(', ')}.`;
-    }
-  }
-
-  const toneNote =
-    params.tone === 'broadcast'
-      ? 'Authoritative newsroom broadcast delivery'
-      : params.tone === 'storytelling'
-      ? 'Warm expressive storytelling delivery'
-      : params.tone === 'energetic'
-      ? 'Upbeat energetic promo delivery'
-      : 'Natural conversational studio delivery';
-
-  const speedVal = Number.isFinite(params.speed) ? params.speed : 1.0;
-  const pitchVal = Number.isFinite(params.pitch) ? Number(params.pitch) : 0;
-  const pitchNote =
-    pitchVal >= 2 ? ', slightly brighter pitch' : pitchVal <= -2 ? ', slightly deeper pitch' : '';
-
-  const styleDirective = [
-    `${speakerIntro}.`,
-    accentCore,
-    timbreNote,
-    `${toneNote}${pitchNote}, ${speedVal}x pace.`,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
+}): VoiceCloneAcousticProfile {
+  const g: 'male' | 'female' =
+    String(params.gender || '').toLowerCase() === 'female' ? 'female' : 'male';
+  const langLabel = getShortLanguageLabel(params.language || 'en');
   return {
-    resolvedLanguage: effectiveLangCode,
-    resolvedLanguageLabel: getShortLanguageLabel(effectiveLangCode),
-    resolvedAccent,
-    resolvedGender: effectiveGender,
-    speechLanguageCode,
-    isCustomAccent,
-    styleDirective,
+    detectedGender: g,
+    pitchRegister: g === 'female' ? 'Clear studio voice sample' : 'Grounded studio voice sample',
+    vocalTimbre: `Moonshine ZipVoice zero-shot profile (${langLabel})`,
+    cadenceAndPacing: `${Math.max(1, Math.round(params.durationSeconds || 10))}s reference clip cached locally`,
+    recommendedBaseVoice: g === 'female' ? 'zipvoice_american_female' : 'zipvoice_american_male',
+    voiceDesignDirective: `Zero-shot reference audio for "${params.voiceName || 'Custom Voice'}"`,
+    engine: 'moonshine-wasm-zipvoice',
   };
 }

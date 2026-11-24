@@ -44,6 +44,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [activeFormat, setActiveFormat] = useState<'srt' | 'txt' | 'docx' | 'json'>('srt');
   const [includeTimestamps, setIncludeTimestamps] = useState(true);
   const [includeSpeakers, setIncludeSpeakers] = useState(true);
+  const distinctSpeakerCount = new Set(
+    segments.map((s) => (s.speaker || '').trim()).filter(Boolean)
+  ).size;
+  const [includeSpeakersInSrt, setIncludeSpeakersInSrt] = useState(distinctSpeakerCount > 1);
   const [copied, setCopied] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
 
@@ -54,9 +58,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const hasAdvancedExport = isSuperAdmin || Boolean(user?.planModules?.includes('advanced_export'));
   const isCurrentFormatLocked = (activeFormat === 'docx' || activeFormat === 'json') && !hasAdvancedExport;
 
-  const baseFileName = (audioName || 'bengali_transcript').replace(/\.[^/.]+$/, '');
+  const baseFileName = (audioName || 'audio_transcript').replace(/\.[^/.]+$/, '');
 
-  const srtContent = generateSRT(segments);
+  const srtContent = generateSRT(segments, includeSpeakersInSrt);
   const txtContent = generateTXT(segments, includeTimestamps, includeSpeakers);
   const jsonContent = generateJSON(segments, { audioName, summary });
 
@@ -189,6 +193,22 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Format Specific Options */}
+        {activeFormat === 'srt' && (
+          <div className="px-6 py-2 bg-[#141414] border-b border-[#282828] flex items-center justify-between gap-4 text-xs text-[#d0d5dd]">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeSpeakersInSrt}
+                onChange={(e) => setIncludeSpeakersInSrt(e.target.checked)}
+                className="rounded border-[#383838] accent-[#1db954] focus:ring-0"
+              />
+              <span>Include Speaker Labels (Speaker 1:, Speaker 2:)</span>
+            </label>
+            <span className="text-[#9ca3af] font-mono tabular-nums">
+              {distinctSpeakerCount} {distinctSpeakerCount === 1 ? 'speaker' : 'speakers'} detected
+            </span>
+          </div>
+        )}
         {activeFormat === 'txt' && (
           <div className="px-6 py-2 bg-[#141414] border-b border-[#282828] flex items-center gap-5 text-xs text-[#d0d5dd]">
             <label className="flex items-center gap-2 cursor-pointer">

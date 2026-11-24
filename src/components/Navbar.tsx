@@ -18,7 +18,6 @@ import { useAuth } from '../context/AuthContext';
 interface NavbarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  onNewRecording: () => void;
   onOpenAuth: (mode?: 'login' | 'register') => void;
   onOpenPricing: () => void;
   onOpenSettings?: () => void;
@@ -31,7 +30,6 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
-  onNewRecording,
   onOpenAuth,
   onOpenPricing,
   onOpenSettings,
@@ -261,14 +259,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-[#9ca3af] text-[11px]"> left</span>
             </div>
 
-
-            <button
-              onClick={onNewRecording}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-[#08100b] bg-[#1db954] hover:bg-[#1aa34a] rounded-full transition-all cursor-pointer shadow-sm"
-            >
-              <Mic className="w-3.5 h-3.5" />
-              <span>Transcribe</span>
-            </button>
 
             {onOpenInquiry && (
               <button

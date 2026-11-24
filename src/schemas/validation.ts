@@ -371,6 +371,46 @@ export const transcribeAudioSchema = z
 
 export type TranscribeAudioInput = z.infer<typeof transcribeAudioSchema>;
 
+export const saveTranscriptSchema = z.object({
+  title: z.string().trim().min(1, 'Transcript title is required.').max(180),
+  audioName: z.string().trim().max(180).optional().default('Audio Recording'),
+  durationSeconds: z.coerce.number().min(1).max(36000).default(30),
+  language: z.string().trim().max(24).optional().default('en'),
+  modelArch: z.string().trim().max(40).optional().default('medium_streaming'),
+  fullTranscript: z.string().optional().default(''),
+  summary: z.string().optional().default(''),
+  segments: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        start: z.coerce.number().min(0),
+        end: z.coerce.number().min(0),
+        speaker: z.string().optional().default('Speaker 1'),
+        text: z.string().default(''),
+      })
+    )
+    .default([]),
+  audioBase64: z.string().optional(),
+  mimeType: z.string().optional().default('audio/wav'),
+});
+
+export type SaveTranscriptInput = z.infer<typeof saveTranscriptSchema>;
+
+export const saveVoiceoverSchema = z.object({
+  script: z.string().trim().min(1, 'Voiceover script is required.').max(100000),
+  voiceId: z.union([z.string(), z.number()]).optional().default('male-default'),
+  voiceName: z.string().trim().max(120).optional().default('Studio Voice'),
+  gender: z.string().trim().max(20).optional().default('male'),
+  language: z.string().trim().max(24).optional().default('en'),
+  languageLabel: z.string().trim().max(60).optional().default('English'),
+  accent: z.string().trim().max(100).optional().default(''),
+  format: z.enum(['wav', 'mp3', 'ogg']).optional().default('wav'),
+  durationSeconds: z.coerce.number().min(1).max(3600).default(5),
+  audioBase64: z.string().min(16, 'Audio data is required.'),
+});
+
+export type SaveVoiceoverInput = z.infer<typeof saveVoiceoverSchema>;
+
 // ============================================================================
 // 5. Zod Error Formatting & Helper Utilities
 // ============================================================================

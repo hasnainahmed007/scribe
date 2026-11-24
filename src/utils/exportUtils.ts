@@ -5,16 +5,29 @@ import { formatSRTTime, formatPlayerTime } from './timeFormat';
 /**
  * Generates SubRip (.srt) subtitle string
  */
-export function generateSRT(segments: TranscriptSegment[]): string {
+export function generateSRT(
+  segments: TranscriptSegment[],
+  includeSpeakers?: boolean
+): string {
   if (!segments || segments.length === 0) return '';
+
+  const distinctSpeakers = new Set(
+    segments.map((s) => (s.speaker || '').trim()).filter(Boolean)
+  );
+  const shouldPrefixSpeaker =
+    typeof includeSpeakers === 'boolean' ? includeSpeakers : distinctSpeakers.size > 1;
 
   return segments
     .map((seg, index) => {
       const srtIndex = index + 1;
       const startCode = formatSRTTime(seg.start);
       const endCode = formatSRTTime(seg.end);
-      const text = seg.text.trim();
-      return `${srtIndex}\n${startCode} --> ${endCode}\n${text}\n`;
+      const cleanText = seg.text.trim();
+      const speakerPrefix =
+        shouldPrefixSpeaker && seg.speaker && !cleanText.startsWith(`${seg.speaker}:`)
+          ? `${seg.speaker.trim()}: `
+          : '';
+      return `${srtIndex}\n${startCode} --> ${endCode}\n${speakerPrefix}${cleanText}\n`;
     })
     .join('\n');
 }

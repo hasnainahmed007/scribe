@@ -69,7 +69,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 1. Upload or Record Spoken Audio
               </h2>
               <p className="text-xs text-[#9ca3af] leading-relaxed">
-                Scriby delivers state-of-the-art speech intelligence across 100+ global languages with accurate punctuation, timestamps, and speaker recognition. Upload MP3/WAV/M4A files or record directly from your microphone.
+                Scriby runs speech-to-text locally in your browser using Moonshine WebAssembly across 10 core languages (English, Spanish, German, Japanese, Arabic, Mandarin, Vietnamese, Tagalog, Korean, and Ukrainian). Upload audio/video files or stream live from your microphone.
               </p>
 
               <div className="p-3.5 rounded-xl bg-[#1f1f1f] border border-[#282828] space-y-1.5">
@@ -78,7 +78,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   <span>30 Free Audio Minutes Included</span>
                 </div>
                 <p className="text-xs text-[#9ca3af] leading-relaxed">
-                  Start testing immediately using your complimentary starter quota or try our preloaded demo tracks.
+                  Start testing immediately using your complimentary starter quota by dropping an audio file or recording from your mic.
                 </p>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { LandingPage } from './components/LandingPage';
 import { AudioPlayerController } from './components/AudioPlayerController';
-import { AudioInputHub } from './components/AudioInputHub';
+import { AudioInputHub, ChatSttActivity } from './components/AudioInputHub';
 import { TranscriptEditor } from './components/TranscriptEditor';
 import { YouTubeMetadataStudio } from './components/YouTubeMetadataStudio';
 import { ThumbnailCanvasStudio } from './components/ThumbnailCanvasStudio';
@@ -17,9 +17,10 @@ import { PricingModal } from './components/PricingModal';
 import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { InquiryModal } from './components/InquiryModal';
-import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from './data/sampleAudios';
+import { generateSyntheticAudioBlob } from './data/sampleAudios';
 import { retrieveTranscriptAudio } from './utils/audioStorage';
 import { createSegmentsFromScript } from './utils/subtitleUtils';
+import { abortActiveSttSession } from './utils/moonshineEngine';
 import { AiQuotaNotice } from './components/AiQuotaNotice';
 import {
   TranscriptSegment,
@@ -72,6 +73,9 @@ function ScribyApp() {
     setDuration(0);
     setIsPlaying(false);
     setYoutubeMetadata(null);
+    setChatActivity(null);
+    setIsLoadingTranscription(false);
+    setThumbnailTitle('Generate High-CTR Subtitles & Titles');
     if (audioRef.current) {
       try {
         audioRef.current.pause();
@@ -100,8 +104,8 @@ function ScribyApp() {
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [isInquiryOpen, setIsInquiryOpen] = useState<boolean>(false);
-  const [showInputModal, setShowInputModal] = useState<boolean>(false);
   const [isLoadingTranscription, setIsLoadingTranscription] = useState<boolean>(false);
+  const [chatActivity, setChatActivity] = useState<ChatSttActivity | null>(null);
 
   // YouTube Studio State
   const [youtubeMetadata, setYoutubeMetadata] = useState<YouTubeMetadata | null>(null);
@@ -128,26 +132,7 @@ function ScribyApp() {
     }
   }, [user, isLoadingSession]);
 
-  // Load first sample audio on mount for instant studio demo
-  useEffect(() => {
-    const initialSample = SAMPLE_AUDIOS[0];
-    const blob = generateSyntheticAudioBlob(initialSample.duration);
-    const url = URL.createObjectURL(blob);
-
-    setAudioSource({
-      url,
-      name: initialSample.title,
-      duration: initialSample.duration,
-      blob,
-      mimeType: 'audio/wav',
-      isSample: true,
-    });
-    setSegments(initialSample.segments);
-    setFullTranscript(initialSample.fullTranscript);
-    setSummary(initialSample.summary);
-    setDuration(initialSample.duration);
-    setThumbnailTitle(initialSample.title);
-  }, []);
+  // Studio opens clean with the inline bottom chat composer ready for audio input
 
   // Sync with HTML5 Audio Element
   useEffect(() => {
@@ -339,11 +324,15 @@ function ScribyApp() {
     audioUrl: string,
     audioName: string,
     durationSeconds: number,
-    scriptText?: string
+    scriptText?: string,
+    customSegments?: TranscriptSegment[]
   ) => {
     const safeDuration = Number.isFinite(durationSeconds) && durationSeconds > 0 ? durationSeconds : 10;
     const cleanScript = (scriptText || '').trim();
-    const newSegments = createSegmentsFromScript(cleanScript, safeDuration, audioName || 'Studio Voice');
+    const newSegments =
+      customSegments && customSegments.length > 0
+        ? customSegments
+        : createSegmentsFromScript(cleanScript, safeDuration, audioName || 'Studio Voice');
 
     setAudioSource({
       url: audioUrl,
@@ -389,6 +378,15 @@ function ScribyApp() {
     setIsExportOpen(true);
   };
 
+  // Scroll directly to the inline chat audio composer inside the Studio view
+  const scrollToChatComposer = () => {
+    setActiveTab('studio');
+    setTimeout(() => {
+      const el = document.getElementById('studio-chat-composer');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  };
+
   // Callback when transcription finishes
   const handleTranscriptionComplete = (
     newSource: AudioSource,
@@ -401,7 +399,7 @@ function ScribyApp() {
     setFullTranscript(newFullText);
     setSummary(newSummary);
     setDuration(newSource.duration);
-    setShowInputModal(false);
+    setChatActivity(null);
     setActiveTab('studio');
 
     if (newSegments.length > 0) {
@@ -650,14 +648,6 @@ function ScribyApp() {
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onNewRecording={() => {
-          if (!user) {
-            setAuthInitialMode('login');
-            setActiveTab('auth');
-          } else {
-            setShowInputModal(true);
-          }
-        }}
         onOpenAuth={(mode = 'login') => {
           setAuthInitialMode(mode);
           setActiveTab('auth');
@@ -740,13 +730,8 @@ function ScribyApp() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display">
-                        {audioSource?.name || 'Spoken Audio Track'}
+                        {audioSource?.name || 'Transcript Chat Workspace'}
                       </h2>
-                      {audioSource?.isSample && (
-                        <span className="text-[11px] text-[#6f7682] font-mono">
-                          (Sample Audio)
-                        </span>
-                      )}
                     </div>
                     <div className="text-xs text-[#9ca3af] mt-0.5">
                       <span>{segments.length} Subtitle Segments</span>
@@ -770,14 +755,6 @@ function ScribyApp() {
                         <span>Clear Studio</span>
                       </Button>
                     )}
-
-                    <Button
-                      onClick={() => setShowInputModal(true)}
-                      size="sm"
-                    >
-                      <Mic className="w-3.5 h-3.5" />
-                      <span>Transcribe New</span>
-                    </Button>
 
                     <Button
                       variant="outline"
@@ -815,7 +792,15 @@ function ScribyApp() {
                     <TranscriptEditor
                       segments={segments}
                       summary={summary}
+                      audioName={audioSource?.name}
                       currentTime={currentTime}
+                      isTranscribing={isLoadingTranscription}
+                      chatActivity={chatActivity}
+                      onCancelTranscription={() => {
+                        abortActiveSttSession();
+                        setIsLoadingTranscription(false);
+                        setChatActivity(null);
+                      }}
                       onUpdateSegment={handleUpdateSegment}
                       onDeleteSegment={handleDeleteSegment}
                       onAddSegment={handleAddSegment}
@@ -827,6 +812,36 @@ function ScribyApp() {
                       onSeek={handleSeek}
                       onPlaySegment={handlePlaySegment}
                       onSearchReplace={handleSearchReplace}
+                      composerFooter={
+                        <AudioInputHub
+                          onTranscriptionStart={(sourceLabel) => {
+                            setSummary('');
+                            setSegments([]);
+                            setPreviousSegmentsBackup(null);
+                            setFullTranscript('');
+                            setAudioSource(null);
+                            setDuration(0);
+                            setCurrentTime(0);
+                            setIsPlaying(false);
+                            setLoadedTranscriptId(null);
+                            setYoutubeMetadata(null);
+                            setThumbnailTitle(sourceLabel);
+                          }}
+                          onPartialSegments={(partialSegs) => {
+                            setSegments(partialSegs);
+                          }}
+                          onTranscriptionAbort={() => {
+                            setIsLoadingTranscription(false);
+                            setChatActivity(null);
+                          }}
+                          onActivityChange={setChatActivity}
+                          onTranscriptionComplete={handleTranscriptionComplete}
+                          isLoading={isLoadingTranscription}
+                          setIsLoading={setIsLoadingTranscription}
+                          onOpenPricing={() => setIsPricingOpen(true)}
+                          onQuotaExceeded={(msg) => setGlobalAiQuotaNotice(msg)}
+                        />
+                      }
                     />
                   </div>
 
@@ -948,7 +963,7 @@ function ScribyApp() {
                       handleClearStudioState();
                     }
                   }}
-                  onNewRecording={() => setShowInputModal(true)}
+                  onNewRecording={scrollToChatComposer}
                 />
               </div>
             )}
@@ -972,8 +987,8 @@ function ScribyApp() {
                     description="Clone your voice from microphone recording or audio files, and synthesize natural AI voiceovers with studio male & female voices. Exclusive to the Agency Studio plan."
                     requiredPlanName="Agency Studio"
                     benefits={[
-                      'Custom voice cloning via microphone or audio file upload',
-                      'Studio male (Kabir) and female (Fatima) voice synthesis',
+                      'Zero-shot ZipVoice cloning via microphone or audio file upload',
+                      'Studio male (Adam) and female (Heart) Moonshine WASM voice synthesis',
                       'Multi-format audio export in WAV, MP3, and OGG formats',
                       'Direct integration to load generated audio into the Subtitle Editor',
                       '1,200 Audio Minutes/Month for high-volume creator workflows',
@@ -984,6 +999,7 @@ function ScribyApp() {
                 ) : (
                   <VoiceoverStudio
                     currentSubtitleText={fullTranscript || segments.map((s) => s.text).join(' ')}
+                    currentSegments={segments}
                     onSendToSubtitleStudio={handleSendToSubtitleStudio}
                     onOpenPricing={() => setIsPricingOpen(true)}
                   />
@@ -1055,32 +1071,6 @@ function ScribyApp() {
         )}
       </main>
 
-      {/* Input Modal */}
-      {showInputModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl">
-            <div className="flex justify-end mb-2">
-              <button
-                onClick={() => setShowInputModal(false)}
-                className="px-4 py-1.5 bg-[#1f1f1f] hover:bg-[#282828] text-[#d0d5dd] text-xs font-semibold rounded-full border border-[#34373f] cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-            <AudioInputHub
-              onTranscriptionComplete={handleTranscriptionComplete}
-              isLoading={isLoadingTranscription}
-              setIsLoading={setIsLoadingTranscription}
-              onOpenPricing={() => {
-                setShowInputModal(false);
-                setIsPricingOpen(true);
-              }}
-              onQuotaExceeded={(msg) => setGlobalAiQuotaNotice(msg)}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Export Modal */}
       <ExportModal
         isOpen={isExportOpen}
@@ -1104,23 +1094,7 @@ function ScribyApp() {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onResetWorkspace={() => {
-          const initialSample = SAMPLE_AUDIOS[0];
-          const blob = generateSyntheticAudioBlob(initialSample.duration);
-          const url = URL.createObjectURL(blob);
-          setAudioSource({
-            url,
-            name: initialSample.title,
-            duration: initialSample.duration,
-            blob,
-            mimeType: 'audio/wav',
-            isSample: true,
-          });
-          setSegments(initialSample.segments);
-          setFullTranscript(initialSample.fullTranscript);
-          setSummary(initialSample.summary);
-          setDuration(initialSample.duration);
-        }}
+        onResetWorkspace={handleClearStudioState}
       />
 
       {/* Onboarding Tour Modal */}
@@ -1132,7 +1106,7 @@ function ScribyApp() {
             setAuthInitialMode('register');
             setActiveTab('auth');
           } else {
-            setShowInputModal(true);
+            scrollToChatComposer();
           }
         }}
       />

@@ -337,21 +337,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
-              {/* Reset Local Cache Button */}
+              {/* Clear Workspace Button */}
               {onResetWorkspace && (
                 <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm('Reset workspace audio and load sample audio?')) {
-                        onResetWorkspace();
-                        onClose();
-                      }
+                      onResetWorkspace();
+                      onClose();
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset Workspace to Sample Demo</span>
+                    <span>Clear Active Studio Workspace</span>
                   </button>
                 </div>
               )}

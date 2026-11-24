@@ -3,204 +3,363 @@ import {
   UploadCloud,
   Mic,
   Square,
-  Play,
   RotateCcw,
   Sparkles,
   FileAudio,
   AlertCircle,
   Loader2,
-  CheckCircle2,
+  ExternalLink,
+  Cpu,
+  Globe,
+  X,
 } from 'lucide-react';
-import { SAMPLE_AUDIOS, generateSyntheticAudioBlob } from '../data/sampleAudios';
 import { TranscriptSegment, AudioSource } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
 import { preparePlayableAudio } from '../utils/audioProcessing';
 import { cacheTranscriptAudio } from '../utils/audioStorage';
 import { useAuth } from '../context/AuthContext';
-import { safeFetchJson, isQuotaExceededError, sanitizeErrorMessage, SAAS_AI_QUOTA_MESSAGE } from '../utils/apiClient';
-import { Card } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { AiQuotaNotice } from './AiQuotaNotice';
+import { safeFetchJson, sanitizeErrorMessage } from '../utils/apiClient';
+import { getSttLanguages, getLanguageOption, MoonshineArchKey } from '../utils/voiceLanguages';
+import {
+  transcribeAudioFileWithMoonshine,
+  startMoonshineLiveMicSession,
+  abortActiveSttSession,
+  isCrossOriginIsolatedReady,
+  blobToBase64,
+  MoonshineIsolationError,
+  MoonshineSttCancelledError,
+  MoonshineDownloadProgress,
+  MoonshineTranscriptionProgress,
+  LiveMicCaptureSession,
+} from '../utils/moonshineEngine';
+
+export interface ChatSttActivity {
+  sourceLabel: string;
+  sourceType: 'upload' | 'record';
+  status: 'processing' | 'recording' | 'ready';
+  loadingStep: string;
+  downloadProgress: MoonshineDownloadProgress | null;
+  chunkProgress: MoonshineTranscriptionProgress | null;
+  recordingSeconds?: number;
+  livePartialText?: string;
+  liveCommittedLines?: Array<{ id: string; text: string; startTime: number }>;
+}
 
 interface AudioInputHubProps {
+  onTranscriptionStart?: (sourceLabel: string, sourceType: 'upload' | 'record') => void;
+  onPartialSegments?: (segments: TranscriptSegment[]) => void;
   onTranscriptionComplete: (
     audioSource: AudioSource,
     segments: TranscriptSegment[],
     fullTranscript: string,
     summary: string
   ) => void;
+  onTranscriptionAbort?: () => void;
+  onActivityChange?: (activity: ChatSttActivity | null) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   onOpenPricing?: () => void;
   onQuotaExceeded?: (message: string) => void;
 }
 
+const ENGLISH_ARCH_OPTIONS: Array<{ value: MoonshineArchKey; label: string }> = [
+  { value: 'medium_streaming', label: 'Medium Streaming (~304 MB)' },
+  { value: 'small_streaming', label: 'Small Streaming (Balanced)' },
+  { value: 'tiny_streaming', label: 'Tiny Streaming (Fastest)' },
+  { value: 'base', label: 'Base (Non-streaming)' },
+  { value: 'tiny', label: 'Tiny (Ultra-Light)' },
+];
+
+function formatBytesMb(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '0.0 MB';
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export const AudioInputHub: React.FC<AudioInputHubProps> = ({
+  onTranscriptionStart,
+  onPartialSegments,
   onTranscriptionComplete,
+  onTranscriptionAbort,
+  onActivityChange,
   isLoading,
   setIsLoading,
   onOpenPricing,
-  onQuotaExceeded,
 }) => {
   const { token, user, refreshProfile } = useAuth();
-  const [activeMode, setActiveMode] = useState<'samples' | 'upload' | 'record'>('samples');
+  const [activeMode, setActiveMode] = useState<'upload' | 'record'>('upload');
   const [dragOver, setDragOver] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isQuotaError, setIsQuotaError] = useState(false);
+  const [needsStandaloneTab, setNeedsStandaloneTab] = useState<boolean>(false);
   const [isCreditExceeded, setIsCreditExceeded] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string>('');
+  const [activeSourceLabel, setActiveSourceLabel] = useState<string>('');
+  const [activeSourceType, setActiveSourceType] = useState<'upload' | 'record'>('upload');
+  const [downloadProgress, setDownloadProgress] = useState<MoonshineDownloadProgress | null>(null);
+  const [chunkProgress, setChunkProgress] = useState<MoonshineTranscriptionProgress | null>(null);
 
-  // Recording State
+  // Moonshine Language & Model Arch Selection
+  const sttLanguages = getSttLanguages();
+  const [selectedSttLanguage, setSelectedSttLanguage] = useState<string>('en');
+  const [selectedSttArch, setSelectedSttArch] = useState<MoonshineArchKey>('medium_streaming');
+
+  // Live Mic Streaming State
   const [isRecording, setIsRecording] = useState(false);
+  const [isStartingMic, setIsStartingMic] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const [livePartialText, setLivePartialText] = useState<string>('');
+  const [liveCommittedLines, setLiveCommittedLines] = useState<
+    Array<{ id: string; text: string; startTime: number }>
+  >([]);
+  const [liveCapturedResult, setLiveCapturedResult] = useState<{
+    durationSeconds: number;
+    segments: TranscriptSegment[];
+    fullTranscript: string;
+    summary: string;
+    language: string;
+    modelArch: MoonshineArchKey;
+  } | null>(null);
+
+  const micSessionRef = useRef<LiveMicCaptureSession | null>(null);
   const timerIntervalRef = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
+    setNeedsStandaloneTab(!isCrossOriginIsolatedReady());
     return () => {
+      abortActiveSttSession();
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (micSessionRef.current) {
+        micSessionRef.current.abort();
+        micSessionRef.current = null;
+      }
       if (recordedUrl) URL.revokeObjectURL(recordedUrl);
     };
   }, [recordedUrl]);
 
-  // Handle File Upload
+  // Sync live status up to chat thread stream
+  useEffect(() => {
+    if (!onActivityChange) return;
+    if (isLoading) {
+      onActivityChange({
+        sourceLabel: activeSourceLabel || (activeSourceType === 'record' ? 'Live Microphone Audio' : 'Uploaded Audio'),
+        sourceType: activeSourceType,
+        status: 'processing',
+        loadingStep,
+        downloadProgress,
+        chunkProgress,
+      });
+    } else if (isRecording || isStartingMic) {
+      onActivityChange({
+        sourceLabel: 'Live Microphone Recording',
+        sourceType: 'record',
+        status: 'recording',
+        loadingStep: isStartingMic ? loadingStep : 'Listening and transcribing live...',
+        downloadProgress,
+        chunkProgress: null,
+        recordingSeconds,
+        livePartialText,
+        liveCommittedLines,
+      });
+    } else {
+      onActivityChange(null);
+    }
+  }, [
+    isLoading,
+    isRecording,
+    isStartingMic,
+    activeSourceLabel,
+    activeSourceType,
+    loadingStep,
+    downloadProgress,
+    chunkProgress,
+    recordingSeconds,
+    livePartialText,
+    liveCommittedLines,
+    onActivityChange,
+  ]);
+
+  const handleLanguageChange = (nextLang: string) => {
+    setSelectedSttLanguage(nextLang);
+    const opt = getLanguageOption(nextLang);
+    if (opt?.defaultSttArch) {
+      setSelectedSttArch(opt.defaultSttArch);
+    }
+  };
+
+  const persistTranscriptAndOpen = async (params: {
+    blob: Blob;
+    audioName: string;
+    size?: number;
+    durationSeconds: number;
+    mimeType: string;
+    playableUrl: string;
+    segments: TranscriptSegment[];
+    fullTranscript: string;
+    summary: string;
+    language: string;
+    modelArch: MoonshineArchKey;
+  }) => {
+    setLoadingStep('Saving transcript & caching studio audio...');
+
+    let savedTranscriptId: number | undefined;
+
+    if (token) {
+      const maxServerAudioBytes = 38 * 1024 * 1024;
+      const audioBase64 =
+        params.blob.size <= maxServerAudioBytes ? await blobToBase64(params.blob) : undefined;
+      const res = await safeFetchJson<{
+        success: boolean;
+        data?: { savedTranscriptId?: number };
+        error?: string;
+      }>('/api/transcripts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: params.audioName,
+          audioName: params.audioName,
+          durationSeconds: params.durationSeconds,
+          language: params.language,
+          modelArch: params.modelArch,
+          segments: params.segments,
+          fullTranscript: params.fullTranscript,
+          summary: params.summary,
+          ...(audioBase64
+            ? { audioBase64, mimeType: params.mimeType || 'audio/wav' }
+            : {}),
+        }),
+      });
+
+      if (res.status === 403) {
+        setIsCreditExceeded(true);
+        throw new Error(
+          res.error || res.data?.error || 'Credit limit reached. Please upgrade your subscription plan.'
+        );
+      }
+
+      if (!res.ok || !res.data?.success) {
+        throw new Error(res.error || res.data?.error || 'Failed to save transcript to workspace.');
+      }
+
+      savedTranscriptId = res.data?.data?.savedTranscriptId;
+    }
+
+    try {
+      await cacheTranscriptAudio(savedTranscriptId, params.audioName, params.blob);
+    } catch (storageErr) {
+      console.warn('[AudioVault] Could not cache audio locally:', storageErr);
+    }
+
+    onTranscriptionComplete(
+      {
+        url: params.playableUrl,
+        name: params.audioName,
+        size: params.size,
+        duration: params.durationSeconds,
+        blob: params.blob,
+        mimeType: params.mimeType,
+      },
+      params.segments,
+      params.fullTranscript,
+      params.summary
+    );
+
+    if (token) refreshProfile();
+  };
+
+  // Handle File Upload via local Moonshine WASM
   const processAudioFile = async (file: File) => {
     setErrorMessage(null);
     setIsCreditExceeded(false);
+    setDownloadProgress(null);
+    setChunkProgress(null);
 
-    if (user && user.creditsRemaining <= 0) {
-      setIsCreditExceeded(true);
-      setErrorMessage('Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to transcribe audio.');
+    if (!isCrossOriginIsolatedReady()) {
+      setNeedsStandaloneTab(true);
+      setErrorMessage(
+        'Local Moonshine WebAssembly requires SharedArrayBuffer isolation. Open Scriby in a standalone browser tab to run speech recognition.'
+      );
       return;
     }
 
+    if (user && user.creditsRemaining <= 0) {
+      setIsCreditExceeded(true);
+      setErrorMessage(
+        'Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to transcribe audio.'
+      );
+      return;
+    }
+
+    setActiveSourceLabel(file.name);
+    setActiveSourceType('upload');
     setIsLoading(true);
-    setLoadingStep('Converting audio to binary format...');
+    setLoadingStep('Initializing Moonshine WebAssembly engine...');
+    onTranscriptionStart?.(file.name, 'upload');
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = reader.result as string;
-          const cleanBase64 = base64Data.split(',')[1] || base64Data;
+      const result = await transcribeAudioFileWithMoonshine({
+        fileOrBlob: file,
+        language: selectedSttLanguage,
+        arch: selectedSttArch,
+        onProgress: (prog) => setDownloadProgress(prog),
+        onStage: (stage) => setLoadingStep(stage),
+        onChunkProgress: (prog) => setChunkProgress(prog),
+        onPartialSegments: (segs) => onPartialSegments?.(segs),
+      });
 
-          setLoadingStep('Analyzing speech and aligning subtitle timestamps...');
+      setLoadingStep('Preparing audio waveform & timeline playback...');
+      const processed = await preparePlayableAudio(file, file.name, result.durationSeconds);
 
-          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-          if (token) headers['Authorization'] = `Bearer ${token}`;
+      await persistTranscriptAndOpen({
+        blob: processed.blob,
+        audioName: file.name,
+        size: file.size,
+        durationSeconds: processed.duration || result.durationSeconds,
+        mimeType: processed.mimeType || 'audio/wav',
+        playableUrl: processed.url,
+        segments: result.segments,
+        fullTranscript: result.fullTranscript,
+        summary: result.summary,
+        language: result.language,
+        modelArch: result.modelArch,
+      });
 
-          const res = await safeFetchJson<{
-            success: boolean;
-            data: { segments: TranscriptSegment[]; fullTranscript: string; summary?: string };
-            error?: string;
-          }>('/api/transcribe', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              audioBase64: cleanBase64,
-              mimeType: file.type || 'audio/mp3',
-              contextHint: file.name,
-              estimatedDurationSeconds: 60,
-            }),
-          });
-
-          if (res.status === 403) {
-            setIsCreditExceeded(true);
-            throw new Error(res.error || res.data?.error || 'Credit limit reached. Please upgrade your subscription plan.');
-          }
-
-          if (res.isQuotaExceeded || res.status === 429) {
-            setIsQuotaError(true);
-            const msg = res.error || SAAS_AI_QUOTA_MESSAGE;
-            onQuotaExceeded?.(msg);
-            throw new Error(msg);
-          }
-
-          if (!res.ok || !res.data?.success) {
-            throw new Error(res.error || res.data?.error || 'Failed to transcribe audio. Please try again.');
-          }
-
-          const json = res.data;
-          setLoadingStep('Syncing audio timeline and wave playback...');
-
-          const fallbackEnd =
-            json.data.segments && json.data.segments.length > 0
-              ? json.data.segments[json.data.segments.length - 1].end
-              : 60;
-
-          // Process and decode audio with universal WAV conversion for .ogg / .opus files
-          const processed = await preparePlayableAudio(file, file.name, fallbackEnd);
-
-          // Persist in local client audio vault and sync to server for permanent zero-latency playback
-          try {
-            const savedId = (json.data as any)?.savedTranscriptId;
-            await cacheTranscriptAudio(savedId, file.name, processed.blob);
-            if (savedId) {
-              const readerWav = new FileReader();
-              readerWav.onload = async () => {
-                const b64 = (readerWav.result as string).split(',')[1];
-                await safeFetchJson(`/api/audio/${savedId}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                  },
-                  body: JSON.stringify({
-                    audioBase64: b64,
-                    mimeType: processed.mimeType || 'audio/wav',
-                    filename: file.name,
-                  }),
-                });
-              };
-              readerWav.readAsDataURL(processed.blob);
-            }
-          } catch (storageErr) {
-            console.warn('[AudioVault] Could not cache uploaded audio locally:', storageErr);
-          }
-
-          onTranscriptionComplete(
-            {
-              url: processed.url,
-              name: file.name,
-              size: file.size,
-              duration: processed.duration,
-              blob: processed.blob,
-              mimeType: processed.mimeType,
-            },
-            json.data.segments,
-            json.data.fullTranscript,
-            json.data.summary || ''
-          );
-          setIsLoading(false);
-          refreshProfile();
-        } catch (err: any) {
-          const quota = isQuotaExceededError(err);
-          const { message, isQuota } = sanitizeErrorMessage(err?.message || 'Audio conversion failed.');
-          if (quota || isQuota) {
-            setIsQuotaError(true);
-            onQuotaExceeded?.(message);
-          }
-          setErrorMessage(message);
-          setIsLoading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Could not read file.');
       setIsLoading(false);
+      setDownloadProgress(null);
+      setChunkProgress(null);
+    } catch (err: unknown) {
+      if (err instanceof MoonshineSttCancelledError) {
+        setIsLoading(false);
+        setDownloadProgress(null);
+        setChunkProgress(null);
+        onTranscriptionAbort?.();
+        return;
+      }
+      if (err instanceof MoonshineIsolationError) {
+        setNeedsStandaloneTab(true);
+      }
+      const rawMsg = err instanceof Error ? err.message : 'Moonshine transcription failed.';
+      const { message } = sanitizeErrorMessage(rawMsg);
+      setErrorMessage(message);
+      setIsLoading(false);
+      setDownloadProgress(null);
+      setChunkProgress(null);
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
+    if (isLoading) return;
     if (user && user.creditsRemaining <= 0) {
       setIsCreditExceeded(true);
-      setErrorMessage('Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to continue.');
+      setErrorMessage(
+        'Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to continue.'
+      );
       return;
     }
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -208,495 +367,513 @@ export const AudioInputHub: React.FC<AudioInputHubProps> = ({
     }
   };
 
-  // Start Mic Recording
+  // Start Live Mic Streaming with Moonshine WASM
   const startRecording = async () => {
     setErrorMessage(null);
     setIsCreditExceeded(false);
+    setDownloadProgress(null);
 
-    if (user && user.creditsRemaining <= 0) {
-      setIsCreditExceeded(true);
-      setErrorMessage('Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to record and transcribe audio.');
+    if (!isCrossOriginIsolatedReady()) {
+      setNeedsStandaloneTab(true);
+      setErrorMessage(
+        'Local Moonshine WebAssembly requires SharedArrayBuffer isolation. Open Scriby in a standalone browser tab to stream microphone transcription.'
+      );
       return;
     }
 
+    if (user && user.creditsRemaining <= 0) {
+      setIsCreditExceeded(true);
+      setErrorMessage(
+        'Audio credit limit reached (0 minutes left). Please upgrade your subscription plan to record and transcribe audio.'
+      );
+      return;
+    }
+
+    if (recordedUrl) {
+      URL.revokeObjectURL(recordedUrl);
+      setRecordedUrl(null);
+    }
+    setRecordedBlob(null);
+    setLiveCapturedResult(null);
+    setLivePartialText('');
+    setLiveCommittedLines([]);
+    setIsStartingMic(true);
+    setActiveSourceLabel('Live Microphone Audio');
+    setActiveSourceType('record');
+    setLoadingStep('Loading Moonshine WebAssembly model for live mic...');
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
+      const session = await startMoonshineLiveMicSession({
+        language: selectedSttLanguage,
+        arch: selectedSttArch,
+        onProgress: (prog) => setDownloadProgress(prog),
+        onStage: (stage) => setLoadingStep(stage),
+        onPartialText: (txt) => setLivePartialText(txt),
+        onLineCommitted: (line) => {
+          if (!line.text.trim()) return;
+          setLiveCommittedLines((prev) => {
+            const idx = prev.findIndex((item) => item.id === line.id);
+            if (idx >= 0) {
+              const copy = [...prev];
+              copy[idx] = { id: line.id, text: line.text, startTime: line.startTime };
+              return copy;
+            }
+            return [...prev, { id: line.id, text: line.text, startTime: line.startTime }];
+          });
+        },
+        onError: (err) => {
+          console.warn('[Moonshine Live Mic]', err.message);
+        },
+      });
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        setRecordedBlob(audioBlob);
-        setRecordedUrl(url);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-
-      mediaRecorder.start(250);
+      micSessionRef.current = session;
+      setIsStartingMic(false);
+      setDownloadProgress(null);
       setIsRecording(true);
       setRecordingSeconds(0);
 
       timerIntervalRef.current = window.setInterval(() => {
         setRecordingSeconds((prev) => prev + 1);
       }, 1000);
-    } catch {
-      setErrorMessage('Microphone access denied. Please grant microphone permissions in browser.');
-    }
-  };
-
-  // Stop Mic Recording
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
+    } catch (err: unknown) {
+      setIsStartingMic(false);
+      setDownloadProgress(null);
+      if (err instanceof MoonshineIsolationError) {
+        setNeedsStandaloneTab(true);
       }
+      const msg =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Microphone access denied. Please grant microphone permissions in browser.';
+      setErrorMessage(msg);
     }
   };
 
-  // Process Recorded Audio
+  // Stop Live Mic Streaming & Finalize WAV + Live Transcript
+  const stopRecording = async () => {
+    if (!micSessionRef.current || !isRecording) return;
+    setIsRecording(false);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    try {
+      const captured = await micSessionRef.current.stop();
+      micSessionRef.current = null;
+      const url = URL.createObjectURL(captured.audioBlob);
+      setRecordedBlob(captured.audioBlob);
+      setRecordedUrl(url);
+      setLiveCapturedResult({
+        durationSeconds: captured.durationSeconds,
+        segments: captured.segments,
+        fullTranscript: captured.fullTranscript,
+        summary: captured.summary,
+        language: captured.language,
+        modelArch: captured.modelArch,
+      });
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to finalize live recording.');
+    }
+  };
+
+  // Save captured live recording & push blocks straight into the Chat stream
   const transcribeRecordedAudio = async () => {
     if (!recordedBlob) return;
 
     if (user && user.creditsRemaining <= 0) {
       setIsCreditExceeded(true);
-      setErrorMessage('Audio credit limit reached (0 minutes left). Please upgrade your subscription plan.');
+      setErrorMessage(
+        'Audio credit limit reached (0 minutes left). Please upgrade your subscription plan.'
+      );
       return;
     }
 
+    const recName = `Live Voice Recording (${new Date().toLocaleTimeString()})`;
+    setActiveSourceLabel(recName);
+    setActiveSourceType('record');
     setIsLoading(true);
-    setLoadingStep('Transcribing spoken audio with universal speech model...');
+    setErrorMessage(null);
+    onTranscriptionStart?.(recName, 'record');
 
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const base64Data = (reader.result as string).split(',')[1];
-          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-          if (token) headers['Authorization'] = `Bearer ${token}`;
+      let finalResult = liveCapturedResult;
+      if (!finalResult || !finalResult.fullTranscript.trim()) {
+        finalResult = await transcribeAudioFileWithMoonshine({
+          fileOrBlob: recordedBlob,
+          language: selectedSttLanguage,
+          arch: selectedSttArch,
+          onProgress: (prog) => setDownloadProgress(prog),
+          onStage: (stage) => setLoadingStep(stage),
+          onChunkProgress: (prog) => setChunkProgress(prog),
+          onPartialSegments: (segs) => onPartialSegments?.(segs),
+        });
+      }
 
-          const res = await safeFetchJson<{
-            success: boolean;
-            data: { segments: TranscriptSegment[]; fullTranscript: string; summary?: string };
-            error?: string;
-          }>('/api/transcribe', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              audioBase64: base64Data,
-              mimeType: 'audio/webm',
-              contextHint: 'Live microphone voice recording',
-              estimatedDurationSeconds: recordingSeconds || 30,
-            }),
-          });
-
-          if (res.status === 403) {
-            setIsCreditExceeded(true);
-            throw new Error(res.error || res.data?.error || 'Credit limit reached. Please upgrade your plan.');
-          }
-
-          if (res.isQuotaExceeded || res.status === 429) {
-            setIsQuotaError(true);
-            const msg = res.error || SAAS_AI_QUOTA_MESSAGE;
-            onQuotaExceeded?.(msg);
-            throw new Error(msg);
-          }
-
-          if (!res.ok || !res.data?.success) {
-            throw new Error(res.error || res.data?.error || 'Failed to transcribe recording.');
-          }
-
-          const json = res.data;
-          setLoadingStep('Syncing audio timeline and wave playback...');
-
-          const fallbackEnd =
-            json.data.segments && json.data.segments.length > 0
-              ? json.data.segments[json.data.segments.length - 1].end
-              : recordingSeconds > 0
-              ? recordingSeconds
-              : 30;
-
-          const recName = `Live Voice Recording (${new Date().toLocaleTimeString()})`;
-          const processed = await preparePlayableAudio(
-            recordedBlob,
-            `${recName}.wav`,
-            fallbackEnd
-          );
-
-          try {
-            const savedId = (json.data as any)?.savedTranscriptId;
-            await cacheTranscriptAudio(savedId, recName, processed.blob);
-            if (savedId) {
-              const readerRec = new FileReader();
-              readerRec.onload = async () => {
-                const b64 = (readerRec.result as string).split(',')[1];
-                await safeFetchJson(`/api/audio/${savedId}`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                  },
-                  body: JSON.stringify({
-                    audioBase64: b64,
-                    mimeType: processed.mimeType || 'audio/wav',
-                    filename: recName,
-                  }),
-                });
-              };
-              readerRec.readAsDataURL(processed.blob);
-            }
-          } catch (storageErr) {
-            console.warn('[AudioVault] Could not cache recorded voice locally:', storageErr);
-          }
-
-          onTranscriptionComplete(
-            {
-              url: processed.url,
-              name: recName,
-              duration: processed.duration,
-              blob: processed.blob,
-              mimeType: processed.mimeType,
-            },
-            json.data.segments,
-            json.data.fullTranscript,
-            json.data.summary || ''
-          );
-          setIsLoading(false);
-          refreshProfile();
-        } catch (err: any) {
-          const quota = isQuotaExceededError(err);
-          const { message, isQuota } = sanitizeErrorMessage(err?.message || 'Failed to transcribe recording.');
-          if (quota || isQuota) {
-            setIsQuotaError(true);
-            onQuotaExceeded?.(message);
-          }
-          setErrorMessage(message);
-          setIsLoading(false);
-        }
-      };
-      reader.readAsDataURL(recordedBlob);
-    } catch (err: any) {
-      setErrorMessage(err.message);
-      setIsLoading(false);
-    }
-  };
-
-  // Load Preset Sample
-  const loadSample = (sample: typeof SAMPLE_AUDIOS[0]) => {
-    setErrorMessage(null);
-
-    if (user && user.creditsRemaining <= 0) {
-      setIsCreditExceeded(true);
-      setErrorMessage('Audio credit limit reached (0 minutes left). Please upgrade your subscription plan.');
-      return;
-    }
-
-    setIsLoading(true);
-    setLoadingStep('Loading demo sample and synchronized subtitle segments...');
-
-    setTimeout(() => {
-      const blob = generateSyntheticAudioBlob(sample.duration);
-      const url = URL.createObjectURL(blob);
-      onTranscriptionComplete(
-        {
-          url,
-          name: sample.title,
-          duration: sample.duration,
-          blob,
-          mimeType: 'audio/wav',
-          isSample: true,
-        },
-        sample.segments,
-        sample.fullTranscript,
-        sample.summary
+      const processed = await preparePlayableAudio(
+        recordedBlob,
+        `${recName}.wav`,
+        finalResult.durationSeconds || recordingSeconds || 10
       );
+
+      await persistTranscriptAndOpen({
+        blob: processed.blob,
+        audioName: recName,
+        size: processed.blob.size,
+        durationSeconds: processed.duration || finalResult.durationSeconds,
+        mimeType: processed.mimeType || 'audio/wav',
+        playableUrl: processed.url,
+        segments: finalResult.segments,
+        fullTranscript: finalResult.fullTranscript,
+        summary: finalResult.summary,
+        language: finalResult.language,
+        modelArch: finalResult.modelArch,
+      });
+
+      // Reset live buffer after pushing into chat stream
+      if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+      setRecordedBlob(null);
+      setRecordedUrl(null);
+      setLiveCapturedResult(null);
+      setLiveCommittedLines([]);
+      setLivePartialText('');
+      setRecordingSeconds(0);
       setIsLoading(false);
-    }, 450);
+      setDownloadProgress(null);
+      setChunkProgress(null);
+    } catch (err: unknown) {
+      if (err instanceof MoonshineSttCancelledError) {
+        setIsLoading(false);
+        setDownloadProgress(null);
+        setChunkProgress(null);
+        onTranscriptionAbort?.();
+        return;
+      }
+      const rawMsg = err instanceof Error ? err.message : 'Failed to finalize recording.';
+      const { message } = sanitizeErrorMessage(rawMsg);
+      setErrorMessage(message);
+      setIsLoading(false);
+      setDownloadProgress(null);
+      setChunkProgress(null);
+    }
   };
+
+  const selectedLangOption = getLanguageOption(selectedSttLanguage);
 
   return (
-    <Card className="p-6 relative overflow-hidden shadow-2xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-[#282828]">
-        <div>
-          <h2 className="text-xl font-bold text-[#e4e7ec] tracking-tight font-display flex items-center gap-2">
-            Audio Input & Speech Studio
-            <Badge variant="emerald">
-              Universal Speech-to-Text
-            </Badge>
-          </h2>
-          <p className="text-xs text-[#9ca3af] mt-1">
-            Upload any audio/video file in any language or speak directly into your microphone.
-          </p>
-        </div>
-
-        {/* Mode Selector */}
-        <div className="flex items-center gap-1 p-1 bg-[#141414] rounded-lg border border-[#282828] self-start md:self-auto">
-          <button
-            onClick={() => setActiveMode('samples')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeMode === 'samples'
-                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
-                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
-            }`}
-          >
-            Demo Clips
-          </button>
-          <button
-            onClick={() => setActiveMode('upload')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeMode === 'upload'
-                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
-                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
-            }`}
-          >
-            Upload File
-          </button>
-          <button
-            onClick={() => setActiveMode('record')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-              activeMode === 'record'
-                ? 'bg-[#1db954]/15 text-[#4cc37c] shadow-sm border border-[#1db954]/30'
-                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
-            }`}
-          >
-            Live Mic
-          </button>
-        </div>
-      </div>
-
-      {/* Credit Exceeded, AI Quota Exceeded, or Error Alert */}
-      {errorMessage && (
-        isQuotaError ? (
-          <div className="mt-4">
-            <AiQuotaNotice
-              message={errorMessage}
-              onDismiss={() => {
-                setErrorMessage(null);
-                setIsQuotaError(false);
-              }}
-              onOpenPricing={onOpenPricing}
-            />
+    <div id="studio-chat-composer" className="bg-[#161616] border-t border-[#282828] p-3.5 space-y-3">
+      {/* Cross-Origin Isolation Warning if running inside non-isolated embedded iframe */}
+      {needsStandaloneTab && (
+        <div className="p-3 bg-amber-950/30 border border-amber-700/60 rounded-xl text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              <strong className="font-semibold">Browser Isolation Needed:</strong> Open Scriby in a standalone tab for multi-threaded WebAssembly execution.
+            </span>
           </div>
-        ) : (
-          <div className="mt-4 p-4 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold">Notice:</span> {errorMessage}
-              </div>
-            </div>
+          {typeof window !== 'undefined' && (
+            <a
+              href={window.location.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold rounded-lg text-xs shrink-0 whitespace-nowrap"
+            >
+              <span>Open Standalone Tab</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Credit Exceeded or Runtime Error Alert */}
+      {errorMessage && (
+        <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-200 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <span>{errorMessage}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
             {isCreditExceeded && onOpenPricing && (
               <button
+                type="button"
                 onClick={onOpenPricing}
-                className="px-3 py-1 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-bold rounded text-xs shrink-0 whitespace-nowrap shadow-sm cursor-pointer"
+                className="px-3 py-1 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-bold rounded text-xs whitespace-nowrap cursor-pointer"
               >
                 Upgrade Plan
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="p-1 text-red-300/80 hover:text-red-100 rounded cursor-pointer"
+              aria-label="Dismiss alert"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
-        )
+        </div>
       )}
 
-      {/* Loading Overlay State */}
+      {/* Composer Toolbar: Mode Switcher + Language + Model Arch */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex items-center gap-1 p-0.5 bg-[#121212] rounded-lg border border-[#282828]">
+          <button
+            type="button"
+            disabled={isLoading || isRecording || isStartingMic}
+            onClick={() => setActiveMode('upload')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+              activeMode === 'upload'
+                ? 'bg-[#1db954]/15 text-[#4cc37c] border border-[#1db954]/30'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+            }`}
+          >
+            <FileAudio className="w-3.5 h-3.5" />
+            <span>Upload Audio</span>
+          </button>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => setActiveMode('record')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer disabled:opacity-50 ${
+              activeMode === 'record'
+                ? 'bg-[#1db954]/15 text-[#4cc37c] border border-[#1db954]/30'
+                : 'text-[#9ca3af] hover:text-[#d0d5dd]'
+            }`}
+          >
+            <Mic className="w-3.5 h-3.5" />
+            <span>Live Mic</span>
+          </button>
+        </div>
+
+        {/* Inline Speech Language & Model Arch Controls */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-[#1f1f1f] border border-[#2e3138] rounded-lg px-2.5 h-8">
+            <Globe className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
+            <select
+              aria-label="Speech Language"
+              value={selectedSttLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              disabled={isLoading || isRecording || isStartingMic}
+              className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
+            >
+              {sttLanguages.map((lang) => (
+                <option key={lang.code} value={lang.code} disabled={!lang.sttSupported} className="bg-[#1f1f1f]">
+                  {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                  {!lang.sttSupported ? ' — pending' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedSttLanguage === 'en' ? (
+            <div className="flex items-center gap-1.5 bg-[#1f1f1f] border border-[#2e3138] rounded-lg px-2.5 h-8">
+              <Cpu className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
+              <select
+                aria-label="WASM Model Architecture"
+                value={selectedSttArch}
+                onChange={(e) => setSelectedSttArch(e.target.value as MoonshineArchKey)}
+                disabled={isLoading || isRecording || isStartingMic}
+                className="bg-transparent text-xs text-[#e4e7ec] outline-none disabled:opacity-60 cursor-pointer"
+              >
+                {ENGLISH_ARCH_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-[#1f1f1f]">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <div className="h-8 bg-[#1f1f1f] border border-[#2e3138] text-xs text-[#d0d5dd] rounded-lg px-2.5 flex items-center gap-2 whitespace-nowrap">
+              <Cpu className="w-3.5 h-3.5 text-[#3fb970]" />
+              <span>{selectedLangOption?.sttModelLabel || 'Base'}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hidden File Picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="audio/*,video/mp4,video/webm"
+        className="hidden"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.files?.[0]) {
+            processAudioFile(e.target.files[0]);
+            e.target.value = '';
+          }
+        }}
+      />
+
+      {/* Composer Body */}
       {isLoading ? (
-        <div className="py-14 text-center flex flex-col items-center justify-center">
-          <div className="mb-5">
-            <Loader2 className="w-11 h-11 text-[#3fb970] animate-spin" />
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#121212] border border-[#282828]">
+          <div className="flex items-center gap-3 min-w-0">
+            <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-[#e4e7ec] truncate">
+                {loadingStep || 'Processing audio in isolated Moonshine worker...'}
+              </div>
+              {chunkProgress && chunkProgress.totalChunks > 1 ? (
+                <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
+                  Segment {chunkProgress.currentChunk}/{chunkProgress.totalChunks} ·{' '}
+                  {formatPlayerTime(chunkProgress.processedSeconds)} / {formatPlayerTime(chunkProgress.totalSeconds)} ·{' '}
+                  {Math.round(chunkProgress.fraction * 100)}%
+                </div>
+              ) : downloadProgress && downloadProgress.fraction >= 0 && downloadProgress.fraction < 1 ? (
+                <div className="text-[11px] font-mono tabular-nums text-[#9ca3af] mt-0.5">
+                  Caching {downloadProgress.file}: {formatBytesMb(downloadProgress.loadedBytes)} /{' '}
+                  {formatBytesMb(downloadProgress.totalBytes)}
+                </div>
+              ) : null}
+            </div>
           </div>
-          <h3 className="text-lg font-bold text-[#e4e7ec] mb-2 font-display">
-            Transcribing Spoken Audio...
-          </h3>
-          <p className="text-sm text-[#3fb970] font-medium">{loadingStep}</p>
-          <div className="mt-6 flex items-center gap-3 text-xs text-[#9ca3af]">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Audio Received
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Grammar & Punctuation
-            </span>
-            <span aria-hidden="true">·</span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#3fb970]" /> Timestamp Sync
-            </span>
+          <button
+            type="button"
+            onClick={() => {
+              abortActiveSttSession();
+              setIsLoading(false);
+              setDownloadProgress(null);
+              setChunkProgress(null);
+              onTranscriptionAbort?.();
+            }}
+            className="px-3 py-1.5 bg-[#202020] hover:bg-[#2a2a2a] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#323232] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : activeMode === 'upload' ? (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 rounded-xl border border-dashed transition-all cursor-pointer ${
+            dragOver
+              ? 'border-[#3fb970] bg-[#1db954]/10'
+              : 'border-[#323232] hover:border-[#4b5563] bg-[#121212] hover:bg-[#191919]'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20 shrink-0">
+              <UploadCloud className="w-4 h-4" />
+            </div>
+            <div className="text-left min-w-0">
+              <div className="text-xs font-semibold text-[#e4e7ec]">
+                Drop audio/video file here or browse to transcribe into chat
+              </div>
+              <div className="text-[11px] text-[#9ca3af] truncate">
+                MP3, WAV, M4A, AAC, WebM, OGG · Multi-speaker &amp; chunked long-file support ({selectedLangOption?.label || 'English'})
+              </div>
+            </div>
           </div>
+
+          <span className="px-3.5 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0">
+            Attach Audio
+          </span>
         </div>
       ) : (
-        <div className="mt-5">
-          {/* Mode 1: Pre-loaded Samples */}
-          {activeMode === 'samples' && (
-            <div>
-              <div className="text-xs text-[#9ca3af] mb-3 flex items-center justify-between">
-                <span>Select a demo clip for instant one-click testing:</span>
-                <span className="text-[#3fb970] font-medium">Free instant demo</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {SAMPLE_AUDIOS.map((sample) => (
-                  <div
-                    key={sample.id}
-                    className="p-4 rounded-xl bg-[#181818] border border-[#282828] hover:border-[#1db954]/45 transition-all flex flex-col justify-between group cursor-pointer hover:bg-[#1f1f1f]"
-                    onClick={() => loadSample(sample)}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1.5 text-[#9ca3af]">
-                        <span className="text-[#3fb970] font-medium">{sample.category}</span>
-                        <span className="font-mono tabular-nums">{sample.durationFormatted}</span>
-                      </div>
-                      <h4 className="text-sm font-semibold text-[#e4e7ec] group-hover:text-[#4cc37c] transition-colors font-display line-clamp-1">
-                        {sample.title}
-                      </h4>
-                      <p className="text-xs text-[#9ca3af] mt-1.5 line-clamp-2">
-                        {sample.description}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-[#282828] flex items-center justify-between">
-                      <span className="text-[11px] text-[#6f7682]">
-                        {sample.segments.length} Timed Subtitle Blocks
-                      </span>
-                      <button className="flex items-center gap-1.5 px-3 py-1 bg-[#1db954]/10 hover:bg-[#1db954]/20 text-[#4cc37c] text-xs font-semibold rounded-lg border border-[#1db954]/25 transition-colors cursor-pointer">
-                        <Play className="w-3 h-3 fill-current" />
-                        <span>Load Sample</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="px-4 py-3 rounded-xl bg-[#121212] border border-[#282828] flex flex-col sm:flex-row items-center justify-between gap-3">
+          {isStartingMic ? (
+            <div className="flex items-center gap-2.5 text-xs text-[#e4e7ec] w-full">
+              <Loader2 className="w-4 h-4 text-[#3fb970] animate-spin shrink-0" />
+              <span>{loadingStep}</span>
             </div>
-          )}
-
-          {/* Mode 2: Audio File Upload */}
-          {activeMode === 'upload' && (
-            <div>
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
-                  dragOver
-                    ? 'border-[#3fb970] bg-[#1db954]/10'
-                    : 'border-[#2c2c2c] hover:border-[#3c3c3c] bg-[#141414] hover:bg-[#1a1a1a]'
-                }`}
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'audio/*,video/mp4,video/webm';
-                  input.onchange = (e: any) => {
-                    if (e.target.files?.[0]) processAudioFile(e.target.files[0]);
-                  };
-                  input.click();
-                }}
+          ) : isRecording ? (
+            <>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 border border-red-500/50 flex items-center justify-center shrink-0">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-mono tabular-nums font-bold text-red-400">
+                      {formatPlayerTime(recordingSeconds)}
+                    </span>
+                    <span className="text-[#9ca3af] truncate">
+                      Streaming live ({selectedLangOption?.label || 'English'})...
+                    </span>
+                  </div>
+                  {livePartialText && (
+                    <div className="text-[11px] text-[#d0d5dd] italic truncate max-w-md">
+                      {livePartialText}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-500 text-[#f3f4f6] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-full bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center mx-auto mb-3 border border-[#1db954]/20">
-                  <UploadCloud className="w-6 h-6" />
-                </div>
-                <h4 className="text-sm font-semibold text-[#e4e7ec] mb-1 font-display">
-                  Drag and drop audio file or browse from device
-                </h4>
-                <p className="text-xs text-[#9ca3af] max-w-sm mx-auto">
-                  Supports MP3, WAV, M4A, AAC, WebM, OGG (up to 50MB)
-                </p>
-                <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#242424] hover:bg-[#2c2c2c] text-[#d0d5dd] text-xs font-medium rounded-lg transition-colors border border-[#323232]">
-                  <FileAudio className="w-3.5 h-3.5 text-[#3fb970]" />
-                  <span>Browse Audio File</span>
-                </div>
+                <Square className="w-3.5 h-3.5 fill-current" />
+                <span>Stop Recording</span>
+              </button>
+            </>
+          ) : recordedBlob ? (
+            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3 w-full sm:w-auto flex-1 min-w-0">
+                {recordedUrl && (
+                  <audio controls src={recordedUrl} className="h-8 flex-1 min-w-[180px]" />
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Mode 3: Live Mic Recording */}
-          {activeMode === 'record' && (
-            <div className="p-6 rounded-xl bg-[#141414] border border-[#282828] text-center flex flex-col items-center">
-              <div className="mb-4">
-                <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto transition-all ${
-                    isRecording
-                      ? 'bg-red-500/20 text-red-400 border-2 border-red-500 animate-pulse'
-                      : 'bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20'
-                  }`}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+                    setRecordedBlob(null);
+                    setRecordedUrl(null);
+                    setLiveCapturedResult(null);
+                    setLiveCommittedLines([]);
+                    setLivePartialText('');
+                    setRecordingSeconds(0);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202020] hover:bg-[#2a2a2a] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#323232] whitespace-nowrap cursor-pointer"
                 >
-                  <Mic className="w-8 h-8" />
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={transcribeRecordedAudio}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg whitespace-nowrap cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Add Recording to Chat</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-lg bg-[#1db954]/10 text-[#3fb970] border border-[#1db954]/20 flex items-center justify-center shrink-0">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="text-xs font-semibold text-[#e4e7ec]">
+                    Record live speech directly into the transcript chat
+                  </div>
+                  <div className="text-[11px] text-[#9ca3af] truncate">
+                    Real-time Moonshine microphone capture with automatic timecodes
+                  </div>
                 </div>
               </div>
-
-              {isRecording ? (
-                <div>
-                  <div className="text-2xl font-mono tabular-nums font-bold text-red-400 mb-2">
-                    {formatPlayerTime(recordingSeconds)}
-                  </div>
-                  <p className="text-xs text-[#9ca3af] mb-5">
-                    Recording voice... Speak clearly in any language into your mic.
-                  </p>
-                  <button
-                    onClick={stopRecording}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-[#f3f4f6] text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Square className="w-4 h-4 fill-current" />
-                    <span>Stop Recording</span>
-                  </button>
-                </div>
-              ) : recordedBlob ? (
-                <div className="w-full max-w-md">
-                  <div className="text-sm font-semibold text-[#e4e7ec] mb-1">
-                    Recording Finished ({formatPlayerTime(recordingSeconds)})
-                  </div>
-                  <p className="text-xs text-[#9ca3af] mb-4">
-                    Click below to transcribe this recording into text and timed subtitles.
-                  </p>
-                  <div className="flex items-center justify-center gap-3">
-                    <button
-                      onClick={transcribeRecordedAudio}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-all cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>Transcribe Audio</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRecordedBlob(null);
-                        setRecordedUrl(null);
-                        setRecordingSeconds(0);
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2.5 bg-[#242424] hover:bg-[#2c2c2c] text-[#d0d5dd] text-xs font-medium rounded-lg border border-[#323232] transition-colors cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Record Again</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#e4e7ec] mb-1 font-display">
-                    Speak Directly Into Your Microphone
-                  </h4>
-                  <p className="text-xs text-[#9ca3af] mb-5 max-w-sm">
-                    Record voice notes or speech in any language; our speech AI will segment sentences into timecodes.
-                  </p>
-                  <button
-                    onClick={startRecording}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Mic className="w-4 h-4" />
-                    <span>Start Recording</span>
-                  </button>
-                </div>
-              )}
-            </div>
+              <button
+                type="button"
+                onClick={startRecording}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] text-xs font-semibold rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              >
+                <Mic className="w-3.5 h-3.5" />
+                <span>Start Mic</span>
+              </button>
+            </>
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 };

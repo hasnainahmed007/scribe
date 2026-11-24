@@ -91,6 +91,18 @@ export async function preparePlayableAudio(
     fileOrBlob.type.includes('webm') ||
     !fileOrBlob.type.startsWith('audio/');
 
+  // Fast memory-safe path: if browser already supports the container natively (MP3, WAV, M4A, AAC)
+  // and Moonshine decoding already measured its exact duration, reuse ObjectURL without decoding 200+ MB PCM twice.
+  if (!isOggOrOpus && fallbackDuration && Number.isFinite(fallbackDuration) && fallbackDuration > 0) {
+    const directUrl = URL.createObjectURL(fileOrBlob);
+    return {
+      url: directUrl,
+      duration: fallbackDuration,
+      blob: fileOrBlob,
+      mimeType: fileOrBlob.type || 'audio/mp3',
+    };
+  }
+
   try {
     const AudioContextClass =
       window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;

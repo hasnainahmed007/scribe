@@ -46,16 +46,16 @@ import {
   generateMetadataSchema,
   generateThumbnailSchema,
   generateAiImageSchema,
-  transcribeAudioSchema,
+  saveTranscriptSchema,
+  saveVoiceoverSchema,
   formatZodError,
   formatZodFieldErrors,
 } from './src/schemas/validation.ts';
 import {
   normalizeLanguageCode,
-  resolveVoiceoverStyleDirective,
   getDefaultAccentForLanguage,
-  selectGenderLockedPrebuiltVoice,
-  shouldPreferVoiceDesignModel,
+  getShortLanguageLabel,
+  buildLocalVoiceCloneProfile,
   VoiceCloneAcousticProfile,
 } from './src/utils/voiceLanguages.ts';
 
@@ -197,6 +197,30 @@ process.on('unhandledRejection', (reason: any) => {
 
 app.use(express.json({ limit: '60mb' }));
 app.use(express.urlencoded({ extended: true, limit: '60mb' }));
+
+// Cross-Origin Isolation headers for SharedArrayBuffer WebAssembly multi-threading (Moonshine WASM)
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+
+// Serve @moonshine-ai/moonshine-wasm binaries and Web Workers cleanly in dev and production
+const MOONSHINE_WASM_DIR = path.resolve(__dirname, 'node_modules', '@moonshine-ai', 'moonshine-wasm', 'dist');
+app.use(
+  '/moonshine-wasm',
+  express.static(MOONSHINE_WASM_DIR, {
+    setHeaders: (res, filePath) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      if (filePath.endsWith('.wasm')) {
+        res.setHeader('Content-Type', 'application/wasm');
+      } else if (filePath.endsWith('.mjs') || filePath.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      }
+    },
+  })
+);
 
 // Shared GoogleGenAI client
 const apiKey = process.env.GEMINI_API_KEY || '';
@@ -1867,11 +1891,11 @@ Our billing team reviews all claims within two (2) business days and executes ve
   }
 }
 
-// ===================== Audio Transcription with Credit Deduction =====================
+// ===================== Client-Side Moonshine STT Persistence & Credits =====================
 
-app.post('/api/transcribe', async (req: Request, res: Response) => {
+app.post('/api/transcripts', async (req: Request, res: Response) => {
   try {
-    const parse = transcribeAudioSchema.safeParse(req.body);
+    const parse = saveTranscriptSchema.safeParse(req.body);
     if (!parse.success) {
       return res.status(400).json({
         error: formatZodError(parse.error),
@@ -1879,15 +1903,19 @@ app.post('/api/transcribe', async (req: Request, res: Response) => {
       });
     }
 
-    const { audioBase64, mimeType, contextHint, estimatedDurationSeconds } = parse.data;
+    const {
+      title,
+      audioName,
+      durationSeconds,
+      language,
+      modelArch,
+      fullTranscript,
+      summary,
+      segments,
+      audioBase64,
+      mimeType,
+    } = parse.data;
 
-    if (!apiKey) {
-      return res.status(500).json({
-        error: 'GEMINI_API_KEY is not configured on the server. Please check your environment variables.',
-      });
-    }
-
-    // Credit Verification: Check authenticated user's credit balance
     let authenticatedUser: any = null;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -1898,207 +1926,111 @@ app.post('/api/transcribe', async (req: Request, res: Response) => {
       }
     }
 
-    // Required audio credits in whole minutes (minimum 1 minute)
-    const neededCredits = Math.max(1, Math.ceil(Number(estimatedDurationSeconds) / 60));
+    const normalizedSegments = (segments || []).map((seg, idx) => ({
+      id: seg.id || `seg-ms-${Date.now()}-${idx + 1}`,
+      start: typeof seg.start === 'number' ? Math.max(0, seg.start) : idx * 4,
+      end: typeof seg.end === 'number' ? Math.max((seg.start || 0) + 0.4, seg.end) : (idx + 1) * 4,
+      speaker: seg.speaker || 'Speaker 1',
+      text: (seg.text || '').trim(),
+    }));
 
-    if (authenticatedUser) {
+    const actualDuration = Math.max(
+      1,
+      Math.round(normalizedSegments[normalizedSegments.length - 1]?.end || durationSeconds || 10)
+    );
+    const neededCredits = Math.max(1, Math.ceil(actualDuration / 60));
+
+    if (authenticatedUser && authenticatedUser.role !== 'superadmin') {
       if (authenticatedUser.creditsRemaining <= 0) {
         return res.status(403).json({
-          error: 'Credit limit reached. Your account has 0 audio minutes remaining. Please upgrade your plan to transcribe audio.',
+          error: 'Credit limit reached. Your account has 0 audio minutes remaining. Please upgrade your plan to save more transcripts.',
           requiredCredits: neededCredits,
           availableCredits: 0,
         });
       }
       if (authenticatedUser.creditsRemaining < neededCredits) {
         return res.status(403).json({
-          error: `Insufficient audio credits. Your account has ${authenticatedUser.creditsRemaining} minutes remaining, but this audio requires ${neededCredits} minutes. Please upgrade your subscription plan to continue.`,
+          error: `Insufficient audio credits. Your account has ${authenticatedUser.creditsRemaining} minutes remaining, but this audio requires ${neededCredits} minutes.`,
           requiredCredits: neededCredits,
           availableCredits: authenticatedUser.creditsRemaining,
         });
       }
     }
 
-    const cleanBase64 = audioBase64.replace(/^data:[a-zA-Z0-9/+-]+;base64,/, '');
+    let savedTranscriptId: number | undefined;
+    let audioUrl: string | undefined;
 
-    const audioPart = {
-      inlineData: {
-        mimeType: mimeType || 'audio/mp3',
-        data: cleanBase64,
-      },
-    };
-
-    const systemPrompt = `You are an expert universal multilingual audio transcriber, linguist, and subtitle editor.
-Your task is to transcribe this spoken audio with high accuracy in whatever language is spoken across all global languages supported by Gemini (e.g. English, Spanish, Bengali, Hindi, Arabic, French, German, Japanese, Chinese, Portuguese, Urdu, Italian, Turkish, Korean, etc.), preserving authentic spelling, punctuation, and natural phrasing.
-
-Guidelines:
-1. Automatically detect the spoken language without any language restriction. Transcribe accurately in that language with correct grammar, capitalization, and punctuation.
-2. For code-switching or loanwords (e.g., tech, business, proper names), transcribe them accurately in their natural spelling.
-3. Break the transcription down into chronological subtitle segments of roughly 3 to 7 seconds each.
-4. Provide precise start and end timestamps (in seconds as floats, e.g. 0.0, 3.5) for every segment.
-5. Identify speakers (e.g. 'Speaker 1', 'Speaker 2').
-6. Provide an accurate summary and key takeaways of the audio in clear, concise language.
-${contextHint ? `Contextual context from user: ${contextHint}` : ''}`;
-
-    const promptText = `Please transcribe this audio into timestamped segments and full text in the language spoken. Return the output in strict JSON format.`;
-
-    let data;
-    try {
-      const response = await generateContentWithRetry({
-        models: ['gemini-3.8-flash', 'gemini-flash-latest'],
-        contents: {
-          parts: [audioPart, { text: promptText }],
-        },
-        timeoutMs: 60000,
-        config: {
-          systemInstruction: systemPrompt,
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              language: { type: Type.STRING, description: 'Detected language code, e.g. en, bn, es, hi, fr, de, ar, ja, zh, pt, it, ur' },
-              fullTranscript: { type: Type.STRING, description: 'The complete transcribed text.' },
-              summary: { type: Type.STRING, description: 'Brief 2-3 sentence summary in the language of the transcript or English.' },
-              segments: {
-                type: Type.ARRAY,
-                description: 'Chronological timestamped subtitle segments.',
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    id: { type: Type.STRING },
-                    start: { type: Type.NUMBER, description: 'Start time in seconds (float)' },
-                    end: { type: Type.NUMBER, description: 'End time in seconds (float)' },
-                    speaker: { type: Type.STRING, description: 'Speaker label, e.g. Speaker 1' },
-                    text: { type: Type.STRING, description: 'Transcribed text for this segment' },
-                  },
-                  required: ['start', 'end', 'speaker', 'text'],
-                },
-              },
-            },
-            required: ['fullTranscript', 'segments'],
-          },
-        },
-      });
-
-      const responseText = response.text || '{}';
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        const match = responseText.match(/\{[\s\S]*\}/);
-        if (match) data = JSON.parse(match[0]);
-        else throw new Error('Failed to parse Gemini response as JSON');
-      }
-    } catch (aiErr: any) {
-      if (isGeminiQuotaError(aiErr)) {
-        console.warn('Gemini audio transcription quota exceeded, returning 429 quota notice:', aiErr?.message || aiErr);
-        return res.status(429).json({
-          error: PROFESSIONAL_QUOTA_MESSAGE,
-          isQuotaExceeded: true,
-          code: 'AI_QUOTA_EXCEEDED',
-          retryAfterSeconds: 25,
-        });
-      }
-      console.warn('Gemini audio transcription model unavailable, activating acoustic timeline generator:', aiErr?.message || aiErr);
-      const safeDuration = Number.isFinite(estimatedDurationSeconds) && estimatedDurationSeconds > 0 ? estimatedDurationSeconds : 30;
-      const segLen = 5;
-      const count = Math.max(1, Math.ceil(safeDuration / segLen));
-      const fallbackSegments = [];
-      for (let i = 0; i < count; i++) {
-        const start = i * segLen;
-        const end = Math.min(safeDuration, (i + 1) * segLen);
-        fallbackSegments.push({
-          id: `seg-acoustic-${Date.now()}-${i + 1}`,
-          start: Number(start.toFixed(2)),
-          end: Number(end.toFixed(2)),
-          speaker: 'Speaker 1',
-          text: i === 0
-            ? `${contextHint || 'Audio Speech Recording'} (Audio loaded - click to edit text)`
-            : `[Audio segment ${i + 1} (${Math.floor(start)}s - ${Math.floor(end)}s)]`,
-        });
-      }
-      data = {
-        language: 'auto',
-        fullTranscript: fallbackSegments.map((s) => s.text).join(' '),
-        summary: `Acoustic audio track processed (${Math.round(safeDuration)}s). Timestamped segments aligned for timeline editing.`,
-        segments: fallbackSegments,
-        isFallback: true,
-      };
-    }
-
-    if (data.segments && Array.isArray(data.segments)) {
-      data.segments = data.segments.map((seg: any, idx: number) => ({
-        id: seg.id || `seg-${Date.now()}-${idx + 1}`,
-        start: typeof seg.start === 'number' ? Math.max(0, seg.start) : idx * 4,
-        end: typeof seg.end === 'number' ? Math.max(seg.start + 0.5, seg.end) : (idx + 1) * 4,
-        speaker: seg.speaker || 'Speaker 1',
-        text: (seg.text || '').trim(),
-      }));
-    }
-
-    // Deduct audio credits and auto-save to transcript history in PostgreSQL
     if (authenticatedUser) {
-      const actualDuration = data.segments[data.segments.length - 1]?.end || estimatedDurationSeconds;
-      const actualCreditsDeducted = Math.max(1, Math.ceil(actualDuration / 60));
-
-      await db
-        .update(usersTable)
-        .set({
-          creditsRemaining: Math.max(0, authenticatedUser.creditsRemaining - actualCreditsDeducted),
-          creditsUsed: authenticatedUser.creditsUsed + actualCreditsDeducted,
-        })
-        .where(eq(usersTable.id, authenticatedUser.id));
+      if (authenticatedUser.role !== 'superadmin') {
+        await db
+          .update(usersTable)
+          .set({
+            creditsRemaining: Math.max(0, authenticatedUser.creditsRemaining - neededCredits),
+            creditsUsed: (authenticatedUser.creditsUsed || 0) + neededCredits,
+          })
+          .where(eq(usersTable.id, authenticatedUser.id));
+      }
 
       await db.insert(usageLogsTable).values({
         userId: authenticatedUser.id,
-        audioName: contextHint || 'Audio Recording',
-        durationSeconds: Math.round(actualDuration),
-        creditsDeducted: actualCreditsDeducted,
+        audioName: audioName || title || 'Audio Recording',
+        durationSeconds: actualDuration,
+        creditsDeducted: authenticatedUser.role === 'superadmin' ? 0 : neededCredits,
       });
 
-      // Auto-save generated transcript to history table
-      try {
-        const title = contextHint || `Audio Recording (${new Date().toLocaleDateString()})`;
-        const wordCount = (data.fullTranscript || '').split(/\s+/).filter(Boolean).length;
-        const saved = await db
-          .insert(transcriptsTable)
-          .values({
-            userId: authenticatedUser.id,
-            userUid: authenticatedUser.uid,
-            title,
-            audioName: contextHint || 'Audio Recording',
-            durationSeconds: Math.round(actualDuration),
-            segmentsJson: JSON.stringify(data.segments),
-            fullTranscript: data.fullTranscript || '',
-            summary: data.summary || '',
-            wordCount,
-          })
-          .returning();
+      const resolvedTranscript = (fullTranscript || normalizedSegments.map((s) => s.text).join(' ')).trim();
+      const wordCount = resolvedTranscript ? resolvedTranscript.split(/\s+/).filter(Boolean).length : 0;
 
-        const savedId = saved[0]?.id;
-        if (savedId) {
-          data.savedTranscriptId = savedId;
-          saveStoredAudioFile(savedId, cleanBase64, mimeType || 'audio/mpeg', contextHint || 'audio.mp3');
-          data.audioUrl = `/api/audio/${savedId}`;
+      const saved = await db
+        .insert(transcriptsTable)
+        .values({
+          userId: authenticatedUser.id,
+          userUid: authenticatedUser.uid,
+          title: title || 'Audio Recording',
+          audioName: audioName || title || 'Audio Recording',
+          durationSeconds: actualDuration,
+          segmentsJson: JSON.stringify(normalizedSegments),
+          fullTranscript: resolvedTranscript,
+          summary: summary || '',
+          wordCount,
+        })
+        .returning();
+
+      if (saved[0]?.id) {
+        savedTranscriptId = saved[0].id;
+        if (audioBase64 && audioBase64.length > 16) {
+          saveStoredAudioFile(savedTranscriptId, audioBase64, mimeType || 'audio/wav', audioName || `transcript-${savedTranscriptId}.wav`);
         }
-      } catch (saveErr) {
-        console.warn('Could not auto-save transcript to history:', saveErr);
+        audioUrl = `/api/audio/${savedTranscriptId}`;
       }
     }
 
-    return res.json({ success: true, data });
+    return res.status(201).json({
+      success: true,
+      data: {
+        savedTranscriptId,
+        audioUrl,
+        language,
+        modelArch,
+        engine: 'moonshine-wasm',
+        segments: normalizedSegments,
+        fullTranscript,
+        summary,
+      },
+    });
   } catch (error: any) {
-    console.error('Error during audio transcription:', error);
-    if (isGeminiQuotaError(error)) {
-      return res.status(429).json({
-        error: PROFESSIONAL_QUOTA_MESSAGE,
-        isQuotaExceeded: true,
-        code: 'AI_QUOTA_EXCEEDED',
-        retryAfterSeconds: 25,
-      });
-    }
+    console.error('Error saving transcript session:', error);
     return res.status(500).json({
-      error: error.message || 'An error occurred while transcribing the audio.',
+      error: error.message || 'Failed to save transcript session.',
     });
   }
+});
+
+app.post('/api/transcribe', (_req: Request, res: Response) => {
+  return res.status(410).json({
+    success: false,
+    error: 'Cloud speech-to-text has been replaced by on-device Moonshine WebAssembly transcription. Save transcripts via POST /api/transcripts.',
+  });
 });
 
 // ===================== Audio Storage Endpoints (Upload & Streaming) =====================
@@ -2126,68 +2058,9 @@ app.get('/api/audio/:id', async (req: Request, res: Response) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).send('Invalid transcript ID');
 
-    let info = getStoredAudioInfo(id);
+    const info = getStoredAudioInfo(id);
     if (!info || !fs.existsSync(info.audioPath)) {
-      // Check database to see if we can synthesize genuine speech for this transcript
-      const rows = await db
-        .select()
-        .from(transcriptsTable)
-        .where(eq(transcriptsTable.id, id))
-        .limit(1);
-
-      if (rows[0] && rows[0].fullTranscript && apiKey) {
-        try {
-          const ttsText = rows[0].fullTranscript.slice(0, 1000);
-          const ttsResponse = await ai.models.generateContent({
-            model: 'gemini-3.8-flash-lite-tts',
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  {
-                    text: ttsText,
-                    speechMetadata: {
-                      style: 'Clear, natural narrator with articulate audio clarity',
-                    },
-                  },
-                ],
-              },
-            ],
-            config: {
-              responseModalities: ['AUDIO'],
-              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
-            },
-          });
-          const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-          if (base64Audio) {
-            const rawBuf = Buffer.from(base64Audio, 'base64');
-            const wavBuffer = wrapPcmWithWavHeader(rawBuf, 24000);
-            const audioPath = path.join(AUDIO_UPLOADS_DIR, `${id}.bin`);
-            const metaPath = path.join(AUDIO_UPLOADS_DIR, `${id}.json`);
-            fs.writeFileSync(audioPath, wavBuffer);
-            fs.writeFileSync(
-              metaPath,
-              JSON.stringify({
-                mimeType: 'audio/wav',
-                filename: rows[0].audioName || `transcript-${id}.wav`,
-                size: wavBuffer.length,
-                savedAt: new Date().toISOString(),
-              })
-            );
-            info = {
-              audioPath,
-              mimeType: 'audio/wav',
-              filename: rows[0].audioName || `transcript-${id}.wav`,
-            };
-          }
-        } catch (ttsErr: any) {
-          console.log('[TTS] Audio synthesis fallback active for transcript', id);
-        }
-      }
-
-      if (!info || !fs.existsSync(info.audioPath)) {
-        return res.status(404).send('Audio recording not found for this transcript.');
-      }
+      return res.status(404).send('Audio recording not found for this transcript.');
     }
 
     const stat = fs.statSync(info.audioPath);
@@ -2922,121 +2795,6 @@ function detectAudioMimeType(buffer: Buffer, dataUri?: string): string {
   return 'audio/wav';
 }
 
-// Helper to analyze an uploaded/recorded voice sample using Gemini multimodal audio intelligence
-async function analyzeClonedVoiceSample(
-  audioBuffer: Buffer,
-  mimeType: string,
-  requestedGender: string,
-  voiceName: string
-): Promise<VoiceCloneAcousticProfile | null> {
-  const lockedGender =
-    requestedGender === 'female' ? 'female' : requestedGender === 'male' ? 'male' : undefined;
-
-  const buildDefaultProfile = (): VoiceCloneAcousticProfile => {
-    const g = lockedGender || 'male';
-    return {
-      detectedGender: g,
-      pitchRegister: g === 'female' ? 'Clear mid-range female register (~190-220 Hz)' : 'Grounded male studio baritone register (~105-135 Hz)',
-      vocalTimbre: g === 'female' ? 'Warm, articulate studio voice' : 'Resonant, steady chest-voice studio tone',
-      cadenceAndPacing: 'Natural conversational phrasing with clear pauses',
-      recommendedBaseVoice: g === 'female' ? 'Aoede' : 'Charon',
-      voiceDesignDirective:
-        g === 'female'
-          ? `Speak as an adult woman matching "${voiceName}" with a warm, steady, natural narrative delivery.`
-          : `Speak as an adult man matching "${voiceName}" with a grounded chest-voice baritone pitch and natural cadence.`,
-    };
-  };
-
-  if (!apiKey || !audioBuffer || audioBuffer.length < 500) {
-    return buildDefaultProfile();
-  }
-
-  try {
-    // Limit audio inline sample size safely (<= 8MB)
-    const sampleData = audioBuffer.length > 8 * 1024 * 1024 ? audioBuffer.subarray(0, 8 * 1024 * 1024) : audioBuffer;
-    const analysisRes = await withTimeout(
-      ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
-        contents: {
-          parts: [
-            {
-              inlineData: {
-                mimeType: mimeType || 'audio/wav',
-                data: sampleData.toString('base64'),
-              },
-            },
-            {
-              text: `Listen closely to the speaker in this voice sample (for voice profile "${voiceName}"${
-                lockedGender ? `, user specified gender: ${lockedGender}` : ''
-              }). Analyze ONLY the acoustic voice qualities of the speaker so a text-to-speech Voice Design model can faithfully replicate their voice.
-
-Return strict JSON describing:
-1. detectedGender: "male" or "female" based on vocal cord pitch & formants${lockedGender ? ` (respect user gender "${lockedGender}")` : ''}.
-2. pitchRegister: exact pitch range and vocal register (e.g. "Deep baritone (~95-115 Hz)", "Warm tenor (~130-150 Hz)", "Clear alto (~180-210 Hz)").
-3. vocalTimbre: vocal resonance, warmth, texture, breathiness, crispness (e.g. "Chesty, slightly gravelly warm baritone with crisp consonants").
-4. cadenceAndPacing: speaking speed, pause rhythm, and inflection habits.
-5. accentCharacteristics: audible regional pronunciation or cadence features from the recording.
-6. recommendedBaseVoice: pick the single best Gemini base voice match:
-   - Male options: "Charon" (deep warm grounded male), "Fenrir" (resonant expressive deeper male), "Puck" (lighter energetic conversational male)
-   - Female options: "Kore" (clear crisp studio female), "Aoede" (warm melodic expressive female), "Zephyr" (soft calm breezy female)
-7. voiceDesignDirective: one vivid, concrete voice-acting direction sentence describing this exact speaker's vocal timbre, register, warmth, and delivery rhythm.`,
-            },
-          ],
-        },
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              detectedGender: { type: Type.STRING },
-              pitchRegister: { type: Type.STRING },
-              vocalTimbre: { type: Type.STRING },
-              cadenceAndPacing: { type: Type.STRING },
-              accentCharacteristics: { type: Type.STRING },
-              recommendedBaseVoice: { type: Type.STRING },
-              voiceDesignDirective: { type: Type.STRING },
-            },
-            required: [
-              'detectedGender',
-              'pitchRegister',
-              'vocalTimbre',
-              'cadenceAndPacing',
-              'recommendedBaseVoice',
-              'voiceDesignDirective',
-            ],
-          },
-        },
-      }),
-      18000,
-      'Voice sample acoustic analysis timed out'
-    );
-
-    const parsed = JSON.parse(analysisRes.text || '{}');
-    const rawDetected = String(parsed.detectedGender || '').toLowerCase();
-    const detectedGender: 'male' | 'female' =
-      lockedGender || (rawDetected.includes('female') ? 'female' : 'male');
-
-    const { prebuiltVoiceName } = selectGenderLockedPrebuiltVoice({
-      requestedGender: detectedGender,
-      fingerprint: { recommendedBaseVoice: parsed.recommendedBaseVoice },
-      isCustom: true,
-    });
-
-    return {
-      detectedGender,
-      pitchRegister: String(parsed.pitchRegister || '').trim().slice(0, 140),
-      vocalTimbre: String(parsed.vocalTimbre || '').trim().slice(0, 180),
-      cadenceAndPacing: String(parsed.cadenceAndPacing || '').trim().slice(0, 160),
-      accentCharacteristics: String(parsed.accentCharacteristics || '').trim().slice(0, 160),
-      recommendedBaseVoice: prebuiltVoiceName,
-      voiceDesignDirective: String(parsed.voiceDesignDirective || '').trim().slice(0, 320),
-    };
-  } catch (err: any) {
-    console.warn('[VoiceClone] Acoustic analysis fallback used:', err?.message || err);
-    return buildDefaultProfile();
-  }
-}
-
 function parseVoiceFingerprintJson(raw?: string | null): (VoiceCloneAcousticProfile & { mimeType?: string }) | null {
   if (!raw) return null;
   try {
@@ -3048,27 +2806,27 @@ function parseVoiceFingerprintJson(raw?: string | null): (VoiceCloneAcousticProf
   return null;
 }
 
-// 1. Get available voices (built-in default voices + authenticated user's custom clones)
+// 1. Get available voices (Moonshine Kokoro/Piper studio presets + user's ZipVoice clone profiles)
 app.get('/api/voices', async (req: Request, res: Response) => {
   try {
     const defaultVoices = [
       {
         id: 'male-default',
-        name: 'Kabir (Male Studio)',
+        name: 'Adam (Male Studio)',
         gender: 'male',
-        language: 'multilingual',
-        accent: 'Studio Broadcast',
-        description: 'Deep, resonant, articulate broadcast tone for documentaries, news, podcasts, and explainers.',
+        language: 'en',
+        accent: 'American (General US)',
+        description: 'On-device neural studio voice powered by Moonshine Kokoro/Piper across supported languages.',
         isCustom: false,
         sampleAudioUrl: '/api/voices/male-default/sample',
       },
       {
         id: 'female-default',
-        name: 'Fatima (Female Studio)',
+        name: 'Heart (Female Studio)',
         gender: 'female',
-        language: 'multilingual',
-        accent: 'Studio Narrative',
-        description: 'Warm, clear, melodic storytelling tone ideal for tutorials, audiobooks, and social media reels.',
+        language: 'en',
+        accent: 'American (General US)',
+        description: 'Clear, natural female narrative voice powered locally by Moonshine WebAssembly.',
         isCustom: false,
         sampleAudioUrl: '/api/voices/female-default/sample',
       },
@@ -3138,7 +2896,7 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
 
     if (id === 'male-default') {
       const sampleBuffer = createNaturalSpeechWavBuffer(
-        'Hello, I am Kabir, your studio voice narrator. Welcome to Scriby AI Voiceover Studio.',
+        'Hello, I am Adam, your studio voice narrator. Welcome to Scriby AI Voiceover Studio.',
         'male',
         1.0,
         0
@@ -3150,7 +2908,7 @@ app.get('/api/voices/:id/sample', async (req: Request, res: Response) => {
 
     if (id === 'female-default') {
       const sampleBuffer = createNaturalSpeechWavBuffer(
-        'Hello, I am Fatima, your studio voice companion. Welcome to Scriby AI Voiceover Studio.',
+        'Hello, I am Heart, your studio voice companion. Welcome to Scriby AI Voiceover Studio.',
         'female',
         1.0,
         0
@@ -3233,7 +2991,7 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
     const sampleAudioPath = path.join(VOICES_UPLOADS_DIR, `voice-clone-${sampleId}.bin`);
     fs.writeFileSync(sampleAudioPath, buffer);
 
-    const normalizedLanguage = normalizeLanguageCode(language, 'multilingual');
+    const normalizedLanguage = normalizeLanguageCode(language, 'en');
     const sanitizedAccent = (
       typeof accent === 'string' && accent.trim()
         ? accent.trim()
@@ -3243,17 +3001,18 @@ app.post('/api/voices/clone', authMiddleware, async (req: AuthenticatedRequest, 
     const requestedGenderNormalized =
       gender === 'female' ? 'female' : gender === 'male' ? 'male' : 'custom';
 
-    const acousticProfile = await analyzeClonedVoiceSample(
-      buffer,
-      sampleMimeType,
-      requestedGenderNormalized,
-      name.trim()
-    );
+    const parsedDuration = Math.max(1, parseInt(durationSeconds || '10', 10));
+    const acousticProfile = buildLocalVoiceCloneProfile({
+      gender: requestedGenderNormalized,
+      language: normalizedLanguage,
+      durationSeconds: parsedDuration,
+      voiceName: name.trim(),
+    });
 
     const storedGender =
       requestedGenderNormalized !== 'custom'
         ? requestedGenderNormalized
-        : acousticProfile?.detectedGender || 'custom';
+        : acousticProfile.detectedGender || 'custom';
 
     const inserted = await db
       .insert(voiceProfilesTable)
@@ -3333,31 +3092,30 @@ app.delete('/api/voices/:id', authMiddleware, async (req: AuthenticatedRequest, 
   }
 });
 
-// 5. Synthesize Voiceover with TTS / Voice Clone & Format Export (WAV / MP3 / OGG)
-app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
+// 5. Persist Client-Synthesized Moonshine WASM Voiceover Audio
+app.post('/api/voiceovers', async (req: Request, res: Response) => {
   try {
+    const parse = saveVoiceoverSchema.safeParse(req.body);
+    if (!parse.success) {
+      return res.status(400).json({
+        error: formatZodError(parse.error),
+        errors: formatZodFieldErrors(parse.error),
+      });
+    }
+
     const {
       script,
       voiceId,
       voiceName,
-      gender = 'male',
-      tone = 'natural',
-      speed = 1.0,
-      pitch = 0,
-      language = 'auto',
-      accent = '',
-      format = 'wav',
-    } = req.body;
+      gender,
+      language,
+      languageLabel,
+      accent,
+      format,
+      durationSeconds,
+      audioBase64,
+    } = parse.data;
 
-    if (!script || typeof script !== 'string' || !script.trim()) {
-      return res.status(400).json({ error: 'Voiceover script text is required.' });
-    }
-
-    const cleanScript = script.trim().slice(0, 5000);
-    const exportFormat: 'wav' | 'mp3' | 'ogg' =
-      format === 'mp3' ? 'mp3' : format === 'ogg' ? 'ogg' : 'wav';
-
-    // Verify authentication & deduct credits if authenticated
     let authenticatedUser: any = null;
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -3379,207 +3137,14 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       }
     }
 
-    // Load custom cloned voice profile if selected
-    let customVoiceProfile: any = null;
-    let vocalFingerprint: (VoiceCloneAcousticProfile & { mimeType?: string }) | null = null;
-    if (voiceId && voiceId !== 'male-default' && voiceId !== 'female-default') {
-      const customId = parseInt(voiceId, 10);
-      if (!isNaN(customId)) {
-        const rows = await db
-          .select()
-          .from(voiceProfilesTable)
-          .where(eq(voiceProfilesTable.id, customId))
-          .limit(1);
-        if (rows[0]) {
-          customVoiceProfile = rows[0];
-          vocalFingerprint = parseVoiceFingerprintJson(customVoiceProfile.fingerprintJson);
-
-          // Lazy-upgrade legacy clone profiles that lack acoustic voice analysis
-          if (
-            (!vocalFingerprint || !vocalFingerprint.voiceDesignDirective) &&
-            customVoiceProfile.sampleAudioPath &&
-            fs.existsSync(customVoiceProfile.sampleAudioPath)
-          ) {
-            try {
-              const sampleBuf = fs.readFileSync(customVoiceProfile.sampleAudioPath);
-              const sampleMime = detectAudioMimeType(sampleBuf);
-              const analyzed = await analyzeClonedVoiceSample(
-                sampleBuf,
-                sampleMime,
-                customVoiceProfile.gender,
-                customVoiceProfile.name
-              );
-              if (analyzed) {
-                vocalFingerprint = { ...(vocalFingerprint || {}), mimeType: sampleMime, ...analyzed };
-                await db
-                  .update(voiceProfilesTable)
-                  .set({ fingerprintJson: JSON.stringify(vocalFingerprint) })
-                  .where(eq(voiceProfilesTable.id, customVoiceProfile.id));
-              }
-            } catch (upgradeErr) {
-              console.warn('[VoiceClone] Lazy sample profiling skipped:', upgradeErr);
-            }
-          }
-        }
-      }
+    const cleanBase64 = audioBase64.replace(/^data:[a-zA-Z0-9/+-]+;base64,/, '');
+    const audioBuffer = Buffer.from(cleanBase64, 'base64');
+    if (audioBuffer.length < 44) {
+      return res.status(400).json({ error: 'Synthesized audio payload is empty.' });
     }
 
-    // Strict gender-locked prebuilt base voice selection
-    const {
-      effectiveGender,
-      prebuiltVoiceName: ttsVoiceName,
-    } = selectGenderLockedPrebuiltVoice({
-      requestedGender:
-        customVoiceProfile?.gender ||
-        (voiceId === 'female-default' ? 'female' : voiceId === 'male-default' ? 'male' : gender),
-      fingerprint: vocalFingerprint,
-      isCustom: Boolean(customVoiceProfile),
-    });
-    const isFemale = effectiveGender === 'female';
-
-    const numericSpeed = parseFloat(String(speed)) || 1.0;
-    const numericPitch = parseFloat(String(pitch)) || 0;
-
-    const {
-      resolvedLanguage,
-      resolvedLanguageLabel,
-      resolvedAccent,
-      resolvedGender,
-      speechLanguageCode,
-      isCustomAccent,
-      styleDirective,
-    } = resolveVoiceoverStyleDirective({
-      language,
-      accent,
-      tone,
-      speed: numericSpeed,
-      pitch: numericPitch,
-      voiceName,
-      gender: effectiveGender,
-      scriptText: cleanScript,
-      customVoiceProfile,
-      vocalFingerprint,
-    });
-
-    let audioBuffer: Buffer | null = null;
-    let usedEngine = 'fallback';
-
-    // Route custom voice clones, custom accent descriptions, and distinct regional dialects to Voice Design flagship first,
-    // while standard global accents use high-throughput localization TTS first (with automatic 429 fallback across both).
-    const needsVoiceDesignAccent = shouldPreferVoiceDesignModel({
-      isCustomClone: Boolean(customVoiceProfile),
-      resolvedLanguage,
-      resolvedAccent,
-      isCustomAccent,
-    });
-
-    const candidateTtsModels = needsVoiceDesignAccent
-      ? ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']
-      : ['gemini-3.8-flash-lite-tts', 'gemini-3.8-flash-tts'];
-
-    const callGeminiTts = async (ttsModel: string, langCode?: string) => {
-      const speechConfig: Record<string, any> = {
-        voiceConfig: {
-          prebuiltVoiceConfig: {
-            voiceName: ttsVoiceName,
-          },
-        },
-      };
-      if (langCode) {
-        speechConfig.languageCode = langCode;
-      }
-      return withTimeout(
-        ai.models.generateContent({
-          model: ttsModel,
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: cleanScript,
-                  speechMetadata: {
-                    style: styleDirective,
-                  },
-                },
-              ],
-            },
-          ],
-          config: {
-            responseModalities: ['AUDIO'],
-            speechConfig,
-          },
-        }),
-        35000,
-        `TTS synthesis timed out on ${ttsModel}`
-      );
-    };
-
-    let sawQuotaError = false;
-    if (apiKey) {
-      for (const ttsModel of candidateTtsModels) {
-        try {
-          let ttsResponse;
-          try {
-            ttsResponse = await callGeminiTts(ttsModel, speechLanguageCode);
-          } catch (langErr: any) {
-            const errMsg = String(langErr?.message || langErr || '').toLowerCase();
-            const isLanguageArgError =
-              Boolean(speechLanguageCode) &&
-              !isGeminiQuotaError(langErr) &&
-              (errMsg.includes('language') || errMsg.includes('invalid_argument') || errMsg.includes('400'));
-            if (isLanguageArgError) {
-              console.warn(`[TTS] ${ttsModel} rejected languageCode="${speechLanguageCode}", retrying without languageCode:`, langErr?.message || langErr);
-              ttsResponse = await callGeminiTts(ttsModel, undefined);
-            } else {
-              throw langErr;
-            }
-          }
-
-          const base64Audio = ttsResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-          if (base64Audio) {
-            const rawBuf = Buffer.from(base64Audio, 'base64');
-            const hasWavHeader =
-              rawBuf.length >= 12 &&
-              rawBuf.subarray(0, 4).toString('ascii') === 'RIFF' &&
-              rawBuf.subarray(8, 12).toString('ascii') === 'WAVE';
-            audioBuffer = hasWavHeader ? rawBuf : wrapPcmWithWavHeader(rawBuf, 24000);
-            usedEngine = ttsModel;
-            console.log(
-              `[TTS] Synthesized with ${ttsModel} (voice=${ttsVoiceName}, gender=${resolvedGender}, lang=${resolvedLanguage}/${speechLanguageCode || 'auto'}, accent="${resolvedAccent}")`
-            );
-            break;
-          }
-        } catch (geminiErr: any) {
-          if (isGeminiQuotaError(geminiErr)) {
-            sawQuotaError = true;
-            console.warn(`[TTS] Quota/RPM limit on ${ttsModel}, trying fallback model if available:`, geminiErr?.message || geminiErr);
-            continue;
-          }
-          console.warn(`[TTS] Model ${ttsModel} failed (${ttsVoiceName}, gender=${resolvedGender}):`, geminiErr?.message || geminiErr);
-        }
-      }
-    }
-
-    if (!audioBuffer && sawQuotaError) {
-      return res.status(429).json({
-        error: PROFESSIONAL_QUOTA_MESSAGE,
-        isQuotaExceeded: true,
-        code: 'AI_QUOTA_EXCEEDED',
-        retryAfterSeconds: 25,
-      });
-    }
-
-    // High-fidelity speech cadence failover generator if API is unavailable
-    if (!audioBuffer) {
-      audioBuffer = createNaturalSpeechWavBuffer(
-        cleanScript,
-        isFemale ? 'female' : 'male',
-        parseFloat(String(speed)) || 1.0,
-        parseFloat(String(pitch)) || 0
-      );
-    }
-
-    // Persist generated voiceover file
+    const exportFormat: 'wav' | 'mp3' | 'ogg' =
+      format === 'mp3' ? 'mp3' : format === 'ogg' ? 'ogg' : 'wav';
     const voiceoverId = `vo-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
     const audioFilename = `${voiceoverId}.${exportFormat}`;
     const audioFilePath = path.join(VOICEOVER_UPLOADS_DIR, audioFilename);
@@ -3587,27 +3152,28 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
 
     fs.writeFileSync(audioFilePath, audioBuffer);
 
-    const wordCount = cleanScript.split(/\s+/).filter(Boolean).length;
-    const durationSeconds = Math.max(2, Math.round((wordCount / (140 * Math.max(0.5, speed))) * 60));
+    const safeDuration = Math.max(1, Math.round(durationSeconds || 5));
+    const resolvedLang = normalizeLanguageCode(language, 'en');
+    const resolvedLangLabel = languageLabel || getShortLanguageLabel(resolvedLang);
 
     fs.writeFileSync(
       metaFilePath,
       JSON.stringify({
         id: voiceoverId,
-        script: cleanScript,
-        voiceId: String(voiceId || (isFemale ? 'female-default' : 'male-default')),
-        voiceName: voiceName || (isFemale ? 'Fatima (Female Studio)' : 'Kabir (Male Studio)'),
-        gender: isFemale ? 'female' : 'male',
-        language: resolvedLanguage,
-        languageLabel: resolvedLanguageLabel,
-        accent: resolvedAccent,
+        script,
+        voiceId: String(voiceId),
+        voiceName,
+        gender,
+        language: resolvedLang,
+        languageLabel: resolvedLangLabel,
+        accent,
         format: exportFormat,
-        durationSeconds,
+        durationSeconds: safeDuration,
+        engine: 'moonshine-wasm',
         createdAt: new Date().toISOString(),
       })
     );
 
-    // Record in PostgreSQL saved_voiceovers table if authenticated user
     let savedRecordId: number | undefined;
     if (authenticatedUser) {
       try {
@@ -3616,14 +3182,14 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
           .values({
             userId: authenticatedUser.id,
             userUid: authenticatedUser.uid,
-            title: cleanScript.slice(0, 60) + (cleanScript.length > 60 ? '...' : ''),
-            script: cleanScript,
-            voiceId: String(voiceId || 'male-default'),
-            voiceName: voiceName || (isFemale ? 'Fatima' : 'Kabir'),
-            voiceGender: isFemale ? 'female' : 'male',
+            title: script.slice(0, 60) + (script.length > 60 ? '...' : ''),
+            script,
+            voiceId: String(voiceId),
+            voiceName,
+            voiceGender: gender === 'female' ? 'female' : 'male',
             audioPath: audioFilePath,
             audioUrl: `/api/voiceover/audio/${voiceoverId}?format=${exportFormat}`,
-            durationSeconds,
+            durationSeconds: safeDuration,
             format: exportFormat,
           })
           .returning({ id: savedVoiceoversTable.id });
@@ -3632,7 +3198,6 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
           savedRecordId = inserted[0].id;
         }
 
-        // Deduct 1 credit minute if not superadmin and credits available
         if (authenticatedUser.role !== 'superadmin' && authenticatedUser.creditsRemaining > 0) {
           await db
             .update(usersTable)
@@ -3647,34 +3212,31 @@ app.post('/api/voiceover/generate', async (req: Request, res: Response) => {
       }
     }
 
-    return res.json({
+    return res.status(201).json({
       success: true,
       id: savedRecordId,
       voiceoverId,
       audioUrl: `/api/voiceover/audio/${voiceoverId}?format=${exportFormat}`,
-      durationSeconds,
+      durationSeconds: safeDuration,
       format: exportFormat,
-      voiceName: voiceName || (isFemale ? 'Fatima' : 'Kabir'),
-      gender: resolvedGender,
-      ttsVoiceName,
-      engine: usedEngine,
-      language: resolvedLanguage,
-      languageLabel: resolvedLanguageLabel,
-      accent: resolvedAccent,
-      script: cleanScript,
+      voiceName,
+      gender,
+      engine: 'moonshine-wasm',
+      language: resolvedLang,
+      languageLabel: resolvedLangLabel,
+      accent,
+      script,
     });
   } catch (err: any) {
-    console.error('Error generating voiceover:', err);
-    if (isGeminiQuotaError(err)) {
-      return res.status(429).json({
-        error: PROFESSIONAL_QUOTA_MESSAGE,
-        isQuotaExceeded: true,
-        code: 'AI_QUOTA_EXCEEDED',
-        retryAfterSeconds: 25,
-      });
-    }
-    return res.status(500).json({ error: err.message || 'Failed to synthesize voiceover.' });
+    console.error('Error saving voiceover:', err);
+    return res.status(500).json({ error: err.message || 'Failed to save synthesized voiceover.' });
   }
+});
+
+app.post('/api/voiceover/generate', (_req: Request, res: Response) => {
+  return res.status(410).json({
+    error: 'Cloud TTS has been replaced by on-device Moonshine WebAssembly synthesis. Upload finished audio via POST /api/voiceovers.',
+  });
 });
 
 // 6. Stream and download generated voiceover audio

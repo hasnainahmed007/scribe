@@ -28,12 +28,28 @@ import {
   X,
   FileCheck,
   Globe,
+  ExternalLink,
+  Users,
+  Wind,
 } from 'lucide-react';
-import { VoiceProfile, SavedVoiceoverItem, AudioExportFormat, VoiceTone, VoiceGender } from '../types';
+import {
+  VoiceProfile,
+  SavedVoiceoverItem,
+  AudioExportFormat,
+  VoiceTone,
+  VoiceGender,
+  TranscriptSegment,
+} from '../types';
 import { safeFetchJson } from '../utils/apiClient';
 import { useAuth } from '../context/AuthContext';
 import { formatPlayerTime } from '../utils/timeFormat';
-import { parseSubtitleToPlainText } from '../utils/subtitleUtils';
+import {
+  StructuredSubtitleCue,
+  parseSubtitleToCues,
+  convertSegmentsToCues,
+  extractUniqueSpeakersFromCues,
+  hasSpeakableText,
+} from '../utils/subtitleUtils';
 import {
   CUSTOM_ACCENT_ID,
   SAMPLE_SCRIPTS_BY_LANGUAGE,
@@ -44,28 +60,108 @@ import {
   getShortLanguageLabel,
   resolveSelectionForVoiceProfile,
 } from '../utils/voiceLanguages';
+import {
+  synthesizeWithMoonshineTts,
+  synthesizeDialogueTimelineWithMoonshine,
+  isCrossOriginIsolatedReady,
+  blobToBase64,
+  MoonshineIsolationError,
+  MoonshineDownloadProgress,
+} from '../utils/moonshineEngine';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
-import { AiQuotaNotice } from './AiQuotaNotice';
 
 interface VoiceoverStudioProps {
   currentSubtitleText?: string;
+  currentSegments?: TranscriptSegment[];
   onSendToSubtitleStudio: (
     audioUrl: string,
     audioName: string,
     durationSeconds: number,
-    script?: string
+    script?: string,
+    customSegments?: TranscriptSegment[]
   ) => void;
   onOpenPricing?: () => void;
 }
 
+function getEffectiveVoiceGender(voice: VoiceProfile): 'female' | 'male' {
+  const g = String(voice.gender || voice.vocalFingerprint?.detectedGender || '').toLowerCase();
+  if (g === 'female') return 'female';
+  if (g === 'male') return 'male';
+  const nameLower = (voice.name || '').toLowerCase();
+  if (/\b(female|woman|girl|heart|emma|bella|dora|alpha|xiaoxiao)\b/.test(nameLower)) return 'female';
+  return 'male';
+}
+
+function buildAutoSpeakerVoiceMap(
+  speakers: string[],
+  availableVoices: VoiceProfile[],
+  fallbackVoiceId: string | number
+): Record<string, string> {
+  if (availableVoices.length === 0) return {};
+
+  const customVoices = availableVoices.filter((v) => v.isCustom);
+  const studioVoices = availableVoices.filter((v) => !v.isCustom);
+  const prioritizedPool = [...customVoices, ...studioVoices];
+  const usedIds = new Set<string>();
+  const map: Record<string, string> = {};
+
+  const pickUnused = (
+    preferredGender?: 'male' | 'female',
+    preferCustom: boolean = true
+  ): VoiceProfile | undefined => {
+    const pools = preferCustom ? [customVoices, studioVoices] : [prioritizedPool];
+    for (const pool of pools) {
+      if (preferredGender) {
+        const matchUnused = pool.find(
+          (v) => getEffectiveVoiceGender(v) === preferredGender && !usedIds.has(String(v.id))
+        );
+        if (matchUnused) return matchUnused;
+      }
+      const anyUnused = pool.find((v) => !usedIds.has(String(v.id)));
+      if (anyUnused && !preferredGender) return anyUnused;
+    }
+    if (preferredGender) {
+      return prioritizedPool.find((v) => getEffectiveVoiceGender(v) === preferredGender);
+    }
+    return undefined;
+  };
+
+  speakers.forEach((speaker, idx) => {
+    const lower = speaker.toLowerCase();
+    let desiredGender: 'male' | 'female' | undefined;
+    if (/\b(female|woman|girl|mother|sister|she|f)\b/.test(lower)) {
+      desiredGender = 'female';
+    } else if (/\b(male|man|boy|father|brother|he|m)\b/.test(lower)) {
+      desiredGender = 'male';
+    } else if (speakers.length >= 2) {
+      // Smart alternating default for unlabeled Speaker 1 (Male) / Speaker 2 (Female)
+      desiredGender = idx % 2 === 0 ? 'male' : 'female';
+    }
+
+    const picked =
+      pickUnused(desiredGender, true) ||
+      pickUnused(undefined, true) ||
+      availableVoices.find((v) => String(v.id) === String(fallbackVoiceId)) ||
+      availableVoices[idx % availableVoices.length];
+
+    if (picked) {
+      map[speaker] = String(picked.id);
+      usedIds.add(String(picked.id));
+    }
+  });
+
+  return map;
+}
+
 export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   currentSubtitleText = '',
+  currentSegments = [],
   onSendToSubtitleStudio,
   onOpenPricing,
 }) => {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
 
   // Navigation Sub-tab: 'tts' | 'clone' | 'record' | 'history'
   const [activeSubTab, setActiveSubTab] = useState<'tts' | 'clone' | 'record' | 'history'>('tts');
@@ -77,18 +173,22 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
 
   // Script & Synthesis Options
   const [script, setScript] = useState<string>(
-    'Welcome to Scriby AI Voiceover Studio. Synthesize high-fidelity voiceovers in any language or clone your personal voice profile for automated digital narration across global languages.'
+    'Welcome to Scriby Voiceover Studio. Synthesize natural studio speech or zero-shot cloned narration locally in your browser using Moonshine WebAssembly.'
   );
+  const [dialogueCues, setDialogueCues] = useState<StructuredSubtitleCue[]>([]);
+  const [speakerVoiceMap, setSpeakerVoiceMap] = useState<Record<string, string>>({});
+  const [naturalBreaths, setNaturalBreaths] = useState<boolean>(true);
   const [tone, setTone] = useState<VoiceTone>('natural');
   const [speed, setSpeed] = useState<number>(1.0);
-  const [pitch, setPitch] = useState<number>(0);
-  const [ttsLanguage, setTtsLanguage] = useState<string>('auto');
-  const [ttsAccent, setTtsAccent] = useState<string>(getDefaultAccentForLanguage('auto'));
+  const [ttsLanguage, setTtsLanguage] = useState<string>('en');
+  const [ttsAccent, setTtsAccent] = useState<string>(getDefaultAccentForLanguage('en'));
   const [ttsCustomAccent, setTtsCustomAccent] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<AudioExportFormat>('wav');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [ttsStageLabel, setTtsStageLabel] = useState<string>('');
+  const [ttsDownloadProgress, setTtsDownloadProgress] = useState<MoonshineDownloadProgress | null>(null);
+  const [needsStandaloneTab, setNeedsStandaloneTab] = useState<boolean>(!isCrossOriginIsolatedReady());
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [quotaErrorMessage, setQuotaErrorMessage] = useState<string | null>(null);
 
   // Current Generated Voiceover
   const [currentVoiceover, setCurrentVoiceover] = useState<{
@@ -102,6 +202,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     languageLabel?: string;
     accent?: string;
     script: string;
+    segments?: TranscriptSegment[];
   } | null>(null);
 
   // Deletion Confirmation Modal State
@@ -131,8 +232,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   // Voice Cloning Modal / Form State
   const [cloneName, setCloneName] = useState<string>('');
   const [cloneGender, setCloneGender] = useState<VoiceGender>('custom');
-  const [cloneLanguage, setCloneLanguage] = useState<string>('multilingual');
-  const [cloneAccent, setCloneAccent] = useState<string>(getDefaultAccentForLanguage('multilingual'));
+  const [cloneLanguage, setCloneLanguage] = useState<string>('en');
+  const [cloneAccent, setCloneAccent] = useState<string>(getDefaultAccentForLanguage('en'));
   const [cloneCustomAccent, setCloneCustomAccent] = useState<string>('');
   const [cloneDescription, setCloneDescription] = useState<string>('');
   const [cloneAudioBlob, setCloneAudioBlob] = useState<Blob | null>(null);
@@ -187,6 +288,35 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     }
   };
 
+  const applyImportedCues = (cues: StructuredSubtitleCue[], sourceLabel: string) => {
+    const speakers = extractUniqueSpeakersFromCues(cues);
+    const hasTimestamps = cues.some((c) => c.hasTimestamp);
+    const hasMultiSpeakers = speakers.length > 1;
+
+    if (hasTimestamps || hasMultiSpeakers) {
+      setDialogueCues(cues);
+      setSpeakerVoiceMap((prev) => {
+        const auto = buildAutoSpeakerVoiceMap(speakers, voices, selectedVoiceId);
+        const merged: Record<string, string> = {};
+        speakers.forEach((sp) => {
+          merged[sp] =
+            prev[sp] && voices.some((v) => String(v.id) === String(prev[sp]))
+              ? prev[sp]
+              : auto[sp] || String(selectedVoiceId);
+        });
+        return merged;
+      });
+      setScript(cues.map((c) => (hasMultiSpeakers ? `${c.speaker}: ${c.text}` : c.text)).join('\n'));
+      showToast(
+        `Loaded ${cues.length} timed cues · ${speakers.length} ${speakers.length === 1 ? 'speaker' : 'speakers'} from ${sourceLabel}`
+      );
+    } else {
+      setDialogueCues([]);
+      setScript(cues.map((c) => c.text).join(' '));
+      showToast(`Imported script from ${sourceLabel}!`);
+    }
+  };
+
   // Handle uploading external SRT/VTT file
   const handleExternalSubtitleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -196,12 +326,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
     reader.onload = () => {
       try {
         const content = reader.result as string;
-        const parsed = parseSubtitleToPlainText(content);
-        if (parsed && parsed.trim().length > 0) {
-          setScript(parsed);
-          showToast(`Imported external subtitles from ${file.name}!`);
+        const cues = parseSubtitleToCues(content);
+        if (cues.length > 0) {
+          applyImportedCues(cues, file.name);
         } else {
-          showToast('Could not extract subtitle text from file. Please check file format.', 'error');
+          showToast('Could not extract subtitle cues from file. Please check file format.', 'error');
         }
       } catch (err: any) {
         showToast('Failed to parse subtitle file: ' + err.message, 'error');
@@ -227,10 +356,32 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       }>('/api/voices', { headers });
 
       if (res.ok && res.data?.allVoices) {
-        setVoices(res.data.allVoices);
-        if (!selectedVoiceId && res.data.allVoices.length > 0) {
-          setSelectedVoiceId(res.data.allVoices[0].id);
+        const loadedVoices = res.data.allVoices;
+        setVoices(loadedVoices);
+        if (!selectedVoiceId && loadedVoices.length > 0) {
+          setSelectedVoiceId(loadedVoices[0].id);
         }
+        setDialogueCues((currentCues) => {
+          if (currentCues.length > 0) {
+            const speakers = extractUniqueSpeakersFromCues(currentCues);
+            setSpeakerVoiceMap((prev) => {
+              const auto = buildAutoSpeakerVoiceMap(
+                speakers,
+                loadedVoices,
+                loadedVoices[0]?.id || 'male-default'
+              );
+              const next: Record<string, string> = {};
+              speakers.forEach((sp) => {
+                next[sp] =
+                  prev[sp] && loadedVoices.some((v) => String(v.id) === String(prev[sp]))
+                    ? prev[sp]
+                    : auto[sp];
+              });
+              return next;
+            });
+          }
+          return currentCues;
+        });
       }
     } catch (err) {
       console.warn('Failed to load voices:', err);
@@ -363,10 +514,29 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           ttsCustomAccent.trim() !== selectedVoiceCloneDefaults.customAccent))
   );
 
-  // Synthesize Voiceover
+  // Synthesize Voiceover locally with Moonshine WebAssembly & ZipVoice
   const handleGenerateVoiceover = async () => {
-    if (!script.trim()) {
-      showToast('Please enter text script to synthesize.', 'error');
+    let validCues = dialogueCues.filter((c) => hasSpeakableText(c.text));
+    const trimmedScript = script.trim();
+
+    if (
+      validCues.length === 0 &&
+      (/\d{1,2}:\d{2}(?::\d{2})?(?:[.,]\d+)?\s*-->\s*/.test(trimmedScript) ||
+        /^\[\d{1,3}:\d{2}(?::\d{2})?(?:\.\d+)?\s*-/m.test(trimmedScript))
+    ) {
+      validCues = parseSubtitleToCues(trimmedScript).filter((c) => hasSpeakableText(c.text));
+    }
+
+    const isTimelineActive = validCues.length > 0;
+    const activeSpeakers = extractUniqueSpeakersFromCues(validCues);
+    const activeScriptText = isTimelineActive
+      ? validCues
+          .map((c) => (activeSpeakers.length > 1 ? `${c.speaker}: ${c.text}` : c.text))
+          .join('\n')
+      : trimmedScript;
+
+    if (isTimelineActive ? validCues.length === 0 : !hasSpeakableText(trimmedScript)) {
+      showToast('Please enter readable script text or import spoken subtitle cues to synthesize.', 'error');
       return;
     }
 
@@ -375,108 +545,200 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
       return;
     }
 
+    if (!isCrossOriginIsolatedReady()) {
+      setNeedsStandaloneTab(true);
+      showToast(
+        'Local Moonshine WebAssembly requires SharedArrayBuffer isolation. Open Scriby in a standalone tab.',
+        'error'
+      );
+      return;
+    }
+
     const activeVoice = voices.find((v) => String(v.id) === String(selectedVoiceId));
     setIsGenerating(true);
+    setTtsStageLabel('Initializing Moonshine neural TTS engine...');
+    setTtsDownloadProgress(null);
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      let synthResult;
 
-      const res = await safeFetchJson<{
-        success: boolean;
-        id?: number;
-        voiceoverId: string;
-        audioUrl: string;
-        durationSeconds: number;
-        format: AudioExportFormat;
-        voiceName: string;
-        gender?: string;
-        ttsVoiceName?: string;
-        engine?: string;
-        language?: string;
-        languageLabel?: string;
-        accent?: string;
-        script: string;
-      }>('/api/voiceover/generate', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          script,
-          voiceId: selectedVoiceId,
-          voiceName: activeVoice?.name || 'Studio Voice',
-          gender: activeVoice?.gender || 'male',
-          tone,
-          speed,
-          pitch,
+      if (isTimelineActive) {
+        const autoFallbackMap = buildAutoSpeakerVoiceMap(
+          activeSpeakers,
+          voices,
+          selectedVoiceId
+        );
+        const resolvedVoiceMap: Record<string, VoiceProfile> = {};
+        for (const sp of activeSpeakers) {
+          const mappedId = speakerVoiceMap[sp] || autoFallbackMap[sp] || String(selectedVoiceId);
+          const found = voices.find((v) => String(v.id) === String(mappedId)) || activeVoice;
+          if (found) resolvedVoiceMap[sp] = found;
+        }
+
+        synthResult = await synthesizeDialogueTimelineWithMoonshine({
+          cues: validCues,
+          speakerVoiceMap: resolvedVoiceMap,
+          fallbackVoice: activeVoice,
           language: ttsLanguage,
           accent: effectiveTtsAccent,
-          format: exportFormat,
-        }),
-      });
-
-      if (res.ok && res.data) {
-        const resolvedLangLabel =
-          res.data.languageLabel || getShortLanguageLabel(res.data.language || ttsLanguage);
-        const resolvedAccentLabel = res.data.accent || effectiveTtsAccent;
-
-        const generatedItem = {
-          id: res.data.id,
-          voiceoverId: res.data.voiceoverId,
-          audioUrl: res.data.audioUrl,
-          durationSeconds: res.data.durationSeconds,
-          format: res.data.format,
-          voiceName: res.data.voiceName,
-          language: res.data.language || ttsLanguage,
-          languageLabel: resolvedLangLabel,
-          accent: resolvedAccentLabel,
-          script: res.data.script,
-        };
-        setCurrentVoiceover(generatedItem);
-        setIsPlaying(false);
-        setCurrentTime(0);
-
-        // Instantly add to savedVoiceovers ("Recordings" section)
-        const newSavedItem: SavedVoiceoverItem = {
-          id: res.data.id || Date.now(),
-          title: script.slice(0, 60) + (script.length > 60 ? '...' : ''),
-          script,
-          voiceId: String(selectedVoiceId),
-          voiceName: res.data.voiceName,
-          voiceGender: res.data.gender || activeVoice?.gender || 'male',
-          language: res.data.language || ttsLanguage,
-          languageLabel: resolvedLangLabel,
-          accent: resolvedAccentLabel,
-          audioUrl: res.data.audioUrl,
-          durationSeconds: res.data.durationSeconds,
-          format: res.data.format,
-          createdAt: new Date().toISOString(),
-        };
-
-        setSavedVoiceovers((prev) => [
-          newSavedItem,
-          ...prev.filter(
-            (p) =>
-              p.audioUrl !== res.data?.audioUrl &&
-              (res.data?.id ? p.id !== res.data.id : true)
-          ),
-        ]);
-
-        if (res.data.engine === 'fallback') {
-          showToast('AI TTS engine was temporarily unavailable; synthesized backup audio track.', 'error');
-        } else {
-          showToast('Voiceover synthesized and added to Recordings!');
-        }
-        if (token) fetchSavedVoiceovers();
+          tone,
+          speed,
+          naturalBreaths,
+          onProgress: (prog) => setTtsDownloadProgress(prog),
+          onStage: (stage) => setTtsStageLabel(stage),
+        });
       } else {
-        if (res.isQuotaExceeded || res.status === 429) {
-          setQuotaErrorMessage(res.error || 'AI speech engine is at peak capacity. Please wait a moment and try again.');
-        }
-        showToast(res.error || 'Failed to generate voiceover.', 'error');
+        synthResult = await synthesizeWithMoonshineTts({
+          script: trimmedScript,
+          language: ttsLanguage,
+          accent: effectiveTtsAccent,
+          gender: activeVoice?.gender || activeVoice?.vocalFingerprint?.detectedGender || 'male',
+          tone,
+          speed,
+          naturalBreaths,
+          isCustomClone: Boolean(activeVoice?.isCustom),
+          cloneSourceUrl: activeVoice?.sampleAudioUrl || `/api/voices/${selectedVoiceId}/sample`,
+          cloneProfileKey: String(selectedVoiceId),
+          onProgress: (prog) => setTtsDownloadProgress(prog),
+          onStage: (stage) => setTtsStageLabel(stage),
+        });
       }
-    } catch (err: any) {
-      showToast(err.message || 'Failed to generate voiceover.', 'error');
+
+      const resolvedLangLabel = getShortLanguageLabel(synthResult.language || ttsLanguage);
+      const resolvedAccentLabel = effectiveTtsAccent;
+      const localVoiceName =
+        isTimelineActive && activeSpeakers.length > 1
+          ? `${activeSpeakers.length}-Speaker Dialogue`
+          : activeVoice?.name || 'Studio Voice';
+
+      let persistedId: number | undefined;
+      let persistedVoiceoverId = `vo-local-${Date.now()}`;
+      let persistedAudioUrl = synthResult.audioUrl;
+      let persistedFormat: AudioExportFormat = exportFormat;
+      let archiveNotice: string | null = null;
+
+      // Isolate studio archive upload so large .SRT WAVs or transient network issues NEVER discard synthesized browser audio
+      if (token) {
+        const maxUploadBytes = 38 * 1024 * 1024;
+        if (synthResult.audioBlob.size <= maxUploadBytes) {
+          try {
+            setTtsStageLabel('Saving synthesized voiceover to studio archive...');
+            const audioBase64 = await blobToBase64(synthResult.audioBlob);
+            const saveRes = await safeFetchJson<{
+              success: boolean;
+              id?: number;
+              voiceoverId: string;
+              audioUrl: string;
+              durationSeconds: number;
+              format: AudioExportFormat;
+              voiceName: string;
+              language?: string;
+              languageLabel?: string;
+              accent?: string;
+              error?: string;
+            }>('/api/voiceovers', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                script: activeScriptText.slice(0, 99500),
+                voiceId: selectedVoiceId,
+                voiceName: localVoiceName,
+                gender: activeVoice?.gender || 'male',
+                language: synthResult.language || ttsLanguage,
+                languageLabel: resolvedLangLabel,
+                accent: resolvedAccentLabel,
+                format: exportFormat,
+                durationSeconds: synthResult.durationSeconds,
+                audioBase64,
+              }),
+            });
+
+            if (saveRes.ok && saveRes.data) {
+              persistedId = saveRes.data.id;
+              persistedVoiceoverId = saveRes.data.voiceoverId || persistedVoiceoverId;
+              persistedAudioUrl = saveRes.data.audioUrl || persistedAudioUrl;
+              persistedFormat = saveRes.data.format || persistedFormat;
+            } else if (saveRes.status === 403) {
+              onOpenPricing?.();
+              archiveNotice = saveRes.error || 'Agency Studio plan required to archive voiceovers.';
+            } else {
+              archiveNotice = saveRes.error || 'Audio synthesized locally (studio archive upload skipped).';
+            }
+          } catch (archiveErr) {
+            console.warn('Non-fatal voiceover archive upload error:', archiveErr);
+            archiveNotice = 'Audio ready locally for playback and download.';
+          }
+        } else {
+          archiveNotice = 'Large multi-speaker WAV ready locally for direct download.';
+        }
+      }
+
+      const generatedItem = {
+        id: persistedId,
+        voiceoverId: persistedVoiceoverId,
+        audioUrl: persistedAudioUrl,
+        durationSeconds: synthResult.durationSeconds,
+        format: persistedFormat,
+        voiceName: localVoiceName,
+        language: synthResult.language || ttsLanguage,
+        languageLabel: resolvedLangLabel,
+        accent: resolvedAccentLabel,
+        script: activeScriptText,
+        segments: synthResult.segments,
+      };
+      setCurrentVoiceover(generatedItem);
+      setIsPlaying(false);
+      setCurrentTime(0);
+
+      const newSavedItem: SavedVoiceoverItem = {
+        id: persistedId || Date.now(),
+        title: activeScriptText.slice(0, 60) + (activeScriptText.length > 60 ? '...' : ''),
+        script: activeScriptText,
+        voiceId: String(selectedVoiceId),
+        voiceName: localVoiceName,
+        voiceGender: activeVoice?.gender || 'male',
+        language: synthResult.language || ttsLanguage,
+        languageLabel: resolvedLangLabel,
+        accent: resolvedAccentLabel,
+        audioUrl: persistedAudioUrl,
+        durationSeconds: synthResult.durationSeconds,
+        format: persistedFormat,
+        createdAt: new Date().toISOString(),
+      };
+
+      setSavedVoiceovers((prev) => [
+        newSavedItem,
+        ...prev.filter(
+          (p) => p.audioUrl !== persistedAudioUrl && (persistedId ? p.id !== persistedId : true)
+        ),
+      ]);
+
+      showToast(
+        archiveNotice ||
+          (isTimelineActive && dialogueSpeakers.length > 1
+            ? `Multi-speaker ${synthResult.usedCloning ? 'cloned ' : ''}dialogue synthesized cleanly!`
+            : synthResult.usedCloning
+            ? 'Zero-shot cloned voiceover synthesized on-device!'
+            : 'Voiceover synthesized cleanly on Moonshine WASM!')
+      );
+      if (token && persistedId) fetchSavedVoiceovers();
+    } catch (err: unknown) {
+      if (err instanceof MoonshineIsolationError) {
+        setNeedsStandaloneTab(true);
+      }
+      const rawMsg = err instanceof Error ? err.message : String(err || '');
+      const friendlyMsg =
+        !rawMsg || /^unknown error$/i.test(rawMsg.trim())
+          ? 'Could not synthesize voiceover due to a local WASM engine or subtitle formatting limit. Please check speaker cues and try again.'
+          : rawMsg;
+      showToast(friendlyMsg, 'error');
     } finally {
       setIsGenerating(false);
+      setTtsStageLabel('');
+      setTtsDownloadProgress(null);
     }
   };
 
@@ -612,8 +874,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
         showToast('Voice cloned and saved successfully!');
         setCloneName('');
         setCloneDescription('');
-        setCloneLanguage('multilingual');
-        setCloneAccent(getDefaultAccentForLanguage('multilingual'));
+        setCloneLanguage('en');
+        setCloneAccent(getDefaultAccentForLanguage('en'));
         setCloneCustomAccent('');
         setCloneAudioBlob(null);
         setCloneAudioUrl(null);
@@ -716,10 +978,16 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
   };
 
   // Word & character stats
-  const cleanWords = script.trim().split(/\s+/).filter(Boolean);
+  const dialogueSpeakers = extractUniqueSpeakersFromCues(dialogueCues);
+  const effectiveDisplayText =
+    dialogueCues.length > 0 ? dialogueCues.map((c) => c.text).join(' ') : script;
+  const cleanWords = effectiveDisplayText.trim().split(/\s+/).filter(Boolean);
   const wordCount = cleanWords.length;
-  const charCount = script.length;
-  const estimatedSeconds = Math.max(1, Math.round((wordCount / (140 * Math.max(0.5, speed))) * 60));
+  const charCount = effectiveDisplayText.length;
+  const estimatedSeconds =
+    dialogueCues.length > 0 && dialogueCues.some((c) => c.hasTimestamp)
+      ? Math.max(1, Math.round(dialogueCues[dialogueCues.length - 1].end))
+      : Math.max(1, Math.round((wordCount / (140 * Math.max(0.5, speed))) * 60));
 
   return (
     <div className="space-y-6">
@@ -760,11 +1028,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               AI Voiceover Studio
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#1db954]/12 text-[#4cc37c] border border-[#1db954]/25 tracking-wide">
-              Voice Clone & Studio TTS
+              Moonshine WASM &amp; ZipVoice Clone
             </span>
           </div>
           <p className="text-xs text-[#9ca3af] mt-1">
-            Professional AI voice cloning, studio text-to-speech, and direct audio export in WAV, MP3, and OGG formats
+            Zero-shot browser voice cloning &amp; neural speech synthesis across Moonshine&apos;s supported languages — zero cloud speech charges
           </p>
         </div>
 
@@ -841,6 +1109,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => {
+                        setDialogueCues([]);
                         setScript(SAMPLE_SCRIPTS_BY_LANGUAGE[ttsLanguage]);
                         showToast(`Loaded native ${getShortLanguageLabel(ttsLanguage)} sample script!`);
                       }}
@@ -883,16 +1152,148 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
               </div>
 
-              {/* Textarea */}
-              <div className="relative">
-                <textarea
-                  value={script}
-                  onChange={(e) => setScript(e.target.value)}
-                  placeholder="Type or paste your voiceover script in any language (English, Bengali, Spanish, Hindi, Arabic, French, German, Japanese, etc.)..."
-                  rows={7}
-                  className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-[#d0d5dd] placeholder-[#6f7682] focus:border-[#1db954]/55 focus:ring-1 focus:ring-[#1db954]/25 outline-none transition-all resize-y leading-relaxed"
-                />
-              </div>
+              {/* Dialogue Timeline & Multi-Speaker Voice Mapping (when .SRT or multi-speaker subtitles imported) */}
+              {dialogueCues.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#141414] border border-[#1db954]/30 rounded-xl flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs text-[#e4e7ec]">
+                      <Users className="w-4 h-4 text-[#3fb970]" />
+                      <span className="font-semibold">
+                        Timeline Dialogue Mode · {dialogueCues.length} Cues · {dialogueSpeakers.length}{' '}
+                        {dialogueSpeakers.length === 1 ? 'Speaker' : 'Speakers'}
+                      </span>
+                      {dialogueCues.some((c) => c.hasTimestamp) && (
+                        <span className="px-2 py-0.5 rounded-full bg-[#1db954]/12 text-[#4cc37c] border border-[#1db954]/25 font-mono text-[11px]">
+                          .SRT Timing Active
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScript(
+                          dialogueCues
+                            .map((c) => (dialogueSpeakers.length > 1 ? `${c.speaker}: ${c.text}` : c.text))
+                            .join('\n')
+                        );
+                        setDialogueCues([]);
+                      }}
+                      className="text-xs text-[#9ca3af] hover:text-[#e4e7ec] underline cursor-pointer"
+                    >
+                      Switch to Single Script
+                    </button>
+                  </div>
+
+                  {/* Per-Speaker Voice Assignment Grid (supports assigning Male & Female Clones!) */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-[#9ca3af]">
+                      Assign Cloned or Studio Voice per Speaker
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {dialogueSpeakers.map((spName) => {
+                        const assignedVoiceId = speakerVoiceMap[spName] || String(selectedVoiceId);
+                        const customVoices = voices.filter((v) => v.isCustom);
+                        const studioVoices = voices.filter((v) => !v.isCustom);
+                        return (
+                          <div
+                            key={spName}
+                            className="p-2.5 bg-[#121212] border border-[#282828] rounded-xl space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-[#e4e7ec]">{spName}</span>
+                              <span className="text-[11px] font-mono text-[#6f7682] tabular-nums">
+                                {dialogueCues.filter((c) => c.speaker === spName).length} cues
+                              </span>
+                            </div>
+                            <select
+                              value={assignedVoiceId}
+                              onChange={(e) =>
+                                setSpeakerVoiceMap((prev) => ({
+                                  ...prev,
+                                  [spName]: e.target.value,
+                                }))
+                              }
+                              className="w-full h-9 bg-[#1f2126] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-2.5 outline-none focus:border-[#1db954]/55"
+                            >
+                              {customVoices.length > 0 && (
+                                <optgroup label="Your Cloned Voices (ZipVoice)">
+                                  {customVoices.map((v) => (
+                                    <option key={v.id} value={String(v.id)}>
+                                      {v.name} ({getEffectiveVoiceGender(v) === 'female' ? 'Female Clone' : 'Male Clone'})
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              <optgroup label="Studio Catalog Voices">
+                                {studioVoices.map((v) => (
+                                  <option key={v.id} value={String(v.id)}>
+                                    {v.name} ({getEffectiveVoiceGender(v) === 'female' ? 'Female' : 'Male'} · {getShortLanguageLabel(v.language)})
+                                  </option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Editable Timed Cue List */}
+                  <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                    {dialogueCues.map((cue, idx) => (
+                      <div
+                        key={cue.id}
+                        className="p-2.5 bg-[#121212] border border-[#282828] rounded-xl space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                          <div className="flex items-center gap-2 font-mono tabular-nums text-[#9ca3af]">
+                            <span>#{idx + 1}</span>
+                            {cue.hasTimestamp && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#1d221f] text-[#4cc37c] border border-[#1db954]/25">
+                                {formatPlayerTime(cue.start)} → {formatPlayerTime(cue.end)}
+                              </span>
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={cue.speaker}
+                            onChange={(e) => {
+                              const nextSpeaker = e.target.value;
+                              setDialogueCues((prev) =>
+                                prev.map((c) => (c.id === cue.id ? { ...c, speaker: nextSpeaker } : c))
+                              );
+                            }}
+                            className="w-28 h-6 px-2 bg-[#1a1c20] border border-[#32353d] rounded text-[11px] font-medium text-[#d0d5dd] focus:outline-none focus:border-[#1db954]/55"
+                            title="Speaker label for this cue"
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={cue.text}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDialogueCues((prev) =>
+                              prev.map((c) => (c.id === cue.id ? { ...c, text: val } : c))
+                            );
+                          }}
+                          className="w-full bg-transparent text-xs text-[#e4e7ec] px-1 py-0.5 focus:outline-none focus:bg-[#1a1c20] rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                /* Textarea (Single Script Mode) */
+                <div className="relative">
+                  <textarea
+                    value={script}
+                    onChange={(e) => setScript(e.target.value)}
+                    placeholder="Type or paste your voiceover script in a supported Moonshine language (English, Spanish, German, Japanese, Arabic, Mandarin, Vietnamese, Korean, Ukrainian)..."
+                    rows={7}
+                    className="w-full bg-[#121212] border border-[#282828] rounded-xl p-3.5 text-sm text-[#d0d5dd] placeholder-[#6f7682] focus:border-[#1db954]/55 focus:ring-1 focus:ring-[#1db954]/25 outline-none transition-all resize-y leading-relaxed"
+                  />
+                </div>
+              )}
 
               {/* Word & Duration Readout */}
               <div className="flex items-center justify-between text-xs text-[#9ca3af] pt-1 font-mono">
@@ -949,8 +1350,13 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                       className="w-full h-10 bg-[#222428] border border-[#34373f] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                     >
                       {synthesisLanguages.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
+                        <option
+                          key={lang.code}
+                          value={lang.code}
+                          disabled={lang.code !== 'auto' && !lang.ttsSupported}
+                        >
                           {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                          {lang.code !== 'auto' && !lang.ttsSupported ? ' — WASM pack pending' : ''}
                         </option>
                       ))}
                     </select>
@@ -1069,16 +1475,68 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                 </div>
               </div>
 
-              {/* Quota Notice if API rate limit or high demand */}
-              {quotaErrorMessage && (
-                <div className="pt-2">
-                  <AiQuotaNotice
-                    message={quotaErrorMessage}
-                    onRetry={handleGenerateVoiceover}
-                    onDismiss={() => setQuotaErrorMessage(null)}
-                    onOpenPricing={onOpenPricing}
-                    compact
+              {/* Natural Breathing & Pacing Toggle */}
+              <div className="pt-2 border-t border-[#282828] flex items-center justify-between gap-3">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={naturalBreaths}
+                    onChange={(e) => setNaturalBreaths(e.target.checked)}
+                    className="mt-0.5 rounded border-[#383838] accent-[#1db954] focus:ring-0"
                   />
+                  <div>
+                    <div className="text-xs font-semibold text-[#e4e7ec] flex items-center gap-1.5">
+                      <Wind className="w-3.5 h-3.5 text-[#3fb970]" />
+                      <span>Natural Pauses, Breaths &amp; Pitch-Locked Cadence</span>
+                    </div>
+                    <p className="text-[11px] text-[#9ca3af] mt-0.5">
+                      Inserts organic clause/sentence breaths, respects .SRT gaps, and prevents fast ZipVoice rushing without shifting voice pitch.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Cross-Origin Isolation Warning if running inside non-isolated embedded iframe */}
+              {needsStandaloneTab && (
+                <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-700/60 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <span>
+                    Browser isolation (`SharedArrayBuffer`) is required to run Moonshine WASM TTS. Open Scriby in a standalone tab if blocked.
+                  </span>
+                  {typeof window !== 'undefined' && (
+                    <a
+                      href={window.location.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold rounded-lg text-xs shrink-0"
+                    >
+                      <span>Open Standalone Tab</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Download & Synthesis Progress Bar */}
+              {isGenerating && (
+                <div className="p-3 rounded-xl bg-[#121212] border border-[#282828] space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#3fb970] font-medium truncate">
+                      {ttsStageLabel || 'Running Moonshine WASM neural voice synthesis...'}
+                    </span>
+                    {ttsDownloadProgress && ttsDownloadProgress.fraction >= 0 && ttsDownloadProgress.fraction < 1 && (
+                      <span className="font-mono tabular-nums text-[#9ca3af] shrink-0 ml-2">
+                        {Math.round(ttsDownloadProgress.fraction * 100)}%
+                      </span>
+                    )}
+                  </div>
+                  {ttsDownloadProgress && ttsDownloadProgress.fraction >= 0 && ttsDownloadProgress.fraction < 1 && (
+                    <div className="h-1.5 bg-[#242424] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#1db954] transition-all duration-150"
+                        style={{ width: `${Math.round(ttsDownloadProgress.fraction * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1086,18 +1544,27 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               <div className="pt-2">
                 <Button
                   onClick={handleGenerateVoiceover}
-                  disabled={isGenerating || !script.trim()}
+                  disabled={
+                    isGenerating ||
+                    (dialogueCues.length > 0
+                      ? dialogueCues.every((c) => !c.text.trim())
+                      : !script.trim())
+                  }
                   className="w-full h-11 bg-[#1db954] hover:bg-[#1aa34a] text-[#08100b] font-semibold text-sm rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                 >
                   {isGenerating ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-[#08100b]" />
-                      <span>Synthesizing Voiceover Audio ({exportFormat.toUpperCase()})...</span>
+                      <span>{ttsStageLabel || `Synthesizing Audio (${exportFormat.toUpperCase()})...`}</span>
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      <span>Generate Voiceover ({exportFormat.toUpperCase()})</span>
+                      <span>
+                        {dialogueCues.length > 0
+                          ? `Generate ${dialogueSpeakers.length}-Speaker Voiceover (${exportFormat.toUpperCase()})`
+                          : `Generate Voiceover (${exportFormat.toUpperCase()})`}
+                      </span>
                     </>
                   )}
                 </Button>
@@ -1125,7 +1592,11 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   <div className="flex items-center gap-2">
                     {/* Direct Download in Chosen Audio Format */}
                     <a
-                      href={`${currentVoiceover.audioUrl}&download=1`}
+                      href={
+                        currentVoiceover.audioUrl.startsWith('blob:')
+                          ? currentVoiceover.audioUrl
+                          : `${currentVoiceover.audioUrl}${currentVoiceover.audioUrl.includes('?') ? '&' : '?'}download=1`
+                      }
                       download={`scriby-voiceover-${currentVoiceover.voiceoverId}.${currentVoiceover.format}`}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-[#24272c] hover:bg-[#2e3238] hover:text-[#4cc37c] text-[#d0d5dd] text-xs font-semibold rounded-lg border border-[#34373f] transition-all cursor-pointer"
                       title={`Download as ${currentVoiceover.format.toUpperCase()}`}
@@ -1142,7 +1613,8 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                           currentVoiceover.audioUrl,
                           `Voiceover - ${currentVoiceover.voiceName}`,
                           audioDuration || currentVoiceover.durationSeconds,
-                          currentVoiceover.script
+                          currentVoiceover.script,
+                          currentVoiceover.segments
                         );
                         showToast('Voiceover loaded into Subtitle Editor!');
                       }}
@@ -1406,17 +1878,17 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
           <Card className="p-6 bg-[#181818] border-[#282828] space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-[#e4e7ec] tracking-tight font-display">
-                Clone Your Voice
+                Clone Your Voice (Moonshine ZipVoice)
               </h2>
               <p className="text-xs text-[#9ca3af] mt-1">
-                Record your voice for 15-30 seconds or upload a clean voice sample to clone your personal voice for automatic AI voiceovers.
+                Record 4–30 seconds of clean speech or upload an audio clip for zero-shot browser voice cloning via Moonshine ZipVoice.
               </p>
             </div>
 
             {/* Step 1: Voice Sample Source (Record Mic or Upload File) */}
             <div className="space-y-3">
               <label className="text-xs font-semibold text-[#d0d5dd] uppercase tracking-wider">
-                Step 1: Provide Voice Sample (15-30 Seconds)
+                Step 1: Provide Clean Voice Reference (4–30 Seconds)
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1560,8 +2032,9 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     className="w-full h-10 bg-[#121212] border border-[#282828] text-xs text-[#d0d5dd] rounded-lg px-3 outline-none focus:border-[#1db954]/55"
                   >
                     {cloningLanguages.map((lang) => (
-                      <option key={lang.code} value={lang.code}>
+                      <option key={lang.code} value={lang.code} disabled={!lang.ttsSupported}>
                         {lang.nativeName ? `${lang.label} (${lang.nativeName})` : lang.label}
+                        {!lang.ttsSupported ? ' — WASM pack pending' : ''}
                       </option>
                     ))}
                   </select>
@@ -1626,7 +2099,7 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   {isCloning ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-[#08100b]" />
-                      <span>Analyzing Voice &amp; Saving Profile...</span>
+                      <span>Preparing ZipVoice Reference Profile...</span>
                     </>
                   ) : (
                     <>
@@ -2024,8 +2497,20 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
               {currentSubtitleText ? (
                 <div
                   onClick={() => {
-                    setScript(currentSubtitleText);
-                    showToast('Imported active subtitles into Voiceover Studio!');
+                    const segCues =
+                      currentSegments && currentSegments.length > 0
+                        ? convertSegmentsToCues(currentSegments)
+                        : [];
+                    const fallbackCues =
+                      segCues.length > 0 ? segCues : parseSubtitleToCues(currentSubtitleText);
+
+                    if (fallbackCues.length > 0) {
+                      applyImportedCues(fallbackCues, 'Active Subtitle Editor');
+                    } else {
+                      setDialogueCues([]);
+                      setScript(currentSubtitleText);
+                      showToast('Imported active subtitles into Voiceover Studio!');
+                    }
                     setShowPlatformSubtitlesModal(false);
                   }}
                   className="p-3.5 bg-[#121212] border border-[#1db954]/35 hover:border-[#1db954]/60 rounded-xl cursor-pointer transition-all hover:bg-[#1a1c20] group"
@@ -2044,8 +2529,14 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                   </p>
                   <div className="text-xs text-[#6f7682] mt-2 flex items-center gap-2">
                     <span>{currentSubtitleText.split(/\s+/).filter(Boolean).length} words</span>
+                    {currentSegments && currentSegments.length > 0 && (
+                      <>
+                        <span>·</span>
+                        <span>{currentSegments.length} timed cues</span>
+                      </>
+                    )}
                     <span>·</span>
-                    <span className="text-[#3fb970] group-hover:underline">Click to load into script</span>
+                    <span className="text-[#3fb970] group-hover:underline">Click to load into dialogue timeline</span>
                   </div>
                 </div>
               ) : (
@@ -2078,12 +2569,21 @@ export const VoiceoverStudio: React.FC<VoiceoverStudioProps> = ({
                     <div
                       key={t.id}
                       onClick={() => {
-                        const targetText =
-                          t.fullTranscript ||
-                          (t.segments && t.segments.length > 0 ? t.segments.map((s: any) => s.text).join(' ') : '') ||
-                          t.title;
-                        setScript(targetText);
-                        showToast(`Imported subtitles from "${t.title}"!`);
+                        const segCues =
+                          t.segments && t.segments.length > 0
+                            ? convertSegmentsToCues(t.segments)
+                            : [];
+                        const targetText = t.fullTranscript || t.title;
+                        const parsedCues =
+                          segCues.length > 0 ? segCues : parseSubtitleToCues(targetText);
+
+                        if (parsedCues.length > 0) {
+                          applyImportedCues(parsedCues, t.title);
+                        } else {
+                          setDialogueCues([]);
+                          setScript(targetText);
+                          showToast(`Imported subtitles from "${t.title}"!`);
+                        }
                         setShowPlatformSubtitlesModal(false);
                       }}
                       className="p-3 bg-[#121212] border border-[#282828] hover:border-[#1db954]/50 rounded-xl cursor-pointer transition-all hover:bg-[#1a1c20] mb-2 group"

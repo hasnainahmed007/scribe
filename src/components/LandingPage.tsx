@@ -63,7 +63,7 @@ const DEFAULT_PLANS: SaaSPlan[] = [
       '30 free audio minutes included',
       'SRT and TXT subtitle export',
       'Interactive waveform audio player',
-      'Multilingual AI speech recognition (100+ languages)',
+      'On-device Moonshine WASM speech recognition (10 languages)',
       'Standard processing queue',
     ],
     modules: ['subtitles_editor', 'voice_recorder'],
@@ -158,11 +158,11 @@ const THUMBNAIL_DEMO_PRESETS = [
 const FAQS = [
   {
     q: 'What languages and audio formats does Scriby support?',
-    a: 'Scriby supports audio transcription across 100+ global languages including Bengali (বাংলা), English, Hindi, Arabic, Spanish, and French. We accept all common audio and video formats including MP3, WAV, OGG, M4A, AAC, and FLAC up to 50MB per upload.',
+    a: 'Scriby runs on-device speech AI powered by Moonshine WebAssembly across 10 core languages: English, Spanish, German, Japanese, Arabic, Mandarin Chinese, Vietnamese, Tagalog, Korean, and Ukrainian. We accept MP3, WAV, OGG, M4A, AAC, and WebM files decoded directly in your browser.',
   },
   {
-    q: 'How does the AI Voiceover & Voice Cloning Studio work in the Agency plan?',
-    a: 'Agency Studio members have exclusive access to voice cloning and TTS voiceovers. You can record a short 10-30 second speech sample through your microphone or upload an audio file to train a personalized voice profile. You can also generate high-fidelity speech using our built-in studio voices (Kabir and Fatima) and export in WAV, MP3, or OGG.',
+    q: 'How does Moonshine Voiceover & ZipVoice Cloning work in the Agency plan?',
+    a: 'Agency Studio members have exclusive access to zero-shot voice cloning via Moonshine ZipVoice WebAssembly. Record a clean 4–30 second speech sample or upload a clip to synthesize narration in your own voice, or choose built-in studio voices (Adam and Heart).',
   },
   {
     q: 'Can I export subtitles into Adobe Premiere, DaVinci Resolve, or CapCut?',
@@ -447,8 +447,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="text-[11px] text-[#6f7682] mt-1 font-medium">Acoustic Accuracy</div>
             </div>
             <div className="p-4 rounded-2xl bg-[#181818]/80 border border-[#282828] backdrop-blur-md text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-[#e4e7ec] font-mono">100+</div>
-              <div className="text-[11px] text-[#6f7682] mt-1 font-medium">Global Languages</div>
+              <div className="text-2xl sm:text-3xl font-bold text-[#e4e7ec] font-mono tabular-nums">10</div>
+              <div className="text-[11px] text-[#6f7682] mt-1 font-medium">Moonshine Languages</div>
             </div>
             <div className="p-4 rounded-2xl bg-[#181818]/80 border border-[#282828] backdrop-blur-md text-center">
               <div className="text-2xl sm:text-3xl font-bold text-purple-400 font-mono">Studio</div>
@@ -634,16 +634,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 {/* Built-in Studio Voices Showcase with Live Audio Preview Playback */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Kabir Voice */}
+                  {/* Adam Voice */}
                   <div className="p-4 rounded-2xl bg-[#181818] border border-[#2e2e2e] space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                          K
+                          A
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-[#e4e7ec]">Kabir (Male Studio Broadcast)</div>
-                          <div className="text-xs text-[#9ca3af]">Deep, articulate, resonant tone for explainers & news</div>
+                          <div className="text-xs font-bold text-[#e4e7ec]">Adam (Male Studio Broadcast)</div>
+                          <div className="text-xs text-[#9ca3af]">Deep, articulate, resonant Kokoro tone for explainers</div>
                         </div>
                       </div>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 font-semibold">
@@ -652,7 +652,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
 
                     <p className="text-xs text-[#9ca3af] italic bg-[#121212] p-2.5 rounded-xl border border-[#242424]">
-                      "Welcome to our comprehensive technical explainer on multimodal artificial intelligence."
+                      "Welcome to our comprehensive technical explainer on on-device speech intelligence."
                     </p>
 
                     <button
@@ -672,22 +672,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       ) : (
                         <>
                           <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Listen to Kabir's Voice Sample</span>
+                          <span>Listen to Adam&apos;s Voice Sample</span>
                         </>
                       )}
                     </button>
                   </div>
 
-                  {/* Fatima Voice */}
+                  {/* Heart Voice */}
                   <div className="p-4 rounded-2xl bg-[#181818] border border-[#2e2e2e] space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
-                          F
+                          H
                         </div>
                         <div>
-                          <div className="text-xs font-bold text-[#e4e7ec]">Fatima (Female Studio Narrative)</div>
-                          <div className="text-xs text-[#9ca3af]">Warm, melodic, articulate storytelling tone for tutorials</div>
+                          <div className="text-xs font-bold text-[#e4e7ec]">Heart (Female Studio Narrative)</div>
+                          <div className="text-xs text-[#9ca3af]">Warm, melodic, articulate storytelling Kokoro voice</div>
                         </div>
                       </div>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-300 font-semibold">
@@ -696,7 +696,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </div>
 
                     <p className="text-xs text-[#9ca3af] italic bg-[#121212] p-2.5 rounded-xl border border-[#242424]">
-                      "Turn any audio recording into synchronized subtitles in seconds with perfect accuracy."
+                      "Turn any audio recording into synchronized subtitles locally in your browser."
                     </p>
 
                     <button
@@ -716,7 +716,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       ) : (
                         <>
                           <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Listen to Fatima's Voice Sample</span>
+                          <span>Listen to Heart&apos;s Voice Sample</span>
                         </>
                       )}
                     </button>
@@ -1019,7 +1019,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Multilingual Subtitle Editor
                 </h3>
                 <p className="text-sm text-[#9ca3af] leading-relaxed">
-                  Universal script transcription supporting all major global languages and Bengali (বাংলা) with punctuation, speaker separation, timestamp adjustments, split points, and seekable waveform audio playback.
+                  Local WebAssembly speech transcription powered by Moonshine Medium across 10 core languages with accurate timestamps, split controls, and seekable waveform audio playback.
                 </p>
                 <ul className="space-y-2 pt-2 text-xs text-[#9ca3af]">
                   <li className="flex items-center gap-2">
@@ -1033,7 +1033,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </ul>
               </div>
               <div className="mt-6 pt-4 border-t border-[#282828] text-xs text-[#9ca3af]">
-                100+ Global Languages · Live Audio Sync
+                10 Moonshine Languages · On-Device WASM Sync
               </div>
             </Card>
 
@@ -1045,10 +1045,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <Mic className="w-5 h-5 text-purple-400" />
                 </div>
                 <h3 className="text-lg font-bold text-[#e4e7ec]">
-                  Voice Cloning & AI Voiceover Studio
+                  ZipVoice Cloning &amp; Moonshine Voiceover
                 </h3>
                 <p className="text-sm text-[#9ca3af] leading-relaxed">
-                  Clone your own voice from a microphone recording or generate professional narration using built-in studio voices (Kabir & Fatima). Send synthesized audio directly to the Subtitle Editor with 1 click.
+                  Clone your voice zero-shot from a short recording or synthesize narration locally using Moonshine Kokoro studio voices (Adam &amp; Heart). Send synthesized audio straight to Subtitles in 1 click.
                 </p>
                 <ul className="space-y-2 pt-2 text-xs text-[#9ca3af]">
                   <li className="flex items-center gap-2">

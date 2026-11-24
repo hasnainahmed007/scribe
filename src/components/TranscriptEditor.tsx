@@ -13,14 +13,23 @@ import {
   RotateCcw,
   X,
   FileAudio,
+  Loader2,
+  Mic,
+  MessageSquareText,
 } from 'lucide-react';
 import { TranscriptSegment } from '../types';
 import { formatPlayerTime } from '../utils/timeFormat';
+import type { ChatSttActivity } from './AudioInputHub';
 
 interface TranscriptEditorProps {
   segments: TranscriptSegment[];
   summary: string;
+  audioName?: string;
   currentTime: number;
+  isTranscribing?: boolean;
+  chatActivity?: ChatSttActivity | null;
+  onCancelTranscription?: () => void;
+  composerFooter?: React.ReactNode;
   onUpdateSegment: (id: string, updated: Partial<TranscriptSegment>) => void;
   onDeleteSegment: (id: string) => void;
   onAddSegment: (afterId?: string) => void;
@@ -37,7 +46,12 @@ interface TranscriptEditorProps {
 export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   segments,
   summary,
+  audioName,
   currentTime,
+  isTranscribing = false,
+  chatActivity = null,
+  onCancelTranscription,
+  composerFooter,
   onUpdateSegment,
   onDeleteSegment,
   onAddSegment,
@@ -58,6 +72,15 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [showMergeAllConfirm, setShowMergeAllConfirm] = useState(false);
   const [showUndoBanner, setShowUndoBanner] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll chat feed when streaming blocks or live mic activity updates
+  useEffect(() => {
+    if (!chatScrollRef.current) return;
+    if (isTranscribing || chatActivity?.status === 'recording') {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [segments.length, isTranscribing, chatActivity?.status, chatActivity?.livePartialText, chatActivity?.liveCommittedLines?.length]);
 
   // Clear undo timer on unmount
   useEffect(() => {
@@ -235,6 +258,9 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   );
   const lastSegmentEnd = segments.length > 0 ? segments[segments.length - 1].end : 0;
   const estimatedWpm = lastSegmentEnd > 0 ? Math.round((totalWords / lastSegmentEnd) * 60) : 0;
+  const uniqueSpeakers = Array.from(
+    new Set(segments.map((s) => (s.speaker || 'Speaker 1').trim()).filter(Boolean))
+  );
 
   return (
     <div className="space-y-4">
@@ -242,9 +268,13 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       <div className="bg-[#181818] border border-[#282828] rounded-xl p-4 shadow-[0_6px_18px_rgba(0,0,0,0.35)] space-y-3.5">
         {/* Metadata Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#282828] text-xs text-[#9ca3af]">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="text-[#d0d5dd] font-semibold">
               Segments: <span className="font-mono text-[#3fb970] font-semibold tabular-nums">{segments.length}</span>
+            </span>
+            <span className="text-[#4a4e57]">·</span>
+            <span>
+              Speakers: <span className="font-mono text-[#d0d5dd] tabular-nums">{Math.max(1, uniqueSpeakers.length)}</span>
             </span>
             <span className="text-[#4a4e57]">·</span>
             <span>
@@ -424,8 +454,8 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </div>
       )}
 
-      {/* Summary Accordion Strip */}
-      {summary && (
+      {/* Summary Accordion Strip — only shown when transcription is ready */}
+      {summary && !isTranscribing && segments.length > 0 && (
         <div className="p-4 rounded-xl bg-[#181818] border border-[#282828] text-xs text-[#c2c8d1]">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[#9ca3af] font-semibold uppercase tracking-wider text-xs">
@@ -442,144 +472,329 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </div>
       )}
 
-      {/* Segment Cards List */}
-      <div className="space-y-3">
-        {segments.length === 0 ? (
-          <div className="p-10 text-center bg-[#181818] border border-dashed border-[#282828] rounded-xl space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#242424] text-[#34a866] flex items-center justify-center mx-auto">
-              <FileAudio className="w-6 h-6" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-[#e4e7ec] font-display">Studio Workspace is Clean</h4>
-              <p className="text-xs text-[#6f7682] mt-1 max-w-md mx-auto">
-                No active transcript loaded. Upload or record audio with the Transcribe button, open a session from History, or send audio from Voiceover Studio.
-              </p>
-            </div>
+      {/* Chat-Style Transcript Container (Scrollable Blocks + Bottom Audio Input Composer) */}
+      <div className="bg-[#141414] border border-[#282828] rounded-xl flex flex-col overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+        {/* Chat Stream Header */}
+        <div className="px-4 py-2.5 bg-[#181818] border-b border-[#282828] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 min-w-0 text-[#9ca3af]">
+            <MessageSquareText className="w-3.5 h-3.5 text-[#3fb970] shrink-0" />
+            <span className="font-semibold text-[#e4e7ec] whitespace-nowrap">Transcript Chat</span>
+            {(chatActivity?.sourceLabel || audioName) && (
+              <>
+                <span className="text-[#4a4e57]">·</span>
+                <span className="truncate text-[#9ca3af]">{chatActivity?.sourceLabel || audioName}</span>
+              </>
+            )}
           </div>
-        ) : (
-          segments.map((seg, index) => {
-          const isActive = currentTime >= seg.start && currentTime <= seg.end;
-          const isSpeaking = speakingSegmentId === seg.id;
+          <span className="font-mono tabular-nums text-[11px] text-[#6f7682] whitespace-nowrap shrink-0">
+            {isTranscribing
+              ? `Streaming · ${segments.length} ready`
+              : segments.length > 0
+              ? `${segments.length} blocks`
+              : 'Ready'}
+          </span>
+        </div>
 
-          return (
-            <div
-              key={seg.id}
-              className={`p-4 rounded-xl border transition-all ${
-                isActive
-                  ? 'bg-[#1d221f] border-[#1db954]/55'
-                  : 'bg-[#181818] border-[#282828] hover:border-[#34373f]'
-              }`}
-            >
-              {/* Segment Metadata & Actions Header */}
-              <div className="flex items-center justify-between gap-3 mb-2.5">
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <span className="text-xs font-mono tabular-nums text-[#6f7682]">
-                    #{index + 1}
-                  </span>
-
-                  {/* Play Audio Block Timestamp Button */}
-                  <button
-                    onClick={() => handlePlayBlockAudio(seg)}
-                    className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#262930] rounded-full text-xs font-mono tabular-nums text-[#d0d5dd] border border-[#2e3138] transition-all cursor-pointer"
-                    title="Play audio from this timestamp"
-                  >
-                    <Play className="w-3 h-3 fill-current text-[#34a866]" />
-                    <span>
-                      {formatPlayerTime(seg.start)} – {formatPlayerTime(seg.end)}
-                    </span>
-                  </button>
-
-                  {/* Dedicated Text-To-Speech (TTS) Voice Button */}
-                  <button
-                    onClick={() => handleSpeakText(seg.id, seg.text)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
-                      isSpeaking
-                        ? 'bg-[#262930] text-[#3fb970] border-[#1db954]/50'
-                        : 'bg-[#121212] hover:bg-[#262930] text-[#9ca3af] hover:text-[#e4e7ec] border-[#2e3138]'
-                    }`}
-                    title={isSpeaking ? 'Stop speaking' : 'Read text aloud (Text-to-Speech)'}
-                  >
-                    <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-[#3fb970]' : 'text-[#9ca3af]'}`} />
-                    <span className="text-xs font-semibold">
-                      {isSpeaking ? 'Reading...' : 'TTS'}
-                    </span>
-                  </button>
-
-                  {/* Speaker Label */}
-                  {editingSpeakerId === seg.id ? (
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="text"
-                        value={speakerInputValue}
-                        onChange={(e) => setSpeakerInputValue(e.target.value)}
-                        className="px-2.5 py-0.5 bg-[#121212] border border-[#34373f] rounded-full text-xs text-[#d0d5dd] w-28 focus:outline-none focus:border-[#1db954]/55"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveSpeaker(seg.id);
-                        }}
-                      />
-                      <button
-                        onClick={() => handleSaveSpeaker(seg.id)}
-                        className="p-1 text-[#3fb970] hover:bg-[#282828] rounded-full cursor-pointer"
-                      >
-                        <Check className="w-3 h-3" />
-                      </button>
-                    </div>
+        {/* Scrollable Chat Messages / Subtitle Blocks Viewport */}
+        <div
+          ref={chatScrollRef}
+          className="max-h-[540px] min-h-[240px] overflow-y-auto p-4 space-y-3.5 scroll-smooth"
+        >
+          {/* User Audio Prompt Message Bubble */}
+          {(chatActivity || (segments.length > 0 && audioName)) && (
+            <div className="flex justify-end">
+              <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-[#19281f] border border-[#1db954]/30 px-4 py-2.5 text-xs text-[#e4e7ec] flex items-center gap-2.5 shadow-sm">
+                <div className="w-6 h-6 rounded-full bg-[#1db954]/20 text-[#3fb970] flex items-center justify-center shrink-0">
+                  {chatActivity?.sourceType === 'record' ? (
+                    <Mic className="w-3.5 h-3.5" />
                   ) : (
-                    <button
-                      onClick={() => {
-                        setEditingSpeakerId(seg.id);
-                        setSpeakerInputValue(seg.speaker);
-                      }}
-                      className="flex items-center gap-1 px-2.5 py-0.5 bg-[#121212] hover:bg-[#262930] text-[#c2c8d1] rounded-full text-xs font-medium border border-[#2e3138] transition-colors cursor-pointer"
-                      title="Click to rename speaker"
-                    >
-                      <User className="w-3 h-3 text-[#6f7682]" />
-                      <span>{seg.speaker || 'Speaker'}</span>
-                    </button>
+                    <FileAudio className="w-3.5 h-3.5" />
                   )}
                 </div>
-
-                {/* Subtitle Action Tools */}
-                <div className="flex items-center gap-1 text-[#9ca3af]">
-                  {index < segments.length - 1 && (
-                    <button
-                      onClick={() => onMergeSegments(seg.id)}
-                      className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                      title="Merge with next block"
-                    >
-                      <Merge className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onAddSegment(seg.id)}
-                    className="p-1.5 text-[#9ca3af] hover:text-[#3fb970] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                    title="Insert block below"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => onDeleteSegment(seg.id)}
-                    className="p-1.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
-                    title="Delete block"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div className="min-w-0">
+                  <div className="font-semibold text-[#e4e7ec] truncate">
+                    {chatActivity?.sourceLabel || audioName}
+                  </div>
+                  <div className="text-[11px] text-[#9ca3af]">
+                    {chatActivity?.status === 'recording'
+                      ? 'Live microphone stream'
+                      : chatActivity?.status === 'processing'
+                      ? 'Transcribing locally with Moonshine WASM'
+                      : 'Audio transcribed into speaker blocks'}
+                  </div>
                 </div>
               </div>
-
-              {/* Subtitle Editable Content */}
-              <textarea
-                value={seg.text}
-                onChange={(e) => onUpdateSegment(seg.id, { text: e.target.value })}
-                rows={2}
-                className="w-full bg-transparent border-0 text-sm text-[#d0d5dd] leading-relaxed focus:outline-none focus:bg-[#121212]/80 p-2 rounded-lg resize-y transition-colors"
-                placeholder="Type subtitle segment text..."
-              />
             </div>
-          );
-        })
-      )}
+          )}
+
+          {/* Empty Welcome Chat State */}
+          {segments.length === 0 && !chatActivity && (
+            <div className="py-10 text-center space-y-2.5">
+              <div className="w-11 h-11 rounded-full bg-[#1f1f1f] border border-[#2e3138] text-[#3fb970] flex items-center justify-center mx-auto">
+                <FileAudio className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-semibold text-[#e4e7ec] font-display">
+                Start a Transcription Conversation
+              </h4>
+              <p className="text-xs text-[#9ca3af] max-w-md mx-auto">
+                Upload an audio/video file or start your microphone in the chat bar below. Completed speaker blocks will appear here as they are ready.
+              </p>
+            </div>
+          )}
+
+          {/* Assistant Subtitle Blocks (Existing Card Design Inside Chat Stream Outer Layout) */}
+          {segments.map((seg, index) => {
+            const isActive = currentTime >= seg.start && currentTime <= seg.end;
+            const isSpeaking = speakingSegmentId === seg.id;
+            const spName = seg.speaker || 'Speaker 1';
+            const spIdx = Math.max(0, uniqueSpeakers.indexOf(spName));
+            const speakerBadgeNum = spIdx + 1;
+            const avatarColorClass =
+              spIdx === 1
+                ? 'bg-sky-500/15 text-sky-300 border-sky-500/35'
+                : spIdx === 2
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/35'
+                : spIdx >= 3
+                ? 'bg-rose-500/15 text-rose-300 border-rose-500/35'
+                : 'bg-[#1db954]/15 text-[#4cc37c] border-[#1db954]/35';
+
+            return (
+              <div key={seg.id} className="flex items-start gap-2.5">
+                {/* Chat Participant Avatar */}
+                <div
+                  className={`w-7 h-7 rounded-full border flex items-center justify-center text-[11px] font-mono font-bold shrink-0 mt-1 ${avatarColorClass}`}
+                  title={spName}
+                >
+                  S{speakerBadgeNum}
+                </div>
+
+                {/* Unchanged Internal Block Design inside Chat Message Bubble */}
+                <div
+                  className={`flex-1 min-w-0 p-4 rounded-2xl rounded-tl-sm border transition-all ${
+                    isActive
+                      ? 'bg-[#1d221f] border-[#1db954]/55'
+                      : 'bg-[#181818] border-[#282828] hover:border-[#34373f]'
+                  }`}
+                >
+                  {/* Segment Metadata & Actions Header */}
+                  <div className="flex items-center justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <span className="text-xs font-mono tabular-nums text-[#6f7682]">
+                        #{index + 1}
+                      </span>
+
+                      {/* Play Audio Block Timestamp Button */}
+                      <button
+                        onClick={() => handlePlayBlockAudio(seg)}
+                        className="flex items-center gap-1.5 px-3 py-1 bg-[#121212] hover:bg-[#262930] rounded-full text-xs font-mono tabular-nums text-[#d0d5dd] border border-[#2e3138] transition-all cursor-pointer"
+                        title="Play audio from this timestamp"
+                      >
+                        <Play className="w-3 h-3 fill-current text-[#34a866]" />
+                        <span>
+                          {formatPlayerTime(seg.start)} – {formatPlayerTime(seg.end)}
+                        </span>
+                      </button>
+
+                      {/* Dedicated Text-To-Speech (TTS) Voice Button */}
+                      <button
+                        onClick={() => handleSpeakText(seg.id, seg.text)}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                          isSpeaking
+                            ? 'bg-[#262930] text-[#3fb970] border-[#1db954]/50'
+                            : 'bg-[#121212] hover:bg-[#262930] text-[#9ca3af] hover:text-[#e4e7ec] border-[#2e3138]'
+                        }`}
+                        title={isSpeaking ? 'Stop speaking' : 'Read text aloud (Text-to-Speech)'}
+                      >
+                        <Volume2 className={`w-3.5 h-3.5 ${isSpeaking ? 'text-[#3fb970]' : 'text-[#9ca3af]'}`} />
+                        <span className="text-xs font-semibold">
+                          {isSpeaking ? 'Reading...' : 'TTS'}
+                        </span>
+                      </button>
+
+                      {/* Speaker Label */}
+                      {editingSpeakerId === seg.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={speakerInputValue}
+                            onChange={(e) => setSpeakerInputValue(e.target.value)}
+                            className="px-2.5 py-0.5 bg-[#121212] border border-[#34373f] rounded-full text-xs text-[#d0d5dd] w-28 focus:outline-none focus:border-[#1db954]/55"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveSpeaker(seg.id);
+                            }}
+                          />
+                          <button
+                            onClick={() => handleSaveSpeaker(seg.id)}
+                            className="p-1 text-[#3fb970] hover:bg-[#282828] rounded-full cursor-pointer"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        (() => {
+                          const speakerToneClass =
+                            spIdx === 1
+                              ? 'bg-sky-500/12 text-sky-300 border-sky-500/30 hover:bg-sky-500/20'
+                              : spIdx === 2
+                              ? 'bg-amber-500/12 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                              : spIdx >= 3
+                              ? 'bg-rose-500/12 text-rose-300 border-rose-500/30 hover:bg-rose-500/20'
+                              : 'bg-[#121212] hover:bg-[#262930] text-[#c2c8d1] border-[#2e3138]';
+                          return (
+                            <button
+                              onClick={() => {
+                                setEditingSpeakerId(seg.id);
+                                setSpeakerInputValue(spName);
+                              }}
+                              className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${speakerToneClass}`}
+                              title="Click to rename speaker"
+                            >
+                              <User className="w-3 h-3 opacity-80" />
+                              <span>{spName}</span>
+                            </button>
+                          );
+                        })()
+                      )}
+                    </div>
+
+                    {/* Subtitle Action Tools */}
+                    <div className="flex items-center gap-1 text-[#9ca3af]">
+                      {index < segments.length - 1 && (
+                        <button
+                          onClick={() => onMergeSegments(seg.id)}
+                          className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                          title="Merge with next block"
+                        >
+                          <Merge className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onAddSegment(seg.id)}
+                        className="p-1.5 text-[#9ca3af] hover:text-[#3fb970] hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                        title="Insert block below"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDeleteSegment(seg.id)}
+                        className="p-1.5 text-[#6f7682] hover:text-rose-400 hover:bg-[#282828] rounded-md transition-colors cursor-pointer"
+                        title="Delete block"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Subtitle Editable Content */}
+                  <textarea
+                    value={seg.text}
+                    onChange={(e) => onUpdateSegment(seg.id, { text: e.target.value })}
+                    rows={2}
+                    className="w-full bg-transparent border-0 text-sm text-[#d0d5dd] leading-relaxed focus:outline-none focus:bg-[#121212]/80 p-2 rounded-lg resize-y transition-colors"
+                    placeholder="Type subtitle segment text..."
+                  />
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Assistant Live Progress / Recording Bubble */}
+          {chatActivity && (chatActivity.status === 'processing' || chatActivity.status === 'recording') && (
+            <div className="flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-[#1db954]/15 border border-[#1db954]/35 text-[#3fb970] flex items-center justify-center shrink-0 mt-1">
+                {chatActivity.status === 'recording' ? (
+                  <Mic className="w-3.5 h-3.5" />
+                ) : (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0 p-3.5 rounded-2xl rounded-tl-sm bg-[#181818] border border-[#2e3138] space-y-2.5">
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  <span className="font-semibold text-[#e4e7ec]">
+                    {chatActivity.status === 'recording'
+                      ? `Live Microphone (${formatPlayerTime(chatActivity.recordingSeconds || 0)})`
+                      : chatActivity.loadingStep || 'Transcribing audio...'}
+                  </span>
+                  {chatActivity.status === 'processing' && onCancelTranscription && (
+                    <button
+                      type="button"
+                      onClick={onCancelTranscription}
+                      className="px-2.5 py-1 bg-[#202020] hover:bg-[#2a2a2a] text-[#d0d5dd] rounded-md border border-[#323232] text-[11px] font-medium cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+
+                {chatActivity.downloadProgress &&
+                  chatActivity.downloadProgress.fraction >= 0 &&
+                  chatActivity.downloadProgress.fraction < 1 && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-mono tabular-nums text-[#9ca3af]">
+                        <span className="truncate max-w-[220px]">Caching {chatActivity.downloadProgress.file}</span>
+                        <span>{Math.round(chatActivity.downloadProgress.fraction * 100)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-[#242424] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#1db954] transition-all duration-150"
+                          style={{ width: `${Math.round(chatActivity.downloadProgress.fraction * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                {chatActivity.chunkProgress && chatActivity.chunkProgress.totalChunks > 1 && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[11px] font-mono tabular-nums text-[#9ca3af]">
+                      <span>
+                        Segment {chatActivity.chunkProgress.currentChunk} of {chatActivity.chunkProgress.totalChunks}
+                      </span>
+                      <span>
+                        {formatPlayerTime(chatActivity.chunkProgress.processedSeconds)} /{' '}
+                        {formatPlayerTime(chatActivity.chunkProgress.totalSeconds)} ·{' '}
+                        {Math.round(chatActivity.chunkProgress.fraction * 100)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#242424] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#1db954] transition-all duration-150"
+                        style={{ width: `${Math.max(3, Math.round(chatActivity.chunkProgress.fraction * 100))}%` }}
+                      />
+                    </div>
+                    {chatActivity.chunkProgress.autoSwitchNotice && (
+                      <p className="text-[11px] text-[#9ca3af]">
+                        {chatActivity.chunkProgress.autoSwitchNotice}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {chatActivity.status === 'recording' &&
+                  ((chatActivity.liveCommittedLines && chatActivity.liveCommittedLines.length > 0) ||
+                    chatActivity.livePartialText) && (
+                    <div className="p-2.5 rounded-lg bg-[#121212] border border-[#282828] space-y-1 max-h-32 overflow-y-auto text-xs">
+                      {chatActivity.liveCommittedLines?.map((line) => (
+                        <p key={line.id} className="text-[#e4e7ec]">
+                          <span className="font-mono tabular-nums text-[#3fb970] mr-2">
+                            {formatPlayerTime(Math.floor(line.startTime))}
+                          </span>
+                          {line.text}
+                        </p>
+                      ))}
+                      {chatActivity.livePartialText && (
+                        <p className="text-[#9ca3af] italic">{chatActivity.livePartialText}</p>
+                      )}
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Chat Input Composer */}
+        {composerFooter}
       </div>
     </div>
   );
