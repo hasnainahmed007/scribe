@@ -101,32 +101,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-[#181818] border border-[#282828] rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <div className="bg-[#181818] border border-[#282828] rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl flex flex-col max-h-[86vh]">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20">
+        <div className="px-6 py-4 border-b border-[#282828] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#1db954]/10 text-[#3fb970] flex items-center justify-center border border-[#1db954]/20 shrink-0">
               <Download className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-[#e4e7ec] font-display">
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-[#e4e7ec] font-display truncate">
                 Export Subtitles & Transcript Files
               </h3>
-              <p className="text-xs text-[#9ca3af]">
+              <p className="text-xs text-[#9ca3af] truncate">
                 Choose your required format and download in 1 click
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] rounded-lg hover:bg-[#282828] transition-colors cursor-pointer"
+            className="p-1.5 text-[#9ca3af] hover:text-[#e4e7ec] rounded-lg hover:bg-[#282828] transition-colors cursor-pointer shrink-0"
+            aria-label="Close export dialog"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Format Selector Tabs */}
-        <div className="px-6 pt-4 pb-2 border-b border-[#282828] flex items-center gap-2 overflow-x-auto">
+        <div className="px-6 py-3 border-b border-[#282828] flex items-center gap-2 overflow-x-auto shrink-0">
           {/* SRT (Standard) */}
           <button
             onClick={() => setActiveFormat('srt')}
@@ -194,7 +195,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
         {/* Format Specific Options */}
         {activeFormat === 'srt' && (
-          <div className="px-6 py-2 bg-[#141414] border-b border-[#282828] flex items-center justify-between gap-4 text-xs text-[#d0d5dd]">
+          <div className="px-6 py-2.5 bg-[#141414] border-b border-[#282828] flex flex-wrap items-center justify-between gap-3 text-xs text-[#d0d5dd] shrink-0">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -210,7 +211,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         )}
         {activeFormat === 'txt' && (
-          <div className="px-6 py-2 bg-[#141414] border-b border-[#282828] flex items-center gap-5 text-xs text-[#d0d5dd]">
+          <div className="px-6 py-2.5 bg-[#141414] border-b border-[#282828] flex flex-wrap items-center gap-5 text-xs text-[#d0d5dd] shrink-0">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -233,7 +234,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         )}
 
         {/* Preview Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-[#121212] font-mono text-xs text-[#d0d5dd]">
+        <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-[#121212] font-mono text-xs text-[#d0d5dd]">
           {/* Locked Notice if format is locked */}
           {isCurrentFormatLocked ? (
             <div className="py-12 text-center max-w-md mx-auto space-y-4">
@@ -261,19 +262,19 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           ) : (
             <>
               {activeFormat === 'srt' && (
-                <pre className="whitespace-pre-wrap leading-relaxed font-sans font-bengali">
+                <pre className="whitespace-pre-wrap break-words leading-relaxed font-sans font-bengali">
                   {srtContent}
                 </pre>
               )}
 
               {activeFormat === 'txt' && (
-                <pre className="whitespace-pre-wrap leading-relaxed font-sans font-bengali">
+                <pre className="whitespace-pre-wrap break-words leading-relaxed font-sans font-bengali">
                   {txtContent}
                 </pre>
               )}
 
               {activeFormat === 'json' && (
-                <pre className="whitespace-pre-wrap text-[#4cc37c]/90 leading-relaxed">
+                <pre className="whitespace-pre-wrap break-words text-[#4cc37c]/90 leading-relaxed">
                   {jsonContent}
                 </pre>
               )}
@@ -285,10 +286,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                       Microsoft Word (.docx) Document Preview
                     </div>
                     <p className="text-xs text-[#9ca3af]">
-                      Formatted table document containing segment timecodes, speaker tags, and accurate Bengali transcript text.
+                      Formatted table document containing segment timecodes, speaker tags, and accurate transcript text.
                     </p>
                   </div>
-                  <div className="border border-[#282828] rounded-lg overflow-hidden">
+                  <div className="border border-[#282828] rounded-lg overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead className="bg-[#181818] text-[#d0d5dd]">
                         <tr>
@@ -317,9 +318,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 border-t border-[#282828] bg-[#141414] flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-[#282828] bg-[#141414] flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-[#9ca3af]">
-            Total Segments: <span className="font-mono text-[#d0d5dd] font-semibold">{segments.length}</span>
+            Total Segments: <span className="font-mono tabular-nums text-[#d0d5dd] font-semibold">{segments.length}</span>
           </div>
 
           <div className="flex items-center gap-3">

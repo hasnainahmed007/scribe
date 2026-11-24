@@ -1,17 +1,12 @@
 import React from 'react';
 import { ActiveTab } from '../types';
 import {
-  Mic,
-  FileAudio,
-  Youtube,
-  Image as ImageIcon,
   LogOut,
-  LogIn,
-  History,
-  Lock,
   Settings,
   HelpCircle,
   MessageSquare,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -25,17 +20,19 @@ interface NavbarProps {
   onOpenInquiry?: () => void;
   hasSegments: boolean;
   onScrollToSection?: (sectionId: string) => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   onOpenAuth,
-  onOpenPricing,
   onOpenSettings,
   onOpenOnboarding,
   onOpenInquiry,
-  hasSegments,
+  isSidebarOpen = false,
+  onToggleSidebar,
 }) => {
   const { user, isAuthenticated, isSuperAdmin, logout } = useAuth();
 
@@ -52,15 +49,21 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const hasModule = (modName: string) => {
-    if (isSuperAdmin) return true;
-    return Boolean(user?.planModules?.includes(modName as any));
-  };
-
   return (
-    <header className="sticky top-0 z-40 bg-[#121212]/95 backdrop-blur-md border-b border-[#282828] px-4 lg:px-8 py-3 flex items-center justify-between gap-8">
-      {/* Zone 1: Clean Brand Wordmark (Spotify Circular Emblem) */}
-      <div className="flex items-center gap-3 shrink-0">
+    <header className="sticky top-0 z-40 h-[57px] bg-[#121212]/95 backdrop-blur-md border-b border-[#282828] px-4 lg:px-6 flex items-center justify-between gap-6">
+      {/* Zone 1: Brand Wordmark + Mobile Sidebar Toggle for Creator Workspace */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        {isAuthenticated && !isSuperAdmin && onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="lg:hidden p-1.5 -ml-1 text-[#9ca3af] hover:text-[#e4e7ec] rounded-lg hover:bg-[#282828] transition-colors cursor-pointer"
+            aria-label={isSidebarOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        )}
+
         <button
           onClick={() => {
             if (!isAuthenticated) setActiveTab('landing');
@@ -76,123 +79,39 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
       </div>
 
-      {/* Zone 2: Navigation Links (Spotify Typography & Pills) */}
+      {/* Zone 2: Visitor Landing Links Only (Creator Nav Lives in Sidebar) */}
       <nav className="hidden md:flex items-center gap-1 text-xs font-semibold">
-        {/* Visitor Navigation */}
         {!isAuthenticated && (
           <div className="flex items-center gap-6 text-[#9ca3af]">
             <button
               onClick={() => handleLandingNav('home')}
-              className="hover:text-[#e4e7ec] transition-colors cursor-pointer"
+              className="hover:text-[#e4e7ec] transition-colors cursor-pointer whitespace-nowrap"
             >
               Home
             </button>
             <button
               onClick={() => handleLandingNav('about')}
-              className="hover:text-[#e4e7ec] transition-colors cursor-pointer"
+              className="hover:text-[#e4e7ec] transition-colors cursor-pointer whitespace-nowrap"
             >
               About
             </button>
             <button
               onClick={() => handleLandingNav('pricing')}
-              className="hover:text-[#e4e7ec] transition-colors cursor-pointer"
+              className="hover:text-[#e4e7ec] transition-colors cursor-pointer whitespace-nowrap"
             >
               Pricing
             </button>
             <button
               onClick={() => handleLandingNav('contact')}
-              className="hover:text-[#e4e7ec] transition-colors cursor-pointer"
+              className="hover:text-[#e4e7ec] transition-colors cursor-pointer whitespace-nowrap"
             >
               Contact
             </button>
           </div>
         )}
-
-
-
-        {/* Creator Studio Workspace Navigation (Pill Segmented Control) */}
-        {isAuthenticated && !isSuperAdmin && (
-          <div className="flex items-center p-1 bg-[#181818] rounded-full border border-[#282828]">
-            <button
-              onClick={() => setActiveTab('studio')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'studio'
-                  ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
-                  : 'text-[#9ca3af] hover:text-[#e4e7ec]'
-              }`}
-            >
-              <FileAudio className="w-3.5 h-3.5" />
-              <span>Subtitles</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'history'
-                  ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
-                  : 'text-[#9ca3af] hover:text-[#e4e7ec]'
-              }`}
-            >
-              <History className="w-3.5 h-3.5" />
-              <span>History</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('voiceover')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'voiceover'
-                  ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
-                  : 'text-[#9ca3af] hover:text-[#e4e7ec]'
-              }`}
-            >
-              <Mic className="w-3.5 h-3.5 text-[#34a866]" />
-              <span>Voiceover</span>
-              {!hasModule('voiceover_studio') && (
-                <Lock className="w-3 h-3 text-[#6f7682]" />
-              )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab('youtube')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'youtube'
-                  ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
-                  : 'text-[#9ca3af] hover:text-[#e4e7ec]'
-              }`}
-            >
-              <Youtube className="w-3.5 h-3.5" />
-              <span>YouTube SEO</span>
-              {!hasModule('youtube_seo') && (
-                <Lock className="w-3 h-3 text-[#6f7682]" />
-              )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab('thumbnail')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
-                activeTab === 'thumbnail'
-                  ? 'bg-[#262930] text-[#e4e7ec] font-semibold shadow-sm'
-                  : 'text-[#9ca3af] hover:text-[#e4e7ec]'
-              }`}
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>Thumbnail</span>
-              {!hasModule('thumbnail_canvas') && (
-                <Lock className="w-3 h-3 text-[#6f7682]" />
-              )}
-            </button>
-
-            <button
-              onClick={onOpenPricing}
-              className="px-3.5 py-1.5 rounded-full text-[#9ca3af] hover:text-[#e4e7ec] transition-colors cursor-pointer"
-            >
-              Plans
-            </button>
-          </div>
-        )}
       </nav>
 
-      {/* Zone 3: Primary Action & Profile (Spotify Pill Buttons) */}
+      {/* Zone 3: Primary Action & Profile */}
       <div className="flex items-center gap-3 shrink-0">
         {/* Visitor Actions */}
         {!isAuthenticated && (

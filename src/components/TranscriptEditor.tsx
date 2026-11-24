@@ -25,6 +25,7 @@ interface TranscriptEditorProps {
   segments: TranscriptSegment[];
   summary: string;
   audioName?: string;
+  userName?: string;
   currentTime: number;
   isTranscribing?: boolean;
   chatActivity?: ChatSttActivity | null;
@@ -43,10 +44,18 @@ interface TranscriptEditorProps {
   onSearchReplace: (searchTerm: string, replaceTerm: string) => number;
 }
 
+function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   segments,
   summary,
   audioName,
+  userName,
   currentTime,
   isTranscribing = false,
   chatActivity = null,
@@ -529,15 +538,15 @@ export const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
           {/* Empty Welcome Chat State */}
           {segments.length === 0 && !chatActivity && (
-            <div className="py-10 text-center space-y-2.5">
-              <div className="w-11 h-11 rounded-full bg-[#1f1f1f] border border-[#2e3138] text-[#3fb970] flex items-center justify-center mx-auto">
-                <FileAudio className="w-5 h-5" />
+            <div className="py-12 px-4 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-[#1db954] text-[#08100b] flex items-center justify-center font-bold text-xl mx-auto shadow-[0_6px_22px_rgba(29,185,84,0.28)]">
+                S
               </div>
-              <h4 className="text-sm font-semibold text-[#e4e7ec] font-display">
-                Start a Transcription Conversation
+              <h4 className="text-lg font-semibold text-[#e4e7ec] font-display tracking-tight">
+                {getTimeBasedGreeting()}{userName ? `, ${userName}` : ''}
               </h4>
-              <p className="text-xs text-[#9ca3af] max-w-md mx-auto">
-                Upload an audio/video file or start your microphone in the chat bar below. Completed speaker blocks will appear here as they are ready.
+              <p className="text-xs text-[#9ca3af] max-w-md mx-auto leading-relaxed">
+                Upload an audio or video file or start your microphone below. Transcribed speaker blocks will stream right into this chat.
               </p>
             </div>
           )}

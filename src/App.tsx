@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { LandingPage } from './components/LandingPage';
 import { AudioPlayerController } from './components/AudioPlayerController';
 import { AudioInputHub, ChatSttActivity } from './components/AudioInputHub';
@@ -18,7 +19,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { InquiryModal } from './components/InquiryModal';
 import { generateSyntheticAudioBlob } from './data/sampleAudios';
-import { retrieveTranscriptAudio } from './utils/audioStorage';
+import { retrieveTranscriptAudio, deleteAudioBlob } from './utils/audioStorage';
 import { createSegmentsFromScript } from './utils/subtitleUtils';
 import { abortActiveSttSession } from './utils/moonshineEngine';
 import { AiQuotaNotice } from './components/AiQuotaNotice';
@@ -34,21 +35,10 @@ import {
 } from './types';
 import { safeFetchJson } from './utils/apiClient';
 import {
-  FileAudio,
-  Youtube,
-  Image as ImageIcon,
   Download,
-  Mic,
-  ChevronRight,
-  Headphones,
-  ShieldCheck,
-  Zap,
-  History,
   Trash2,
 } from 'lucide-react';
 import { Button } from './components/ui/button';
-import { Card } from './components/ui/card';
-import { Badge } from './components/ui/badge';
 
 function ScribyApp() {
   const { user, isSuperAdmin, token, refreshProfile, isLoadingSession } = useAuth();
@@ -106,6 +96,12 @@ function ScribyApp() {
   const [isInquiryOpen, setIsInquiryOpen] = useState<boolean>(false);
   const [isLoadingTranscription, setIsLoadingTranscription] = useState<boolean>(false);
   const [chatActivity, setChatActivity] = useState<ChatSttActivity | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+
+  // Sidebar History & Pinned Transcripts
+  const [transcriptHistory, setTranscriptHistory] = useState<SavedTranscript[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [pinnedTranscriptIds, setPinnedTranscriptIds] = useState<number[]>([]);
 
   // YouTube Studio State
   const [youtubeMetadata, setYoutubeMetadata] = useState<YouTubeMetadata | null>(null);
@@ -114,6 +110,93 @@ function ScribyApp() {
 
   // Track user login state transitions for role-based auto-redirection
   const previousUserRef = useRef<SaaSUser | null>(null);
+
+  const fetchTranscriptHistory = async () => {
+    if (!token || !user || user.role !== 'user') return;
+    setIsLoadingHistory(true);
+    try {
+      const res = await safeFetchJson<{ success: boolean; data: SavedTranscript[] }>(
+        '/api/transcripts',
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.ok && res.data?.data) {
+        setTranscriptHistory(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch sidebar transcript history:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.uid) {
+      try {
+        const stored = localStorage.getItem(`scriby_pinned_transcripts_${user.uid}`);
+        setPinnedTranscriptIds(stored ? JSON.parse(stored) : []);
+      } catch {
+        setPinnedTranscriptIds([]);
+      }
+    } else {
+      setPinnedTranscriptIds([]);
+      setTranscriptHistory([]);
+    }
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (token && user?.role === 'user') {
+      fetchTranscriptHistory();
+    }
+  }, [token, user?.id, user?.role]);
+
+  const handleTogglePinTranscript = (id: number) => {
+    setPinnedTranscriptIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((item) => item !== id) : [id, ...prev];
+      if (user?.uid) {
+        try {
+          localStorage.setItem(`scriby_pinned_transcripts_${user.uid}`, JSON.stringify(next));
+        } catch {
+          // ignore storage quota errors
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleDeleteTranscriptFromSidebar = async (item: SavedTranscript) => {
+    if (!token) return;
+    const res = await safeFetchJson(`/api/transcripts/${item.id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      try {
+        await deleteAudioBlob(`transcript_${item.id}`);
+        if (item.audioName) await deleteAudioBlob(`title_${item.audioName.trim()}`);
+        if (item.title) await deleteAudioBlob(`title_${item.title.trim()}`);
+      } catch {
+        // ignore vault errors
+      }
+      setTranscriptHistory((prev) => prev.filter((t) => t.id !== item.id));
+      setPinnedTranscriptIds((prev) => {
+        const next = prev.filter((id) => id !== item.id);
+        if (user?.uid) {
+          try {
+            localStorage.setItem(`scriby_pinned_transcripts_${user.uid}`, JSON.stringify(next));
+          } catch {}
+        }
+        return next;
+      });
+      if (
+        loadedTranscriptId === item.id ||
+        (audioSource && (audioSource.name === item.audioName || audioSource.name === item.title))
+      ) {
+        handleClearStudioState();
+      }
+    }
+  };
 
   useEffect(() => {
     if (!isLoadingSession) {
@@ -413,6 +496,7 @@ function ScribyApp() {
     }
 
     refreshProfile();
+    fetchTranscriptHistory();
   };
 
   // Segment Handlers
@@ -657,60 +741,80 @@ function ScribyApp() {
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenInquiry={() => setIsInquiryOpen(true)}
         hasSegments={segments.length > 0}
+        isSidebarOpen={isMobileSidebarOpen}
+        onToggleSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
       />
 
-      {/* Main Viewport */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
-        {/* ======================================================================== */}
-        {/* VIEW 0: AUTHENTICATION PAGE (Dedicated Full Page, NOT Modal)              */}
-        {/* ======================================================================== */}
-        {activeTab === 'auth' && (
-          <AuthPage
-            initialMode={authInitialMode}
-            onSuccess={() => {
-              if (user?.role === 'superadmin') setActiveTab('admin');
-              else setActiveTab('studio');
-            }}
-            onBackToHome={() => setActiveTab('landing')}
-          />
-        )}
-
-        {/* ======================================================================== */}
-        {/* VIEW 1: LANDING PAGE (Only Home, About, Contact Us sections)             */}
-        {/* Rendered when unauthenticated OR explicitly navigated to landing         */}
-        {/* ======================================================================== */}
-        {activeTab !== 'auth' && (!user || activeTab === 'landing') && (
-          <LandingPage
-            onGetStarted={() => {
-              if (user) {
-                if (user.role === 'superadmin') setActiveTab('admin');
+      {/* Non-Creator Shell (Visitor Landing, Auth, SuperAdmin) */}
+      {(!user || user.role !== 'user' || activeTab === 'landing' || activeTab === 'auth') && (
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6">
+          {/* VIEW 0: AUTHENTICATION PAGE */}
+          {activeTab === 'auth' && (
+            <AuthPage
+              initialMode={authInitialMode}
+              onSuccess={() => {
+                if (user?.role === 'superadmin') setActiveTab('admin');
                 else setActiveTab('studio');
-              } else {
-                setAuthInitialMode('register');
+              }}
+              onBackToHome={() => setActiveTab('landing')}
+            />
+          )}
+
+          {/* VIEW 1: LANDING PAGE */}
+          {activeTab !== 'auth' && (!user || activeTab === 'landing') && (
+            <LandingPage
+              onGetStarted={() => {
+                if (user) {
+                  if (user.role === 'superadmin') setActiveTab('admin');
+                  else setActiveTab('studio');
+                } else {
+                  setAuthInitialMode('register');
+                  setActiveTab('auth');
+                }
+              }}
+              onSignIn={() => {
+                setAuthInitialMode('login');
                 setActiveTab('auth');
-              }
+              }}
+            />
+          )}
+
+          {/* VIEW 2: SUPERADMIN PORTAL */}
+          {user && user.role === 'superadmin' && activeTab === 'admin' && (
+            <div className="space-y-6">
+              <SuperAdminPanel />
+            </div>
+          )}
+        </main>
+      )}
+
+      {/* VIEW 3: CREATOR WORKSPACE WITH LEFT SIDEBAR */}
+      {user && user.role === 'user' && activeTab !== 'landing' && activeTab !== 'auth' && (
+        <div className="flex flex-1 min-w-0">
+          <WorkspaceSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onOpenPricing={() => setIsPricingOpen(true)}
+            transcripts={transcriptHistory}
+            isLoadingHistory={isLoadingHistory}
+            pinnedIds={pinnedTranscriptIds}
+            activeTranscriptId={loadedTranscriptId}
+            onTogglePin={handleTogglePinTranscript}
+            onLoadTranscript={(item) => handleLoadTranscript(item, 'studio')}
+            onExportTranscript={handleExportTranscriptFromHistory}
+            onOpenInYouTube={async (item) => {
+              await handleLoadTranscript(item, 'youtube');
+              const textToAnalyze =
+                item.fullTranscript ||
+                (item.segments || []).map((s: any) => s.text).join(' ');
+              handleGenerateMetadata(item.title, textToAnalyze);
             }}
-            onSignIn={() => {
-              setAuthInitialMode('login');
-              setActiveTab('auth');
-            }}
+            onDeleteTranscript={handleDeleteTranscriptFromSidebar}
+            isMobileOpen={isMobileSidebarOpen}
+            onCloseMobile={() => setIsMobileSidebarOpen(false)}
           />
-        )}
 
-        {/* ======================================================================== */}
-        {/* VIEW 2: SUPERADMIN PORTAL (Strictly SuperAdmin Only, NO Creator Tools)   */}
-        {/* ======================================================================== */}
-        {user && user.role === 'superadmin' && activeTab === 'admin' && (
-          <div className="space-y-6">
-            <SuperAdminPanel />
-          </div>
-        )}
-
-        {/* ======================================================================== */}
-        {/* VIEW 3: CREATOR WORKSPACE (Strictly Creator Only, NO SuperAdmin Tools)   */}
-        {/* ======================================================================== */}
-        {user && user.role === 'user' && (
-          <>
+          <main className="flex-1 min-w-0 max-w-6xl mx-auto w-full px-4 lg:px-8 py-6 space-y-6">
             {/* Global AI Quota Notice if API rate limit or peak capacity occurs */}
             {globalAiQuotaNotice && (
               <div className="mb-4">
@@ -722,17 +826,15 @@ function ScribyApp() {
               </div>
             )}
 
-            {/* 3A. SUBTITLES & WAVEFORM EDITOR */}
+            {/* 3A. SUBTITLES & CHAT WORKSPACE */}
             {activeTab === 'studio' && (
               <div className="space-y-6">
                 {/* Workspace Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#282828]">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display">
-                        {audioSource?.name || 'Transcript Chat Workspace'}
-                      </h2>
-                    </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-semibold text-[#e4e7ec] tracking-tight font-display truncate">
+                      {audioSource?.name || 'Transcript Chat Workspace'}
+                    </h2>
                     <div className="text-xs text-[#9ca3af] mt-0.5">
                       <span>{segments.length} Subtitle Segments</span>
                       <span className="mx-2 text-[#4a4e57]">·</span>
@@ -742,7 +844,7 @@ function ScribyApp() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {(segments.length > 0 || audioSource) && (
                       <Button
                         variant="ghost"
@@ -786,150 +888,62 @@ function ScribyApp() {
                   />
                 )}
 
-                {/* Two-Column Editor Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  <div className="lg:col-span-3">
-                    <TranscriptEditor
-                      segments={segments}
-                      summary={summary}
-                      audioName={audioSource?.name}
-                      currentTime={currentTime}
-                      isTranscribing={isLoadingTranscription}
-                      chatActivity={chatActivity}
-                      onCancelTranscription={() => {
-                        abortActiveSttSession();
+                {/* Full-Width Chat & Subtitle Editor */}
+                <TranscriptEditor
+                  segments={segments}
+                  summary={summary}
+                  audioName={audioSource?.name}
+                  userName={user.name}
+                  currentTime={currentTime}
+                  isTranscribing={isLoadingTranscription}
+                  chatActivity={chatActivity}
+                  onCancelTranscription={() => {
+                    abortActiveSttSession();
+                    setIsLoadingTranscription(false);
+                    setChatActivity(null);
+                  }}
+                  onUpdateSegment={handleUpdateSegment}
+                  onDeleteSegment={handleDeleteSegment}
+                  onAddSegment={handleAddSegment}
+                  onMergeSegments={handleMergeSegments}
+                  onMergeAllSegments={handleMergeAllSegments}
+                  onUndoMergeAll={handleUndoMergeAll}
+                  canUndoMergeAll={!!previousSegmentsBackup}
+                  onSplitSegment={handleSplitSegment}
+                  onSeek={handleSeek}
+                  onPlaySegment={handlePlaySegment}
+                  onSearchReplace={handleSearchReplace}
+                  composerFooter={
+                    <AudioInputHub
+                      onTranscriptionStart={(sourceLabel) => {
+                        setSummary('');
+                        setSegments([]);
+                        setPreviousSegmentsBackup(null);
+                        setFullTranscript('');
+                        setAudioSource(null);
+                        setDuration(0);
+                        setCurrentTime(0);
+                        setIsPlaying(false);
+                        setLoadedTranscriptId(null);
+                        setYoutubeMetadata(null);
+                        setThumbnailTitle(sourceLabel);
+                      }}
+                      onPartialSegments={(partialSegs) => {
+                        setSegments(partialSegs);
+                      }}
+                      onTranscriptionAbort={() => {
                         setIsLoadingTranscription(false);
                         setChatActivity(null);
                       }}
-                      onUpdateSegment={handleUpdateSegment}
-                      onDeleteSegment={handleDeleteSegment}
-                      onAddSegment={handleAddSegment}
-                      onMergeSegments={handleMergeSegments}
-                      onMergeAllSegments={handleMergeAllSegments}
-                      onUndoMergeAll={handleUndoMergeAll}
-                      canUndoMergeAll={!!previousSegmentsBackup}
-                      onSplitSegment={handleSplitSegment}
-                      onSeek={handleSeek}
-                      onPlaySegment={handlePlaySegment}
-                      onSearchReplace={handleSearchReplace}
-                      composerFooter={
-                        <AudioInputHub
-                          onTranscriptionStart={(sourceLabel) => {
-                            setSummary('');
-                            setSegments([]);
-                            setPreviousSegmentsBackup(null);
-                            setFullTranscript('');
-                            setAudioSource(null);
-                            setDuration(0);
-                            setCurrentTime(0);
-                            setIsPlaying(false);
-                            setLoadedTranscriptId(null);
-                            setYoutubeMetadata(null);
-                            setThumbnailTitle(sourceLabel);
-                          }}
-                          onPartialSegments={(partialSegs) => {
-                            setSegments(partialSegs);
-                          }}
-                          onTranscriptionAbort={() => {
-                            setIsLoadingTranscription(false);
-                            setChatActivity(null);
-                          }}
-                          onActivityChange={setChatActivity}
-                          onTranscriptionComplete={handleTranscriptionComplete}
-                          isLoading={isLoadingTranscription}
-                          setIsLoading={setIsLoadingTranscription}
-                          onOpenPricing={() => setIsPricingOpen(true)}
-                          onQuotaExceeded={(msg) => setGlobalAiQuotaNotice(msg)}
-                        />
-                      }
+                      onActivityChange={setChatActivity}
+                      onTranscriptionComplete={handleTranscriptionComplete}
+                      isLoading={isLoadingTranscription}
+                      setIsLoading={setIsLoadingTranscription}
+                      onOpenPricing={() => setIsPricingOpen(true)}
+                      onQuotaExceeded={(msg) => setGlobalAiQuotaNotice(msg)}
                     />
-                  </div>
-
-                  {/* Sidebar Actions */}
-                  <div className="lg:col-span-1 space-y-4">
-                    {/* Creator Tools & Repurposing */}
-                    <Card className="p-4 space-y-2.5">
-                      <div className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider mb-2">
-                        Creator Extensions
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          setActiveTab('youtube');
-                          if (!youtubeMetadata) handleGenerateMetadata();
-                        }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Youtube className="w-4 h-4 text-rose-400" />
-                          <span>YouTube SEO & Titles</span>
-                        </span>
-                        {!user.planModules?.includes('youtube_seo') && (
-                          <Badge variant="outline" className="text-xs">Pro</Badge>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab('thumbnail')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <ImageIcon className="w-4 h-4 text-amber-400/90" />
-                          <span>16:9 Thumbnail Canvas</span>
-                        </span>
-                        {!user.planModules?.includes('thumbnail_canvas') && (
-                          <Badge variant="outline" className="text-xs">Pro</Badge>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab('voiceover')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Mic className="w-4 h-4 text-[#34a866]" />
-                          <span>AI Voiceover & Cloning</span>
-                        </span>
-                        {!user.planModules?.includes('voiceover_studio') && (
-                          <Badge variant="outline" className="text-xs text-purple-300/90 border-purple-400/25">Agency</Badge>
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setActiveTab('history')}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#121212] hover:bg-[#1f1f1f] text-[#d0d5dd] border border-[#282828] transition-colors text-xs font-medium cursor-pointer"
-                      >
-                        <span className="flex items-center gap-2">
-                          <History className="w-4 h-4 text-[#34a866]" />
-                          <span>Saved History</span>
-                        </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-[#6f7682]" />
-                      </button>
-                    </Card>
-
-                    {/* Credit balance widget */}
-                    <Card className="p-4">
-                      <div className="text-xs font-medium text-[#9ca3af] mb-1 flex items-center justify-between">
-                        <span>Audio Minutes</span>
-                        <Zap className="w-3.5 h-3.5 text-amber-400/90" />
-                      </div>
-                      <div className="text-xl font-semibold font-mono text-[#3fb970] tabular-nums">
-                        {user.creditsRemaining} <span className="text-xs text-[#9ca3af] font-sans font-normal">minutes</span>
-                      </div>
-                      <div className="text-xs text-[#9ca3af] mt-1 mb-3">
-                        Plan: <strong className="text-[#e4e7ec] font-medium">{user.planName}</strong>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsPricingOpen(true)}
-                        className="w-full"
-                      >
-                        Top Up or Upgrade
-                      </Button>
-                    </Card>
-                  </div>
-                </div>
+                  }
+                />
               </div>
             )}
 
@@ -963,6 +977,7 @@ function ScribyApp() {
                       handleClearStudioState();
                     }
                   }}
+                  onHistoryChanged={fetchTranscriptHistory}
                   onNewRecording={scrollToChatComposer}
                 />
               </div>
@@ -1067,9 +1082,9 @@ function ScribyApp() {
                 )}
               </div>
             )}
-          </>
-        )}
-      </main>
+          </main>
+        </div>
+      )}
 
       {/* Export Modal */}
       <ExportModal
